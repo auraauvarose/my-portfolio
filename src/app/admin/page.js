@@ -3,460 +3,305 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
+const ADMIN_PASSWORD = 'aura2007';
+
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
   const [isDark, setIsDark] = useState(true);
-  const [activeTab, setActiveTab] = useState('certs'); // 'certs' | 'projects'
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Certs state
-  const [certificates, setCertificates] = useState([]);
-  const [certForm, setCertForm] = useState({ image_url: '', title: '', issuer: '' });
-  const [certSuccess, setCertSuccess] = useState(false);
-
-  // Projects state
-  const [projects, setProjects] = useState([]);
-  const [projForm, setProjForm] = useState({ title: '', description: '', tech_stack: '', github_url: '', demo_url: '', image_url: '' });
-  const [projSuccess, setProjSuccess] = useState(false);
-
   const d = isDark;
+  const [authed, setAuthed] = useState(false);
+  const [passInput, setPassInput] = useState('');
+  const [passError, setPassError] = useState(false);
+  const [tab, setTab] = useState('sertifikat');
+  const [certs, setCerts] = useState([]);
+  const [certMode, setCertMode] = useState('url');
+  const [certTitle, setCertTitle] = useState('');
+  const [certIssuer, setCertIssuer] = useState('');
+  const [certUrl, setCertUrl] = useState('');
+  const [certFile, setCertFile] = useState(null);
+  const [certUploading, setCertUploading] = useState(false);
+  const [editingCert, setEditingCert] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [projTitle, setProjTitle] = useState('');
+  const [projDesc, setProjDesc] = useState('');
+  const [projStack, setProjStack] = useState('');
+  const [projGithub, setProjGithub] = useState('');
+  const [projDemo, setProjDemo] = useState('');
+  const [projImg, setProjImg] = useState('');
+  const [projMode, setProjMode] = useState('url');
+  const [projFile, setProjFile] = useState(null);
+  const [projUploading, setProjUploading] = useState(false);
+  const [editingProj, setEditingProj] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [views, setViews] = useState(0);
 
   useEffect(() => {
-    document.documentElement.style.background = d ? '#111110' : '#f7f6f1';
-    document.body.style.background = d ? '#111110' : '#f7f6f1';
+    document.documentElement.style.background = d ? '#111110' : '#f4f4f0';
+    document.body.style.background = d ? '#111110' : '#f4f4f0';
     document.body.style.margin = '0';
-    document.body.style.padding = '0';
   }, [d]);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (password === 'aura123') {
-      setIsAuthenticated(true);
-      setLoginError('');
-      fetchAll();
-    } else {
-      setLoginError('Password salah. Coba lagi.');
-    }
-  };
+  useEffect(() => { if (authed) loadAll(); }, [authed]);
 
-  const fetchAll = async () => {
-    setIsLoading(true);
-    const [certsRes, projsRes] = await Promise.all([
+  const loadAll = async () => {
+    const [c, p, cm, v] = await Promise.all([
       supabase.from('certificates').select('*').order('created_at', { ascending: false }),
       supabase.from('projects').select('*').order('created_at', { ascending: false }),
+      supabase.from('comments').select('*').order('created_at', { ascending: false }),
+      supabase.from('views').select('count').eq('slug', 'home').single(),
     ]);
-    if (certsRes.data) setCertificates(certsRes.data);
-    if (projsRes.data) setProjects(projsRes.data);
-    setIsLoading(false);
+    if (c.data) setCerts(c.data);
+    if (p.data) setProjects(p.data);
+    if (cm.data) setComments(cm.data);
+    if (v.data) setViews(v.data.count);
   };
 
-  const handleAddCert = async (e) => {
-    e.preventDefault();
-    if (!certForm.image_url) return;
-    setIsLoading(true);
-    await supabase.from('certificates').insert([certForm]);
-    setCertForm({ image_url: '', title: '', issuer: '' });
-    setCertSuccess(true);
-    setTimeout(() => setCertSuccess(false), 3000);
+  const login = () => {
+    if (passInput === ADMIN_PASSWORD) { setAuthed(true); setPassError(false); }
+    else { setPassError(true); setPassInput(''); }
+  };
+
+  const uploadFile = async (file, bucket) => {
+    const ext = file.name.split('.').pop();
+    const filename = `${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from(bucket).upload(filename, file, { upsert: true });
+    if (error) { alert('Upload gagal: ' + error.message); return null; }
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filename);
+    return urlData.publicUrl;
+  };
+
+  const addCert = async () => {
+    if (!certTitle || !certIssuer) return alert('Judul dan penerbit wajib diisi.');
+    setCertUploading(true);
+    let imageUrl = certUrl;
+    if (certMode === 'file' && certFile) { imageUrl = await uploadFile(certFile, 'certificates'); if (!imageUrl) { setCertUploading(false); return; } }
+    if (editingCert) { await supabase.from('certificates').update({ title: certTitle, issuer: certIssuer, image_url: imageUrl }).eq('id', editingCert.id); setEditingCert(null); }
+    else { await supabase.from('certificates').insert([{ title: certTitle, issuer: certIssuer, image_url: imageUrl }]); }
+    setCertTitle(''); setCertIssuer(''); setCertUrl(''); setCertFile(null); setCertUploading(false);
     const { data } = await supabase.from('certificates').select('*').order('created_at', { ascending: false });
-    if (data) setCertificates(data);
-    setIsLoading(false);
+    if (data) setCerts(data);
   };
 
-  const handleDeleteCert = async (id) => {
-    if (confirm('Yakin mau hapus sertifikat ini?')) {
-      await supabase.from('certificates').delete().eq('id', id);
-      const { data } = await supabase.from('certificates').select('*').order('created_at', { ascending: false });
-      if (data) setCertificates(data);
-    }
-  };
+  const editCert = (c) => { setEditingCert(c); setCertTitle(c.title||''); setCertIssuer(c.issuer||''); setCertUrl(c.image_url||''); setCertMode('url'); };
+  const deleteCert = async (id) => { if (!confirm('Hapus sertifikat ini?')) return; await supabase.from('certificates').delete().eq('id', id); setCerts(prev => prev.filter(c => c.id !== id)); };
 
-  const handleAddProject = async (e) => {
-    e.preventDefault();
-    if (!projForm.title) return;
-    setIsLoading(true);
-    await supabase.from('projects').insert([projForm]);
-    setProjForm({ title: '', description: '', tech_stack: '', github_url: '', demo_url: '', image_url: '' });
-    setProjSuccess(true);
-    setTimeout(() => setProjSuccess(false), 3000);
+  const addProject = async () => {
+    if (!projTitle) return alert('Judul proyek wajib diisi.');
+    setProjUploading(true);
+    let imageUrl = projImg;
+    if (projMode === 'file' && projFile) { imageUrl = await uploadFile(projFile, 'projects'); if (!imageUrl) { setProjUploading(false); return; } }
+    const payload = { title: projTitle, description: projDesc, tech_stack: projStack, github_url: projGithub, demo_url: projDemo, image_url: imageUrl };
+    if (editingProj) { await supabase.from('projects').update(payload).eq('id', editingProj.id); setEditingProj(null); }
+    else { await supabase.from('projects').insert([payload]); }
+    setProjTitle(''); setProjDesc(''); setProjStack(''); setProjGithub(''); setProjDemo(''); setProjImg(''); setProjFile(null); setProjUploading(false);
     const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
     if (data) setProjects(data);
-    setIsLoading(false);
   };
 
-  const handleDeleteProject = async (id) => {
-    if (confirm('Yakin mau hapus proyek ini?')) {
-      await supabase.from('projects').delete().eq('id', id);
-      const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-      if (data) setProjects(data);
-    }
-  };
+  const editProject = (p) => { setEditingProj(p); setProjTitle(p.title||''); setProjDesc(p.description||''); setProjStack(p.tech_stack||''); setProjGithub(p.github_url||''); setProjDemo(p.demo_url||''); setProjImg(p.image_url||''); setProjMode('url'); };
+  const deleteProject = async (id) => { if (!confirm('Hapus proyek ini?')) return; await supabase.from('projects').delete().eq('id', id); setProjects(prev => prev.filter(p => p.id !== id)); };
+  const deleteComment = async (id) => { if (!confirm('Hapus komentar ini?')) return; await supabase.from('comments').delete().eq('id', id); setComments(prev => prev.filter(c => c.id !== id)); };
+  const resetViews = async () => { if (!confirm('Reset views ke 0?')) return; await supabase.from('views').update({ count: 0 }).eq('slug', 'home'); setViews(0); };
 
-  const css = `
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,400;1,9..144,700&display=swap');
-    *,*::before,*::after{box-sizing:border-box;}
-    html,body{margin:0;padding:0;width:100%;}
-    body{cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="cyan" stroke="white" stroke-width="1.5"><path d="M3 3l7 17 2.5-7.5L20 10z"/></svg>'),auto;}
-    a,button{cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="magenta" stroke="white" stroke-width="1.5"><path d="M3 3l7 17 2.5-7.5L20 10z"/></svg>'),pointer;}
+  const bg   = d ? '#111110' : '#f4f4f0';
+  const bg2  = d ? '#1c1c1a' : '#ffffff';
+  const ink  = d ? '#f0efe8' : '#1a1a1a';
+  const ink2 = d ? '#909088' : '#666';
+  const bd   = d ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.09)';
+  const acc  = '#d4eb00';
+  const fonts = `@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Fraunces:opsz,wght@9..144,900&display=swap');`;
 
-    .aw{
-      --acc:#d4eb00;--acc-bg:rgba(212,235,0,0.1);
-      --ink:#0d0d0d;--ink2:#717171;--ink3:#aaaaaa;
-      --bg:#f7f6f1;--bg2:#eeeee8;--bd:rgba(0,0,0,0.08);
-      font-family:'Plus Jakarta Sans',sans-serif;
-      background:var(--bg);color:var(--ink);min-height:100vh;width:100%;
-      transition:background 0.4s,color 0.4s;
-    }
-    .aw.dark{
-      --ink:#f0efe8;--ink2:#888880;--ink3:#555550;
-      --bg:#111110;--bg2:#1c1c1a;--bd:rgba(255,255,255,0.07);
-    }
-
-    /* NAV */
-    .anav{position:fixed;top:0;left:0;right:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--bd);transition:background 0.4s;}
-    .anav-in{max-width:1140px;margin:0 auto;padding:0 48px;height:64px;display:flex;align-items:center;justify-content:space-between;}
-    .alogo{font-family:'Fraunces',serif;font-size:22px;font-weight:900;color:var(--ink);text-decoration:none;letter-spacing:-0.5px;}
-    .alogo em{font-style:normal;color:var(--acc);}
-    .alogo-badge{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink2);padding:4px 12px;border:1px solid var(--bd);background:var(--bg2);border-radius:100px;}
-    .anav-right{display:flex;align-items:center;gap:10px;}
-    .btn-site{padding:8px 18px;background:transparent;border:1px solid var(--bd);color:var(--ink2);border-radius:100px;font-family:inherit;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:4px;transition:all 0.2s;}
-    .btn-site:hover{color:var(--ink);border-color:var(--ink);}
-    .btn-theme-a{padding:8px 18px;border:1px solid var(--bd);background:var(--bg2);color:var(--ink);border-radius:100px;font-family:inherit;font-size:12px;font-weight:700;transition:all 0.2s;}
-    .btn-theme-a:hover{transform:translateY(-1px);}
-
-    .awrap{max-width:1140px;margin:0 auto;padding:0 48px;}
-
-    /* LOADING BAR */
-    .lbar{position:fixed;top:64px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),transparent);background-size:200% 100%;animation:shimmer 1.2s ease infinite;z-index:100;}
-    @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-
-    /* LOGIN */
-    .login-outer{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
-    .login-card{width:100%;max-width:440px;padding:52px 44px;background:var(--bg2);border:1px solid var(--bd);border-radius:24px;animation:up 0.5s ease;}
-    .l-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--ink2);margin-bottom:12px;}
-    .l-title{font-family:'Fraunces',serif;font-size:44px;font-weight:900;line-height:0.95;letter-spacing:-0.02em;color:var(--ink);margin:0 0 32px;}
-    .l-title em{font-style:italic;font-weight:400;color:var(--ink2);}
-    .f-label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink2);margin-bottom:8px;}
-    .f-input{width:100%;padding:15px 18px;background:var(--bg);border:1px solid var(--bd);color:var(--ink);border-radius:14px;font-family:inherit;font-size:15px;letter-spacing:3px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;margin-bottom:16px;}
-    .f-input::placeholder{letter-spacing:0;color:var(--ink3);}
-    .f-input:focus{border-color:var(--ink);box-shadow:0 0 0 3px var(--acc-bg);}
-    .l-error{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#dc2626;font-size:13px;font-weight:600;margin-bottom:16px;}
-    .btn-submit{width:100%;padding:16px;background:var(--ink);color:var(--bg);border:none;border-radius:14px;font-family:inherit;font-size:14px;font-weight:700;letter-spacing:0.04em;transition:all 0.2s;}
-    .btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.15);}
-
-    /* DASH HEADER */
-    .dash-hdr{padding-top:96px;padding-bottom:48px;border-bottom:1px solid var(--bd);}
-    .d-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--ink2);margin-bottom:10px;}
-    .d-title{font-family:'Fraunces',serif;font-size:clamp(36px,5vw,60px);font-weight:900;line-height:0.95;letter-spacing:-0.02em;color:var(--ink);margin:0;}
-    .d-title em{font-style:italic;font-weight:400;color:var(--ink2);}
-
-    /* STATS */
-    .dstats{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--bd);}
-    .dstat{padding:32px 0;text-align:center;border-right:1px solid var(--bd);animation:up 0.5s ease both;}
-    .dstat:last-child{border-right:none;}
-    .dstat-n{font-family:'Fraunces',serif;font-size:40px;font-weight:900;color:var(--ink);line-height:1;margin-bottom:4px;}
-    .dstat-l{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink2);}
-
-    /* TABS */
-    .tabs{display:flex;gap:0;border-bottom:1px solid var(--bd);margin-top:40px;}
-    .tab-btn{
-      padding:16px 32px;background:transparent;border:none;
-      font-family:inherit;font-size:14px;font-weight:700;
-      color:var(--ink2);letter-spacing:0.04em;
-      border-bottom:2px solid transparent;margin-bottom:-1px;
-      transition:all 0.2s;
-    }
-    .tab-btn:hover{color:var(--ink);}
-    .tab-btn.active{color:var(--ink);border-bottom-color:var(--acc);}
-    .tab-count{
-      display:inline-flex;align-items:center;justify-content:center;
-      width:22px;height:22px;border-radius:100px;
-      background:var(--bg2);font-size:11px;font-weight:700;
-      color:var(--ink2);margin-left:8px;
-    }
-    .tab-btn.active .tab-count{background:var(--acc);color:#0d0d0d;}
-
-    /* PANEL */
-    .panel{padding:44px 0;border-bottom:1px solid var(--bd);}
-    .panel-title{font-family:'Fraunces',serif;font-size:24px;font-weight:900;color:var(--ink);margin:0 0 24px;letter-spacing:-0.01em;}
-
-    /* FORMS */
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-    .form-full{grid-column:1/-1;}
-    .fg{margin-bottom:0;}
-    .fl{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink2);margin-bottom:8px;}
-    .fi,.ft{width:100%;padding:14px 16px;background:var(--bg2);border:1px solid var(--bd);color:var(--ink);border-radius:12px;font-family:inherit;font-size:14px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
-    .fi::placeholder,.ft::placeholder{color:var(--ink3);}
-    .fi:focus,.ft:focus{border-color:var(--ink);box-shadow:0 0 0 3px var(--acc-bg);}
-    .ft{height:100px;resize:vertical;}
-    .form-actions{display:flex;align-items:center;gap:12px;margin-top:20px;}
-    .btn-add{padding:14px 28px;background:var(--ink);color:var(--bg);border:none;border-radius:12px;font-family:inherit;font-size:13px;font-weight:700;transition:all 0.2s;}
-    .btn-add:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.15);}
-    .btn-add:disabled{opacity:0.6;}
-    .success-toast{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:#16a34a;font-size:13px;font-weight:600;animation:up 0.3s ease;}
-
-    /* GRID */
-    .items-grid{padding:40px 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;}
-
-    /* CERT CARD */
-    .ac-card{background:var(--bg2);border:1px solid var(--bd);border-radius:20px;overflow:hidden;animation:up 0.4s ease both;transition:transform 0.2s;}
-    .ac-card:hover{transform:translateY(-3px);}
-    .ac-thumb{aspect-ratio:16/10;overflow:hidden;position:relative;}
-    .ac-thumb img{width:100%;height:100%;object-fit:cover;transition:filter 0.3s;}
-    .ac-card:hover .ac-thumb img{filter:brightness(0.5);}
-    .ac-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;}
-    .ac-card:hover .ac-overlay{opacity:1;}
-    .btn-del{padding:10px 20px;background:#ef4444;color:white;border:none;border-radius:100px;font-family:inherit;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;transition:background 0.2s;}
-    .btn-del:hover{background:#dc2626;}
-    .ac-foot{padding:14px 18px;}
-    .ac-foot-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px;}
-    .ac-foot-issuer{font-size:12px;color:var(--ink2);}
-
-    /* PROJECT CARD */
-    .ap-card{background:var(--bg2);border:1px solid var(--bd);border-radius:20px;overflow:hidden;animation:up 0.4s ease both;transition:transform 0.2s;}
-    .ap-card:hover{transform:translateY(-3px);}
-    .ap-thumb{aspect-ratio:16/9;overflow:hidden;position:relative;background:var(--bg);}
-    .ap-thumb img{width:100%;height:100%;object-fit:cover;transition:filter 0.3s;}
-    .ap-card:hover .ap-thumb img{filter:brightness(0.5);}
-    .ap-thumb-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:40px;font-weight:900;color:var(--bd);}
-    .ap-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;}
-    .ap-card:hover .ap-overlay{opacity:1;}
-    .ap-body{padding:16px 18px;}
-    .ap-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;}
-    .ap-desc{font-size:12px;color:var(--ink2);line-height:1.5;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-    .ap-stack{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
-    .ap-chip{padding:3px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:100px;font-size:10px;font-weight:700;color:var(--ink3);}
-    .ap-links{display:flex;gap:8px;}
-    .ap-link{font-size:11px;font-weight:700;color:var(--ink2);text-decoration:none;padding:5px 10px;border:1px solid var(--bd);border-radius:100px;transition:all 0.2s;}
-    .ap-link:hover{color:var(--ink);border-color:var(--ink);}
-
-    /* EMPTY */
-    .empty-state{padding:80px;text-align:center;border:1px dashed var(--bd);border-radius:20px;color:var(--ink2);font-size:14px;grid-column:1/-1;}
-
-    /* ANIMATIONS */
-    @keyframes up{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-
-    /* RESPONSIVE */
-    @media(max-width:768px){
-      .awrap{padding:0 20px;}
-      .anav-in{padding:0 20px;}
-      .form-grid{grid-template-columns:1fr;}
-      .dstats{grid-template-columns:1fr 1fr;}
-      .dstat:nth-child(2){border-right:none;}
-      .dstat:nth-child(4){border-right:none;}
-      .tabs{overflow-x:auto;}
-    }
-  `;
-
-  // ── LOGIN ──
-  if (!isAuthenticated) {
-    return (
-      <>
-        <style>{css}</style>
-        <div className={`aw${d ? ' dark' : ''}`}>
-          <nav className="anav">
-            <div className="anav-in">
-              <a href="/" className="alogo">Aura<em>.</em></a>
-              <div className="anav-right">
-                <span className="alogo-badge">Admin</span>
-                <button className="btn-theme-a" onClick={() => setIsDark(!d)}>{d ? '☀ Light' : '🌙 Dark'}</button>
-              </div>
-            </div>
-          </nav>
-          <div className="login-outer">
-            <form onSubmit={handleLogin} className="login-card">
-              <p className="l-eyebrow">Akses Terbatas</p>
-              <h1 className="l-title">Ruang<br /><em>Admin</em></h1>
-              <label className="f-label">Password</label>
-              <input type="password" placeholder="Masukkan password..." value={password} onChange={e => { setPassword(e.target.value); setLoginError(''); }} className="f-input" required />
-              {loginError && <div className="l-error">⚠ {loginError}</div>}
-              <button type="submit" className="btn-submit">Masuk ke Dashboard →</button>
-            </form>
+  if (!authed) return (
+    <>
+      <style>{`${fonts}*{box-sizing:border-box;}body{margin:0;background:${bg};}input:focus{border-color:${acc}!important;outline:none;box-shadow:0 0 0 3px rgba(212,235,0,0.1)!important;}`}</style>
+      <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", minHeight:'100vh', background:bg, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+        <div style={{ background:bg2, border:`1px solid ${bd}`, borderRadius:24, padding:'48px 40px', width:'100%', maxWidth:400, textAlign:'center' }}>
+          <div style={{ fontFamily:"'Fraunces',serif", fontSize:44, fontWeight:900, color:ink, marginBottom:4 }}><span style={{ color:acc }}>A.</span></div>
+          <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.14em', color:ink2, marginBottom:36 }}>Admin Dashboard</div>
+          <div style={{ textAlign:'left', marginBottom:14 }}>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:ink2, marginBottom:7 }}>Password</label>
+            <input type="password" placeholder="Masukkan password admin..." value={passInput}
+              onChange={e => { setPassInput(e.target.value); setPassError(false); }}
+              onKeyDown={e => e.key === 'Enter' && login()}
+              style={{ width:'100%', padding:'13px 16px', background:bg, border:`1.5px solid ${passError?'#ef4444':bd}`, color:ink, borderRadius:12, fontFamily:'inherit', fontSize:14, outline:'none', boxSizing:'border-box' }}
+              autoFocus />
+            {passError && <div style={{ fontSize:12, color:'#ef4444', marginTop:8, fontWeight:600 }}>Keluar Password salah. Coba lagi.</div>}
           </div>
+          <button onClick={login} style={{ width:'100%', padding:14, background:acc, color:'#0d0d0d', border:'none', borderRadius:12, fontFamily:'inherit', fontSize:14, fontWeight:800, cursor:'pointer' }}>Masuk →</button>
         </div>
-      </>
-    );
-  }
+      </div>
+    </>
+  );
 
-  // ── DASHBOARD ──
+  const inp       = { width:'100%', padding:'11px 14px', background:bg, border:`1.5px solid ${bd}`, color:ink, borderRadius:12, fontFamily:'inherit', fontSize:13, outline:'none', boxSizing:'border-box' };
+  const lbl       = { display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:ink2, marginBottom:6 };
+  const fg        = { marginBottom:13 };
+  const btnAcc    = { padding:'10px 22px', background:acc, color:'#0d0d0d', border:'none', borderRadius:10, fontFamily:'inherit', fontSize:13, fontWeight:800, cursor:'pointer' };
+  const btnEdit   = { padding:'6px 12px', background:acc, color:'#0d0d0d', border:'none', borderRadius:8, fontFamily:'inherit', fontSize:11, fontWeight:700, cursor:'pointer' };
+  const btnDel    = { padding:'6px 12px', background:'rgba(239,68,68,0.1)', color:'#ef4444', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, fontFamily:'inherit', fontSize:11, fontWeight:700, cursor:'pointer' };
+  const btnCancel = { padding:'10px 18px', background:'transparent', color:ink2, border:`1px solid ${bd}`, borderRadius:10, fontFamily:'inherit', fontSize:13, fontWeight:700, cursor:'pointer' };
+  const tabBtn    = (on) => ({ padding:'9px 20px', borderRadius:100, border:`1.5px solid ${on?acc:bd}`, background:on?acc:'transparent', color:on?'#0d0d0d':ink2, fontFamily:'inherit', fontSize:12, fontWeight:700, cursor:'pointer' });
+  const modeBtn   = (on) => ({ padding:'7px 16px', borderRadius:100, border:`1.5px solid ${on?acc:bd}`, background:on?'rgba(212,235,0,0.12)':'transparent', color:on?acc:ink2, fontFamily:'inherit', fontSize:11, fontWeight:700, cursor:'pointer' });
+  const itemCard  = { background:bg, border:`1px solid ${bd}`, borderRadius:14, overflow:'hidden' };
+  const grid3     = { display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:14 };
+  const formPanel = { background:bg2, border:`1px solid ${bd}`, borderRadius:20, padding:22, position:'sticky', top:80 };
+  const splitGrid = { display:'grid', gridTemplateColumns:'340px 1fr', gap:24, alignItems:'start' };
+
   return (
     <>
-      <style>{css}</style>
-      <div className={`aw${d ? ' dark' : ''}`}>
+      <style>{`${fonts}*,*::before,*::after{box-sizing:border-box;}body{margin:0;}input::placeholder,textarea::placeholder{color:${d?'#555550':'#bbb'};}input:focus,textarea:focus{border-color:${acc}!important;box-shadow:0 0 0 3px rgba(212,235,0,0.1)!important;outline:none;}@media(max-width:800px){.split{grid-template-columns:1fr!important;}.form-sticky{position:relative!important;top:auto!important;}}.admin-main{max-width:1100px;margin:0 auto;padding:28px 40px 60px;}@media(max-width:600px){.admin-main{padding:20px 18px 48px!important;}}`}</style>
+      <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", minHeight:'100vh', background:bg, color:ink }}>
 
-        <nav className="anav">
-          <div className="anav-in">
-            <a href="/" className="alogo">Aura<em>.</em></a>
-            <div className="anav-right">
-              <a href="/" className="btn-site">← Lihat Site</a>
-              <span className="alogo-badge">Dashboard</span>
-              <button className="btn-theme-a" onClick={() => setIsDark(!d)}>{d ? '☀ Light' : '🌙 Dark'}</button>
-            </div>
+        {/* NAV */}
+        <nav style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 40px', height:64, background:bg2, borderBottom:`1px solid ${bd}`, position:'sticky', top:0, zIndex:50 }}>
+          <span style={{ fontFamily:"'Fraunces',serif", fontSize:20, fontWeight:900 }}><span style={{ color:acc }}>A.</span></span>
+          <div style={{ display:'flex', gap:8 }}>
+            <a href="/" style={{ padding:'7px 15px', border:`1px solid ${bd}`, color:ink, borderRadius:100, fontFamily:'inherit', fontSize:12, fontWeight:700, textDecoration:'none', background:'transparent' }}>← Site</a>
+            <button onClick={() => setIsDark(!d)} style={{ padding:'7px 13px', border:`1px solid ${bd}`, background:bg, color:ink, borderRadius:100, fontFamily:'inherit', fontSize:12, fontWeight:700, cursor:'pointer' }}>{d?'☀ Light':'🌙 Dark'}</button>
+            <button onClick={() => setAuthed(false)} style={{ padding:'7px 13px', border:'1px solid rgba(239,68,68,0.3)', background:'rgba(239,68,68,0.08)', color:'#ef4444', borderRadius:100, fontFamily:'inherit', fontSize:12, fontWeight:700, cursor:'pointer' }}>Keluar</button>
           </div>
         </nav>
 
-        {isLoading && <div className="lbar" />}
-
-        <div className="awrap">
-
-          {/* HEADER */}
-          <div className="dash-hdr">
-            <p className="d-eyebrow">// Panel Kontrol</p>
-            <h1 className="d-title">Dashboard<br /><em>Admin</em></h1>
+        <div className="admin-main">
+          {/* HEADER + TABS */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:14, marginBottom:28 }}>
+            <div>
+              <div style={{ fontFamily:"'Fraunces',serif", fontSize:24, fontWeight:900, color:ink }}>Dashboard</div>
+              <div style={{ fontSize:12, color:ink2, marginTop:2 }}>{certs.length} sertifikat · {projects.length} proyek · {comments.length} komentar · {views} views</div>
+            </div>
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              {[['sertifikat','🎓 Sertifikat'],['proyek','🚀 Proyek'],['komentar','💬 Komentar'],['stats','📊 Stats']].map(([k,l]) => (
+                <button key={k} style={tabBtn(tab===k)} onClick={() => setTab(k)}>{l}</button>
+              ))}
+            </div>
           </div>
 
-          {/* STATS */}
-          <div className="dstats">
-            {[
-              { n: certificates.length, l: 'Sertifikat' },
-              { n: projects.length, l: 'Proyek' },
-              { n: 'Aktif', l: 'Status DB' },
-              { n: 'Supabase', l: 'Backend' },
-            ].map((s, i) => (
-              <div key={i} className="dstat" style={{ animationDelay: `${i * 0.07}s` }}>
-                <div className="dstat-n">{s.n}</div>
-                <div className="dstat-l">{s.l}</div>
+          {/* ══ SERTIFIKAT ══ */}
+          {tab==='sertifikat' && (
+            <div className="split" style={splitGrid}>
+              <div className="form-sticky" style={formPanel}>
+                <div style={{ fontFamily:"'Fraunces',serif", fontSize:16, fontWeight:900, color:ink, marginBottom:16 }}>{editingCert?'Mengedit Sertifikat':'+ Upload Sertifikat'}</div>
+                <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+                  <button style={modeBtn(certMode==='url')} onClick={()=>setCertMode('url')}>🔗 URL</button>
+                  <button style={modeBtn(certMode==='file')} onClick={()=>setCertMode('file')}>📁 Upload File</button>
+                </div>
+                <div style={fg}><label style={lbl}>Judul Sertifikat *</label><input style={inp} placeholder="Cth: Web Development Certificate" value={certTitle||''} onChange={e=>setCertTitle(e.target.value)}/></div>
+                <div style={fg}><label style={lbl}>Diterbitkan Oleh *</label><input style={inp} placeholder="Cth: Dicoding Indonesia" value={certIssuer||''} onChange={e=>setCertIssuer(e.target.value)}/></div>
+                {certMode==='url'
+                  ? <div style={fg}><label style={lbl}>URL Gambar</label><input style={inp} placeholder="https://..." value={certUrl||''} onChange={e=>setCertUrl(e.target.value)}/></div>
+                  : <div style={fg}><label style={lbl}>Upload Gambar</label><input type="file" accept="image/*" style={{...inp,padding:'8px'}} onChange={e=>setCertFile(e.target.files[0])}/></div>
+                }
+                <div style={{ display:'flex', gap:8 }}>
+                  <button style={btnAcc} onClick={addCert} disabled={certUploading}>{certUploading?'Mengupload...':(editingCert?'Simpan':'Tambahkan →')}</button>
+                  {editingCert && <button style={btnCancel} onClick={()=>{setEditingCert(null);setCertTitle('');setCertIssuer('');setCertUrl('');}}>Batal</button>}
+                </div>
               </div>
-            ))}
-          </div>
-
-          {/* TABS */}
-          <div className="tabs">
-            <button className={`tab-btn${activeTab === 'certs' ? ' active' : ''}`} onClick={() => setActiveTab('certs')}>
-              Sertifikat <span className="tab-count">{certificates.length}</span>
-            </button>
-            <button className={`tab-btn${activeTab === 'projects' ? ' active' : ''}`} onClick={() => setActiveTab('projects')}>
-              Proyek <span className="tab-count">{projects.length}</span>
-            </button>
-          </div>
-
-          {/* ── TAB: SERTIFIKAT ── */}
-          {activeTab === 'certs' && (
-            <>
-              <div className="panel">
-                <h2 className="panel-title">Upload Sertifikat Baru</h2>
-                <form onSubmit={handleAddCert}>
-                  <div className="form-grid">
-                    <div className="fg">
-                      <label className="fl">Judul Sertifikat *</label>
-                      <input type="text" placeholder="Cth: Sertifikat Web Development" value={certForm.title} onChange={e => setCertForm({ ...certForm, title: e.target.value })} className="fi" required />
-                    </div>
-                    <div className="fg">
-                      <label className="fl">Diterbitkan Oleh *</label>
-                      <input type="text" placeholder="Cth: Dicoding Indonesia" value={certForm.issuer} onChange={e => setCertForm({ ...certForm, issuer: e.target.value })} className="fi" required />
-                    </div>
-                    <div className="fg form-full">
-                      <label className="fl">URL Gambar Sertifikat *</label>
-                      <input type="url" placeholder="https://example.com/cert.jpg" value={certForm.image_url} onChange={e => setCertForm({ ...certForm, image_url: e.target.value })} className="fi" required />
-                    </div>
-                  </div>
-                  <div className="form-actions">
-                    <button type="submit" className="btn-add" disabled={isLoading}>Tambahkan →</button>
-                    {certSuccess && <div className="success-toast">✓ Sertifikat berhasil ditambahkan!</div>}
-                  </div>
-                </form>
-              </div>
-
-              <div className="items-grid">
-                {certificates.length === 0 ? (
-                  <div className="empty-state">Belum ada sertifikat.</div>
-                ) : (
-                  certificates.map((cert, i) => (
-                    <div key={cert.id} className="ac-card" style={{ animationDelay: `${i * 0.05}s` }}>
-                      <div className="ac-thumb">
-                        <img src={cert.image_url} alt={cert.title} />
-                        <div className="ac-overlay">
-                          <button onClick={() => handleDeleteCert(cert.id)} className="btn-del">🗑 Hapus</button>
+              <div>
+                <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:ink2, marginBottom:14 }}>Semua Sertifikat ({certs.length})</div>
+                {certs.length===0
+                  ? <div style={{ padding:'48px 24px', textAlign:'center', border:`1px dashed ${bd}`, borderRadius:16, color:ink2, fontSize:13 }}>Belum ada sertifikat.</div>
+                  : <div style={grid3}>{certs.map(c=>(
+                      <div key={c.id} style={itemCard}>
+                        {c.image_url && <img src={c.image_url} alt={c.title} style={{width:'100%',aspectRatio:'16/9',objectFit:'cover',display:'block'}}/>}
+                        <div style={{padding:'11px 13px'}}>
+                          <div style={{fontSize:12,fontWeight:700,color:ink,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.title||'—'}</div>
+                          <div style={{fontSize:11,color:ink2,marginBottom:9}}>{c.issuer||'—'}</div>
+                          <div style={{display:'flex',gap:7}}><button style={btnEdit} onClick={()=>editCert(c)}>Edit</button><button style={btnDel} onClick={()=>deleteCert(c.id)}>Hapus</button></div>
                         </div>
+                      </div>))}</div>
+                }
+              </div>
+            </div>
+          )}
+
+          {/* ══ PROYEK ══ */}
+          {tab==='proyek' && (
+            <div className="split" style={splitGrid}>
+              <div className="form-sticky" style={formPanel}>
+                <div style={{ fontFamily:"'Fraunces',serif", fontSize:16, fontWeight:900, color:ink, marginBottom:16 }}>{editingProj?'Mengedit Proyek':'+ Tambah Proyek'}</div>
+                <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+                  <button style={modeBtn(projMode==='url')} onClick={()=>setProjMode('url')}>🔗 URL</button>
+                  <button style={modeBtn(projMode==='file')} onClick={()=>setProjMode('file')}>📁 Upload File</button>
+                </div>
+                <div style={fg}><label style={lbl}>Judul Proyek *</label><input style={inp} placeholder="Cth: Portfolio Website" value={projTitle||''} onChange={e=>setProjTitle(e.target.value)}/></div>
+                <div style={fg}><label style={lbl}>Tech Stack</label><input style={inp} placeholder="Next.js, Supabase, ..." value={projStack||''} onChange={e=>setProjStack(e.target.value)}/></div>
+                <div style={fg}><label style={lbl}>Deskripsi</label><textarea style={{...inp,height:76,resize:'vertical'}} placeholder="Deskripsi singkat..." value={projDesc||''} onChange={e=>setProjDesc(e.target.value)}/></div>
+                <div style={fg}><label style={lbl}>GitHub URL</label><input style={inp} placeholder="https://github.com/..." value={projGithub||''} onChange={e=>setProjGithub(e.target.value)}/></div>
+                <div style={fg}><label style={lbl}>Demo URL</label><input style={inp} placeholder="https://..." value={projDemo||''} onChange={e=>setProjDemo(e.target.value)}/></div>
+                {projMode==='url'
+                  ? <div style={fg}><label style={lbl}>URL Thumbnail</label><input style={inp} placeholder="https://..." value={projImg||''} onChange={e=>setProjImg(e.target.value)}/></div>
+                  : <div style={fg}><label style={lbl}>Upload Thumbnail</label><input type="file" accept="image/*" style={{...inp,padding:'8px'}} onChange={e=>setProjFile(e.target.files[0])}/></div>
+                }
+                <div style={{ display:'flex', gap:8 }}>
+                  <button style={btnAcc} onClick={addProject} disabled={projUploading}>{projUploading?'Mengupload...':(editingProj?'Simpan':'Tambahkan →')}</button>
+                  {editingProj && <button style={btnCancel} onClick={()=>{setEditingProj(null);setProjTitle('');setProjDesc('');setProjStack('');setProjGithub('');setProjDemo('');setProjImg('');}}>Batal</button>}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:ink2, marginBottom:14 }}>Semua Proyek ({projects.length})</div>
+                {projects.length===0
+                  ? <div style={{ padding:'48px 24px', textAlign:'center', border:`1px dashed ${bd}`, borderRadius:16, color:ink2, fontSize:13 }}>Belum ada proyek.</div>
+                  : <div style={grid3}>{projects.map(p=>(
+                      <div key={p.id} style={itemCard}>
+                        {p.image_url
+                          ? <img src={p.image_url} alt={p.title} style={{width:'100%',aspectRatio:'16/9',objectFit:'cover',display:'block'}}/>
+                          : <div style={{width:'100%',aspectRatio:'16/9',background:d?'#1c1c1a':'#e8e8e4',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'Fraunces',serif",fontSize:32,fontWeight:900,color:bd}}>{p.title?.[0]||'?'}</div>
+                        }
+                        <div style={{padding:'11px 13px'}}>
+                          <div style={{fontSize:12,fontWeight:700,color:ink,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.title||'—'}</div>
+                          <div style={{fontSize:11,color:ink2,marginBottom:9}}>{p.tech_stack||'—'}</div>
+                          <div style={{display:'flex',gap:7}}><button style={btnEdit} onClick={()=>editProject(p)}>Edit</button><button style={btnDel} onClick={()=>deleteProject(p.id)}>Hapus</button></div>
+                        </div>
+                      </div>))}</div>
+                }
+              </div>
+            </div>
+          )}
+
+          {/* ══ KOMENTAR ══ */}
+          {tab==='komentar' && (
+            <div style={{ maxWidth:680 }}>
+              <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:ink2, marginBottom:16 }}>Komentar Masuk ({comments.length})</div>
+              {comments.length===0
+                ? <div style={{ padding:'48px 24px', textAlign:'center', border:`1px dashed ${bd}`, borderRadius:16, color:ink2, fontSize:13 }}>Belum ada komentar.</div>
+                : comments.map(c=>(
+                    <div key={c.id} style={{ background:bg2, border:`1px solid ${bd}`, borderRadius:14, padding:'13px 16px', marginBottom:10, display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 }}>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:13, fontWeight:700, color:ink, marginBottom:3 }}>{c.name}</div>
+                        <div style={{ fontSize:13, color:ink2, lineHeight:1.6, marginBottom:5 }}>{c.message}</div>
+                        <div style={{ fontSize:10, fontWeight:600, color:d?'#555550':'#bbb', textTransform:'uppercase', letterSpacing:'0.08em' }}>{new Date(c.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
                       </div>
-                      <div className="ac-foot">
-                        <div className="ac-foot-title">{cert.title || 'Sertifikat'}</div>
-                        <div className="ac-foot-issuer">{cert.issuer || '—'}</div>
-                      </div>
+                      <button style={btnDel} onClick={()=>deleteComment(c.id)}>Hapus</button>
                     </div>
                   ))
-                )}
-              </div>
-            </>
+              }
+            </div>
           )}
 
-          {/* ── TAB: PROYEK ── */}
-          {activeTab === 'projects' && (
-            <>
-              <div className="panel">
-                <h2 className="panel-title">Tambah Proyek Baru</h2>
-                <form onSubmit={handleAddProject}>
-                  <div className="form-grid">
-                    <div className="fg">
-                      <label className="fl">Nama Proyek *</label>
-                      <input type="text" placeholder="Cth: E-commerce API" value={projForm.title} onChange={e => setProjForm({ ...projForm, title: e.target.value })} className="fi" required />
-                    </div>
-                    <div className="fg">
-                      <label className="fl">Tech Stack (pisah koma)</label>
-                      <input type="text" placeholder="Node.js, Express, PostgreSQL" value={projForm.tech_stack} onChange={e => setProjForm({ ...projForm, tech_stack: e.target.value })} className="fi" />
-                    </div>
-                    <div className="fg form-full">
-                      <label className="fl">Deskripsi</label>
-                      <textarea placeholder="Jelaskan proyek ini secara singkat..." value={projForm.description} onChange={e => setProjForm({ ...projForm, description: e.target.value })} className="ft" />
-                    </div>
-                    <div className="fg">
-                      <label className="fl">Link GitHub</label>
-                      <input type="url" placeholder="https://github.com/..." value={projForm.github_url} onChange={e => setProjForm({ ...projForm, github_url: e.target.value })} className="fi" />
-                    </div>
-                    <div className="fg">
-                      <label className="fl">Link Demo / Live</label>
-                      <input type="url" placeholder="https://..." value={projForm.demo_url} onChange={e => setProjForm({ ...projForm, demo_url: e.target.value })} className="fi" />
-                    </div>
-                    <div className="fg form-full">
-                      <label className="fl">URL Thumbnail Gambar</label>
-                      <input type="url" placeholder="https://example.com/screenshot.jpg" value={projForm.image_url} onChange={e => setProjForm({ ...projForm, image_url: e.target.value })} className="fi" />
-                    </div>
+          {/* ══ STATS ══ */}
+          {tab==='stats' && (
+            <div style={{ maxWidth:460 }}>
+              <div style={{ background:bg2, border:`1px solid ${bd}`, borderRadius:20, padding:28 }}>
+                <div style={{ fontFamily:"'Fraunces',serif", fontSize:16, fontWeight:900, color:ink, marginBottom:20 }}>Statistik Website</div>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:bg, borderRadius:14, padding:'18px 20px', marginBottom:20 }}>
+                  <div>
+                    <div style={{ fontFamily:"'Fraunces',serif", fontSize:38, fontWeight:900, color:acc, lineHeight:1 }}>{views.toLocaleString()}</div>
+                    <div style={{ fontSize:12, color:ink2, marginTop:5 }}>Total kunjungan website</div>
                   </div>
-                  <div className="form-actions">
-                    <button type="submit" className="btn-add" disabled={isLoading}>Tambahkan →</button>
-                    {projSuccess && <div className="success-toast">✓ Proyek berhasil ditambahkan!</div>}
-                  </div>
-                </form>
+                  <button onClick={resetViews} style={{ padding:'10px 18px', background:'rgba(239,68,68,0.1)', color:'#ef4444', border:'1px solid rgba(239,68,68,0.2)', borderRadius:10, fontFamily:'inherit', fontSize:13, fontWeight:700, cursor:'pointer' }}>Reset ke 0</button>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:16 }}>
+                  {[['Sertifikat',certs.length,'🎓'],['Proyek',projects.length,'🚀'],['Komentar',comments.length,'💬']].map(([label,n,icon])=>(
+                    <div key={label} style={{ background:bg, borderRadius:12, padding:'14px', textAlign:'center' }}>
+                      <div style={{ fontSize:20, marginBottom:4 }}>{icon}</div>
+                      <div style={{ fontFamily:"'Fraunces',serif", fontSize:22, fontWeight:900, color:ink }}>{n}</div>
+                      <div style={{ fontSize:11, color:ink2, marginTop:3 }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize:11, color:d?'#555550':'#aaa' }}>Reset views tidak bisa dibatalkan.</div>
               </div>
-
-              <div className="items-grid">
-                {projects.length === 0 ? (
-                  <div className="empty-state">Belum ada proyek.</div>
-                ) : (
-                  projects.map((proj, i) => {
-                    const stack = proj.tech_stack ? proj.tech_stack.split(',').map(s => s.trim()) : [];
-                    return (
-                      <div key={proj.id} className="ap-card" style={{ animationDelay: `${i * 0.05}s` }}>
-                        <div className="ap-thumb">
-                          {proj.image_url
-                            ? <img src={proj.image_url} alt={proj.title} />
-                            : <div className="ap-thumb-empty">{proj.title ? proj.title[0] : '?'}</div>
-                          }
-                          <div className="ap-overlay">
-                            <button onClick={() => handleDeleteProject(proj.id)} className="btn-del">🗑 Hapus</button>
-                          </div>
-                        </div>
-                        <div className="ap-body">
-                          <div className="ap-title">{proj.title}</div>
-                          {proj.description && <div className="ap-desc">{proj.description}</div>}
-                          {stack.length > 0 && (
-                            <div className="ap-stack">{stack.map(s => <span key={s} className="ap-chip">{s}</span>)}</div>
-                          )}
-                          <div className="ap-links">
-                            {proj.github_url && <a href={proj.github_url} target="_blank" rel="noopener noreferrer" className="ap-link">GitHub ↗</a>}
-                            {proj.demo_url && <a href={proj.demo_url} target="_blank" rel="noopener noreferrer" className="ap-link">Demo ↗</a>}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </>
+            </div>
           )}
-
         </div>
       </div>
     </>
