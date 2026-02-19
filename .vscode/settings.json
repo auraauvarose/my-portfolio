@@ -1,0 +1,10 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "npx prettier": true,
+        "true": true,
+        "/^node -e \"const fs=require\\('fs'\\);const parser=require\\('@babel/parser'\\);const code=fs\\.readFileSync\\('src/app/page\\.js','utf8'\\);parser\\.parse\\(code,\\{sourceType:'module',plugins:\\['jsx'\\]\\}\\);console\\.log\\('parsed ok'\\);\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
