@@ -18,15 +18,77 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitDone, setSubmitDone] = useState(false);
   const [pageReady, setPageReady] = useState(false);
+  const [ripple, setRipple] = useState(null);
+  const [profileImage, setProfileImage] = useState('');
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiMessages, setAiMessages] = useState([]);
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
   const audioRef = useRef(null);
+  const themeBtnRef = useRef(null);
+  const aiEndRef = useRef(null);
   const d = isDark;
   const isID = lang === 'id';
 
-  // Sync body bg — prevent white sides
+  const toggleTheme = () => {
+    if (themeBtnRef.current) {
+      const r = themeBtnRef.current.getBoundingClientRect();
+      const x = ((r.left + r.width / 2) / window.innerWidth * 100).toFixed(1);
+      const y = ((r.top + r.height / 2) / window.innerHeight * 100).toFixed(1);
+      // ripple color = destination theme background
+      const color = d ? '#ffffff' : '#111110';
+      setRipple({ x, y, key: Date.now(), color });
+      setTimeout(() => setRipple(null), 700);
+    }
+    setIsDark(prev => !prev);
+  };
+
+  // ← GANTI dengan API key Gemini kamu dari https://aistudio.google.com/app/apikey
+  const GEMINI_KEY = 'AIzaSyAX7PrLzhStSLDmAvoz2uDOg5gktc6c1PE';
+
+  const sendAI = async () => {
+    if (!aiInput.trim() || aiLoading) return;
+    const userMsg = { role: 'user', parts: [{ text: aiInput.trim() }] };
+    const displayMsgs = [...aiMessages, { role: 'user', content: aiInput.trim() }];
+    setAiMessages(displayMsgs);
+    setAiInput('');
+    setAiLoading(true);
+
+    // Build history for Gemini (convert display format to Gemini format)
+    const history = aiMessages.map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: {
+              parts: [{ text: 'Kamu adalah asisten AI pribadi di portofolio Aura Auvarose, mahasiswa Informatika semester 1 dari Indonesia. Kamu ramah, singkat, dan membantu. Jawab dalam bahasa yang sama dengan pertanyaan (Indonesia/Inggris). Info tentang Aura: belajar Python, JavaScript, Next.js, Supabase, Git, Linux. Fokus pada logika pemrograman dan konsisten belajar setiap malam.' }]
+            },
+            contents: [...history, userMsg],
+            generationConfig: { maxOutputTokens: 800, temperature: 0.7 }
+          }),
+        }
+      );
+      const data = await res.json();
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Maaf, tidak ada respons.';
+      setAiMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+    } catch {
+      setAiMessages(prev => [...prev, { role: 'assistant', content: 'Koneksi gagal. Pastikan API key sudah benar.' }]);
+    }
+    setAiLoading(false);
+  };
+
+  useEffect(() => { aiEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages]);
+
+  // Sync html class — let CSS handle ALL transitions, no direct style manipulation
   useEffect(() => {
-    const bg = d ? '#111110' : '#ffffff';
-    document.documentElement.style.background = bg;
-    document.body.style.background = bg;
+    document.documentElement.classList.toggle('site-dark', d);
     document.body.style.margin = '0';
     document.body.style.padding = '0';
   }, [d]);
@@ -79,9 +141,12 @@ export default function Home() {
       const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
       if (data) setProjects(data);
     };
+    const loadProfileImage = async () => {
+      const { data } = await supabase.from('settings').select('value').eq('key', 'profile_image').single();
+      if (data?.value) setProfileImage(data.value);
+    };
     const init = async () => {
-      await Promise.all([loadCerts(), loadProjects(), loadViews(), loadComments()]);
-      // Slight delay so fonts/layout settle before hiding loader
+      await Promise.all([loadCerts(), loadProjects(), loadViews(), loadComments(), loadProfileImage()]);
       setTimeout(() => setPageReady(true), 300);
     };
     init();
@@ -207,14 +272,34 @@ export default function Home() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,400;1,9..144,700&display=swap');
         *,*::before,*::after{box-sizing:border-box;}
-        html{margin:0;padding:0;width:100%;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(100,100,100,0.5) transparent;}
+        html{
+          margin:0;padding:0;width:100%;overflow-x:hidden;
+          background:#111110;
+          transition:background 0.5s ease;
+          scrollbar-width:thin;scrollbar-color:rgba(100,100,100,0.5) transparent;
+        }
+        html.site-dark{background:#111110;}
+        html:not(.site-dark){background:#ffffff;}
         html::-webkit-scrollbar{width:4px;}
         html::-webkit-scrollbar-track{background:transparent;}
         html::-webkit-scrollbar-thumb{background:rgba(100,100,100,0.4);border-radius:4px;}
         html::-webkit-scrollbar-thumb:hover{background:rgba(150,150,150,0.6);}
-        body{margin:0;padding:0;width:100%;overflow-x:hidden;}
+        body{margin:0;padding:0;width:100%;overflow-x:hidden;background:transparent;}
         body{cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="cyan" stroke="white" stroke-width="1.5"><path d="M3 3l7 17 2.5-7.5L20 10z"/></svg>'),auto;}
         a,button{cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="magenta" stroke="white" stroke-width="1.5"><path d="M3 3l7 17 2.5-7.5L20 10z"/></svg>'),pointer;}
+
+        /* ── WAVE RIPPLE OVERLAY ── */
+        .theme-ripple{
+          position:fixed;inset:0;z-index:9997;pointer-events:none;
+          background:var(--ripple-color,#ffffff);
+          clip-path:circle(0% at var(--rx,50%) var(--ry,50%));
+          animation:waveRipple 0.65s cubic-bezier(0.22,1,0.36,1) forwards;
+        }
+        @keyframes waveRipple{
+          0%{clip-path:circle(0% at var(--rx) var(--ry));opacity:0.95;}
+          60%{clip-path:circle(120% at var(--rx) var(--ry));opacity:0.9;}
+          100%{clip-path:circle(150% at var(--rx) var(--ry));opacity:0;}
+        }
 
         /* ── LOADING SCREEN ── */
         .page-loader{
@@ -239,7 +324,8 @@ export default function Home() {
           --shadow:rgba(0,0,0,0.07);
           font-family:'Plus Jakarta Sans',sans-serif;
           background:var(--bg); color:var(--ink);
-          min-height:100vh; width:100%; transition:background 0.5s,color 0.5s;
+          min-height:100vh; width:100%;
+          transition:background 0.5s ease,color 0.5s ease;
           position:relative; overflow-x:hidden;
         }
         .rw.dark{
@@ -247,6 +333,8 @@ export default function Home() {
           --bg:#111110; --bg2:#1c1c1a; --bd:rgba(255,255,255,0.07);
           --shadow:rgba(0,0,0,0.3);
         }
+        .rw *{transition-property:background-color,border-color,color,box-shadow;transition-duration:0.5s;transition-timing-function:ease;}
+        .rw img,.rw canvas,.rw video,.rw .orb,.rw [data-reveal],.rw .theme-ripple{transition:none!important;}
 
         /* ── DARK MODE ORBS ── */
         .orb{
@@ -457,16 +545,17 @@ export default function Home() {
 
         /* ── FOOTER ── */
         .footer{padding-top:40px;padding-bottom:40px;border-top:1px solid var(--bd);}
-        .footer-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+        .footer-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+        .footer-left{display:flex;flex-direction:column;gap:6px;}
         .footer-logo{font-family:'Fraunces',serif;font-size:19px;font-weight:900;color:var(--ink);}
         .footer-logo em{font-style:normal;color:var(--acc);}
-        .footer-views{display:flex;align-items:center;gap:9px;padding:9px 18px;background:var(--bg2);border:1px solid var(--bd);border-radius:100px;}
+        .footer-copy{font-size:12px;font-weight:500;color:var(--ink2);margin:0;}
+        .footer-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+        .footer-views{display:inline-flex;align-items:center;gap:9px;padding:8px 16px;background:var(--bg2);border:1px solid var(--bd);border-radius:100px;}
         .footer-views-dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:blink 2s ease infinite;flex-shrink:0;}
-        .footer-views-text{font-size:12px;font-weight:600;color:var(--ink2);}
         .footer-views-num{font-family:'Fraunces',serif;font-size:14px;font-weight:900;color:var(--ink);}
-        .footer-views-suffix{font-size:12px;font-weight:600;color:var(--ink2);}
-        .footer-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:18px;border-top:1px solid var(--bd);}
-        .footer-copy{font-size:12px;font-weight:500;color:var(--ink2);}
+        .footer-views-text{font-size:12px;font-weight:600;color:var(--ink2);}
+        .footer-made{font-size:12px;font-weight:500;color:var(--ink3);}
 
         /* ── FLOAT (LANG + MUSIC) ── */
         .float-group{position:fixed;bottom:28px;right:28px;z-index:200;display:flex;flex-direction:column;align-items:center;gap:8px;}
@@ -475,6 +564,39 @@ export default function Home() {
         .music-btn{width:54px;height:54px;border-radius:50%;background:var(--ink);color:var(--bg);border:none;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px var(--shadow);transition:all 0.25s;}
         .music-btn:hover{transform:scale(1.1);box-shadow:0 12px 32px var(--shadow);}
         .music-btn.playing{animation:spin 8s linear infinite;}
+
+
+
+        /* ── GITHUB ACTIVITY ── */
+        .gh-activity{background:var(--bg2);border:1px solid var(--bd);border-radius:20px;padding:20px 24px;margin-bottom:36px;overflow:hidden;}
+        .gh-activity-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+        .gh-status-dot{width:8px;height:8px;border-radius:50%;background:#2ea043;animation:blink 2s ease infinite;flex-shrink:0;}
+        .gh-activity-title{font-size:13px;font-weight:700;color:var(--ink);}
+        .gh-activity-sub{font-size:11px;color:var(--ink2);margin-left:auto;}
+        .gh-chart-wrap{width:100%;overflow:hidden;border-radius:10px;}
+        .gh-chart-wrap img{width:100%;height:auto;display:block;border-radius:8px;}
+        .rw:not(.dark) .gh-chart-wrap img{filter:none;}
+        .rw.dark .gh-chart-wrap img{filter:invert(1) hue-rotate(180deg) brightness(0.85);}
+
+        /* ── AI CHAT ── */
+        .ai-btn{padding:8px 13px;background:linear-gradient(135deg,#d4eb00,#c5da00);color:#0d0d0d;border:none;border-radius:100px;font-family:inherit;font-size:11px;font-weight:800;letter-spacing:0.03em;display:flex;align-items:center;gap:5px;transition:all 0.2s;cursor:pointer;}
+        .ai-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(212,235,0,0.5);}
+        .ai-panel{position:fixed;bottom:100px;right:28px;z-index:300;width:340px;background:var(--bg2);border:1px solid var(--bd);border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;animation:up 0.25s ease;}
+        .ai-panel-head{padding:14px 18px;background:var(--bg);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;}
+        .ai-panel-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);animation:blink 2s ease infinite;}
+        .ai-panel-title{font-size:13px;font-weight:800;color:var(--ink);flex:1;}
+        .ai-panel-close{background:transparent;border:none;color:var(--ink2);font-size:16px;cursor:pointer;padding:2px 6px;border-radius:6px;line-height:1;}
+        .ai-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;max-height:320px;min-height:160px;}
+        .ai-msg{max-width:85%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5;}
+        .ai-msg.user{background:var(--acc);color:#0d0d0d;align-self:flex-end;border-bottom-right-radius:4px;font-weight:600;}
+        .ai-msg.assistant{background:var(--bg);border:1px solid var(--bd);color:var(--ink);align-self:flex-start;border-bottom-left-radius:4px;}
+        .ai-empty{text-align:center;color:var(--ink2);font-size:12px;padding:20px;}
+        .ai-panel-foot{padding:10px 14px;border-top:1px solid var(--bd);display:flex;gap:8px;background:var(--bg);}
+        .ai-input{flex:1;padding:9px 13px;background:var(--bg2);border:1.5px solid var(--bd);color:var(--ink);border-radius:10px;font-family:inherit;font-size:13px;outline:none;}
+        .ai-input:focus{border-color:var(--acc);}
+        .ai-send{padding:9px 14px;background:var(--acc);color:#0d0d0d;border:none;border-radius:10px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0;}
+        .ai-send:disabled{opacity:0.5;}
+        @media(max-width:600px){.ai-panel{right:12px;left:12px;width:auto;bottom:90px;}}
 
         /* ── ANIMATIONS ── */
         @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
@@ -501,8 +623,8 @@ export default function Home() {
           .modal-box{flex-direction:column;max-height:92vh;overflow-y:auto;}
           .modal-info-side{width:100%;border-left:none;border-top:1px solid var(--bd);min-height:auto;}
           .modal-img-side{min-height:220px;flex:none;}
-          .footer-top{flex-direction:column;text-align:center;}
-          .footer-bottom{flex-direction:column;gap:8px;text-align:center;}
+          .footer-inner{flex-direction:column;align-items:center;text-align:center;}
+          .footer-right{align-items:center;}
         }
 
         /* ── RESPONSIVE: MOBILE ── */
@@ -561,7 +683,7 @@ export default function Home() {
           .footer{padding-top:28px;padding-bottom:28px;}
           .footer-logo{font-size:17px;}
           .footer-views{padding:7px 14px;}
-          .footer-views-text{display:none;}
+          .footer-right{align-items:center;}
 
           .cert-empty,.proj-empty{padding:40px 16px;}
         }
@@ -577,6 +699,14 @@ export default function Home() {
       `}</style>
 
       <div className={`rw${d ? ' dark' : ''}`}>
+        {/* THEME RIPPLE WAVE */}
+        {ripple && (
+          <div
+            key={ripple.key}
+            className="theme-ripple"
+            style={{ '--rx': `${ripple.x}%`, '--ry': `${ripple.y}%`, '--ripple-color': ripple.color }}
+          />
+        )}
         {/* LOADING SCREEN */}
         <div className={`page-loader${pageReady ? ' done' : ''}`}>
           <div className="loader-logo"><em>A.</em></div>
@@ -601,7 +731,10 @@ export default function Home() {
               <li><a href="#contact">{tx.navContact}</a></li>
             </ul>
             <div className="nav-right">
-              <button className="btn-theme" onClick={() => setIsDark(!d)}>
+              <button className="ai-btn" onClick={() => setAiOpen(!aiOpen)}>
+                ✦ AI
+              </button>
+              <button ref={themeBtnRef} className="btn-theme" onClick={toggleTheme}>
                 {d ? '☀ Light' : '🌙 Dark'}
               </button>
               <a href="/admin" className="btn-admin">⚙ Admin</a>
@@ -623,7 +756,7 @@ export default function Home() {
           <div className="hero-photo-wrap" data-reveal data-delay="2">
             <div className="hero-photo-bg" />
             <div className="hero-photo">
-              <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Aura&backgroundColor=c7d2fe" alt="Aura" />
+              <img src={profileImage || "https://api.dicebear.com/7.x/notionists/svg?seed=Aura&backgroundColor=c7d2fe"} alt="Aura" />
             </div>
           </div>
         </section>
@@ -727,6 +860,21 @@ export default function Home() {
 
         {/* PROJECTS */}
         <section className="wrap sec" id="projects">
+          {/* GITHUB ACTIVITY */}
+          <div className="gh-activity" data-reveal>
+            <div className="gh-activity-head">
+              <span className="gh-status-dot"/>
+              <span className="gh-activity-title">Active on GitHub</span>
+              <span className="gh-activity-sub">@auraauvarose · 370 contributions this year</span>
+            </div>
+            <div className="gh-chart-wrap">
+              <img
+                src="https://ghchart.rshah.org/2ea043/auraauvarose"
+                alt="GitHub Contribution Chart"
+                loading="lazy"
+              />
+            </div>
+          </div>
           <div className="sec-head" data-reveal>
             <div><p className="eyebrow">{tx.projEyebrow}</p><h2 className="sec-title">{tx.projTitle}</h2></div>
             <span className="sec-num">0{projects.length}</span>
@@ -817,18 +965,19 @@ export default function Home() {
 
         {/* FOOTER */}
         <footer className="wrap footer" data-reveal>
-          <div className="footer-top">
-            <div className="footer-logo">aura<em></em>auvarose</div>
-            <div className="footer-views">
-              <span className="footer-views-dot"/>
-              <span className="footer-views-text">{tx.footerViews}</span>
-              <span className="footer-views-num">{views||0}</span>
-              <span className="footer-views-suffix">{tx.footerTimes}</span>
+          <div className="footer-inner">
+            <div className="footer-left">
+              <div className="footer-logo">aura<em>a</em>uvarose</div>
+              <p className="footer-copy">© 2026 auraauvarose</p>
             </div>
-          </div>
-          <div className="footer-bottom">
-            <p className="footer-copy">© 2026 auraauvarose</p>
-            <p className="footer-copy">{tx.footerMade}</p>
+            <div className="footer-right">
+              <div className="footer-views">
+                <span className="footer-views-dot"/>
+                <span className="footer-views-num">{views||0}</span>
+                <span className="footer-views-text">&nbsp;{tx.footerTimes}</span>
+              </div>
+              <p className="footer-made">{tx.footerMade}</p>
+            </div>
           </div>
         </footer>
 
@@ -858,6 +1007,37 @@ export default function Home() {
                 <div className="modal-note-div"/>
                 <div className="modal-acc-bar">{tx.modalVerified}</div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* AI CHAT PANEL */}
+        {aiOpen && (
+          <div className="ai-panel">
+            <div className="ai-panel-head">
+              <span className="ai-panel-dot"/>
+              <span className="ai-panel-title">✦ AI Aura</span>
+              <button className="ai-panel-close" onClick={() => setAiOpen(false)}>✕</button>
+            </div>
+            <div className="ai-msgs custom-scrollbar">
+              {aiMessages.length === 0 && (
+                <div className="ai-empty">Halo! 👋 Tanya apa saja tentang Aura atau pemrograman.</div>
+              )}
+              {aiMessages.map((m, i) => (
+                <div key={i} className={`ai-msg ${m.role}`}>{m.content}</div>
+              ))}
+              {aiLoading && <div className="ai-msg assistant">✦ Sedang berpikir...</div>}
+              <div ref={aiEndRef}/>
+            </div>
+            <div className="ai-panel-foot">
+              <input
+                className="ai-input"
+                placeholder="Tanya sesuatu..."
+                value={aiInput}
+                onChange={e => setAiInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendAI()}
+              />
+              <button className="ai-send" onClick={sendAI} disabled={aiLoading}>Kirim</button>
             </div>
           </div>
         )}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
-const ADMIN_PASSWORD = 'aura2007';
+const ADMIN_PASSWORD = 'aura2007'; // ← GANTI dengan password admin yang kamu inginkan
 
 export default function AdminPage() {
   const [isDark, setIsDark] = useState(true);
@@ -33,6 +33,10 @@ export default function AdminPage() {
   const [editingProj, setEditingProj] = useState(null);
   const [comments, setComments] = useState([]);
   const [views, setViews] = useState(0);
+  const [profileImg, setProfileImg] = useState('');
+  const [profileFile, setProfileFile] = useState(null);
+  const [profileMode, setProfileMode] = useState('url');
+  const [profileUploading, setProfileUploading] = useState(false);
 
   useEffect(() => {
     document.documentElement.style.background = d ? '#111110' : '#f4f4f0';
@@ -43,16 +47,18 @@ export default function AdminPage() {
   useEffect(() => { if (authed) loadAll(); }, [authed]);
 
   const loadAll = async () => {
-    const [c, p, cm, v] = await Promise.all([
+    const [c, p, cm, v, prof] = await Promise.all([
       supabase.from('certificates').select('*').order('created_at', { ascending: false }),
       supabase.from('projects').select('*').order('created_at', { ascending: false }),
       supabase.from('comments').select('*').order('created_at', { ascending: false }),
       supabase.from('views').select('count').eq('slug', 'home').single(),
+      supabase.from('settings').select('value').eq('key', 'profile_image').single(),
     ]);
     if (c.data) setCerts(c.data);
     if (p.data) setProjects(p.data);
     if (cm.data) setComments(cm.data);
     if (v.data) setViews(v.data.count);
+    if (prof.data?.value) setProfileImg(prof.data.value);
   };
 
   const login = () => {
@@ -100,6 +106,16 @@ export default function AdminPage() {
   const editProject = (p) => { setEditingProj(p); setProjTitle(p.title||''); setProjDesc(p.description||''); setProjStack(p.tech_stack||''); setProjGithub(p.github_url||''); setProjDemo(p.demo_url||''); setProjImg(p.image_url||''); setProjMode('url'); };
   const deleteProject = async (id) => { if (!confirm('Hapus proyek ini?')) return; await supabase.from('projects').delete().eq('id', id); setProjects(prev => prev.filter(p => p.id !== id)); };
   const deleteComment = async (id) => { if (!confirm('Hapus komentar ini?')) return; await supabase.from('comments').delete().eq('id', id); setComments(prev => prev.filter(c => c.id !== id)); };
+  const saveProfile = async () => {
+    setProfileUploading(true);
+    let imageUrl = profileImg;
+    if (profileMode === 'file' && profileFile) { imageUrl = await uploadFile(profileFile, 'certificates'); if (!imageUrl) { setProfileUploading(false); return; } }
+    await supabase.from('settings').upsert({ key: 'profile_image', value: imageUrl }, { onConflict: 'key' });
+    if (imageUrl) setProfileImg(imageUrl);
+    setProfileUploading(false);
+    alert('Foto profil berhasil disimpan!');
+  };
+
   const resetViews = async () => { if (!confirm('Reset views ke 0?')) return; await supabase.from('views').update({ count: 0 }).eq('slug', 'home'); setViews(0); };
 
   const bg   = d ? '#111110' : '#f4f4f0';
@@ -169,7 +185,7 @@ export default function AdminPage() {
               <div style={{ fontSize:12, color:ink2, marginTop:2 }}>{certs.length} sertifikat · {projects.length} proyek · {comments.length} komentar · {views} views</div>
             </div>
             <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-              {[['sertifikat','🎓 Sertifikat'],['proyek','🚀 Proyek'],['komentar','💬 Komentar'],['stats','📊 Stats']].map(([k,l]) => (
+              {[['sertifikat','🎓 Sertifikat'],['proyek','🚀 Proyek'],['komentar','💬 Komentar'],['profil','📸 Profil'],['stats','📊 Stats']].map(([k,l]) => (
                 <button key={k} style={tabBtn(tab===k)} onClick={() => setTab(k)}>{l}</button>
               ))}
             </div>
@@ -274,6 +290,30 @@ export default function AdminPage() {
                     </div>
                   ))
               }
+            </div>
+          )}
+
+          {/* ══ PROFIL ══ */}
+          {tab==='profil' && (
+            <div style={{ maxWidth:480 }}>
+              <div style={{ background:bg2, border:`1px solid ${bd}`, borderRadius:20, padding:28 }}>
+                <div style={{ fontFamily:"'Fraunces',serif", fontSize:16, fontWeight:900, color:ink, marginBottom:8 }}>📸 Foto Profil</div>
+                <div style={{ fontSize:12, color:ink2, marginBottom:20 }}>Foto ini akan muncul di halaman utama portfolio.</div>
+                {profileImg && (
+                  <div style={{ marginBottom:18, textAlign:'center' }}>
+                    <img src={profileImg} alt="Profil" style={{ width:120, height:120, objectFit:'cover', borderRadius:'50%', border:`3px solid ${acc}` }}/>
+                  </div>
+                )}
+                <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+                  <button style={modeBtn(profileMode==='url')} onClick={()=>setProfileMode('url')}>🔗 URL</button>
+                  <button style={modeBtn(profileMode==='file')} onClick={()=>setProfileMode('file')}>📁 Upload File</button>
+                </div>
+                {profileMode==='url'
+                  ? <div style={fg}><label style={lbl}>URL Foto</label><input style={inp} placeholder="https://..." value={profileImg||''} onChange={e=>setProfileImg(e.target.value)}/></div>
+                  : <div style={fg}><label style={lbl}>Upload Foto</label><input type="file" accept="image/*" style={{...inp,padding:'8px'}} onChange={e=>setProfileFile(e.target.files[0])}/></div>
+                }
+                <button style={btnAcc} onClick={saveProfile} disabled={profileUploading}>{profileUploading?'Menyimpan...':'Simpan Foto →'}</button>
+              </div>
             </div>
           )}
 
