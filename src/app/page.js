@@ -43,48 +43,29 @@ export default function Home() {
     setIsDark(prev => !prev);
   };
 
-  // ← GANTI dengan API key Gemini kamu dari https://aistudio.google.com/app/apikey
-  const GEMINI_KEY = 'AIzaSyAX7PrLzhStSLDmAvoz2uDOg5gktc6c1PE';
-
   const sendAI = async () => {
     if (!aiInput.trim() || aiLoading) return;
-    const userMsg = { role: 'user', parts: [{ text: aiInput.trim() }] };
-    const displayMsgs = [...aiMessages, { role: 'user', content: aiInput.trim() }];
-    setAiMessages(displayMsgs);
+    const userMsg = { role: 'user', content: aiInput.trim() };
+    const newMsgs = [...aiMessages, userMsg];
+    setAiMessages(newMsgs);
     setAiInput('');
     setAiLoading(true);
-
-    // Build history for Gemini (convert display format to Gemini format)
-    const history = aiMessages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    }));
-
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: {
-              parts: [{ text: 'Kamu adalah asisten AI pribadi di portofolio Aura Auvarose, mahasiswa Informatika semester 1 dari Indonesia. Kamu ramah, singkat, dan membantu. Jawab dalam bahasa yang sama dengan pertanyaan (Indonesia/Inggris). Info tentang Aura: belajar Python, JavaScript, Next.js, Supabase, Git, Linux. Fokus pada logika pemrograman dan konsisten belajar setiap malam.' }]
-            },
-            contents: [...history, userMsg],
-            generationConfig: { maxOutputTokens: 800, temperature: 0.7 }
-          }),
-        }
-      );
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMsgs }),
+      });
       const data = await res.json();
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Maaf, tidak ada respons.';
+      const reply = data.reply || 'Maaf, tidak ada respons.';
       setAiMessages(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch {
-      setAiMessages(prev => [...prev, { role: 'assistant', content: 'Koneksi gagal. Pastikan API key sudah benar.' }]);
+      setAiMessages(prev => [...prev, { role: 'assistant', content: 'Koneksi gagal. Coba lagi.' }]);
     }
     setAiLoading(false);
   };
 
-  useEffect(() => { aiEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages]);
+    useEffect(() => { aiEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages]);
 
   // Sync html class — let CSS handle ALL transitions, no direct style manipulation
   useEffect(() => {
