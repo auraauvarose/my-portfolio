@@ -73,3 +73,5 @@ export async function POST(request) {
     return Response.json({ reply: '❌ Server error. Coba lagi nanti.' }, { status: 500 });
   }
 }
+
+// perbaikan final
