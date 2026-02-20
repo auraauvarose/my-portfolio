@@ -399,6 +399,10 @@ export default function Home() {
     { name: 'Docker', cat: 'DevOps', level: 0 },
     { name: 'Next.js', cat: 'Front-End', level: 50 },
     { name: 'Git', cat: 'Tools', level: 82 },
+    { name: 'C++', cat: 'Language', level: 55 },
+    { name : 'Linux', cat: 'OS', level: 65 },
+    { name: 'SQL', cat: 'Database', level: 30 },
+    { name: 'Next.js', cat: 'Framework', level: 50 },
   ];
 
   const timeline = isID ? [
