@@ -24,21 +24,54 @@ export default function Home() {
   const [aiMessages, setAiMessages] = useState([]);
   const [aiInput, setAiInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [typedDesc, setTypedDesc] = useState('');
+  const [typingDone, setTypingDone] = useState(false);
+  const [typedAbout1, setTypedAbout1] = useState('');
+  const [typedAbout2, setTypedAbout2] = useState('');
+  const [aboutTypingDone, setAboutTypingDone] = useState(false);
+  const [aboutVisible, setAboutVisible] = useState(false);
+  const [loopName, setLoopName] = useState('Auvarose');
+  const [themeColor, setThemeColor] = useState('#d4eb00');
+  const [bgTheme, setBgTheme]       = useState('default');
+  const [fontChoice, setFontChoice] = useState('fraunces');
+  const [musicUrl, setMusicUrl]     = useState('https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3');
   const audioRef = useRef(null);
   const themeBtnRef = useRef(null);
-  const isMobile = useRef(false);
-  useEffect(() => { isMobile.current = window.matchMedia("(hover:none),(pointer:coarse)").matches; }, []);
   const aiEndRef = useRef(null);
   const d = isDark;
   const isID = lang === 'id';
+
+  // ── THEME DATA (sama persis dengan admin) ──
+  const BG_THEMES = {
+    default: { darkBg:'#111110', darkBg2:'#1c1c1a', lightBg:'#ffffff',  lightBg2:'#f4f4f0' },
+    warm:    { darkBg:'#1a1410', darkBg2:'#271e14', lightBg:'#f5f0e8',  lightBg2:'#ece5d5' },
+    navy:    { darkBg:'#0d1117', darkBg2:'#161b22', lightBg:'#fdf6e3',  lightBg2:'#f0e8cc' },
+    forest:  { darkBg:'#0d1a0f', darkBg2:'#142518', lightBg:'#f0f7f0',  lightBg2:'#dceadc' },
+    slate:   { darkBg:'#0f1117', darkBg2:'#181c27', lightBg:'#f8f9fb',  lightBg2:'#eaedf2' },
+  };
+  const FONTS = {
+    fraunces:  { heading:"'Fraunces',serif",           body:"'Plus Jakarta Sans',sans-serif" },
+    playfair:  { heading:"'Playfair Display',serif",   body:"'Inter',sans-serif" },
+    space:     { heading:"'Space Grotesk',sans-serif", body:"'Space Grotesk',sans-serif" },
+    syne:      { heading:"'Syne',sans-serif",           body:"'DM Sans',sans-serif" },
+    cormorant: { heading:"'Cormorant Garamond',serif",  body:"'Lato',sans-serif" },
+  };
+  const curBg   = BG_THEMES[bgTheme]   || BG_THEMES.default;
+  const curFont = FONTS[fontChoice]     || FONTS.fraunces;
+  // accent-bg with 18% alpha
+  const accHex  = themeColor.replace('#','');
+  const accRgb  = accHex.length===6
+    ? [parseInt(accHex.slice(0,2),16),parseInt(accHex.slice(2,4),16),parseInt(accHex.slice(4,6),16)]
+    : [212,235,0];
+  const accBg   = `rgba(${accRgb[0]},${accRgb[1]},${accRgb[2]},0.12)`;
 
   const toggleTheme = () => {
     if (themeBtnRef.current) {
       const r = themeBtnRef.current.getBoundingClientRect();
       const x = ((r.left + r.width / 2) / window.innerWidth * 100).toFixed(1);
       const y = ((r.top + r.height / 2) / window.innerHeight * 100).toFixed(1);
-      // ripple color = destination theme background
-      const color = d ? '#ffffff' : '#111110';
+      // ripple = destination theme bg color
+      const color = d ? curBg.lightBg : curBg.darkBg;
       setRipple({ x, y, key: Date.now(), color });
       setTimeout(() => setRipple(null), 700);
     }
@@ -69,12 +102,94 @@ export default function Home() {
 
     useEffect(() => { aiEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages]);
 
-  // Sync html class — let CSS handle ALL transitions, no direct style manipulation
+  // ── TYPING ANIMATION for hero description ──
+  useEffect(() => {
+    if (!pageReady) return;
+    const fullText = isID
+      ? 'Belajar dari awal sampai akhir, Berhenti menunggu mood yang tepat untuk bergerak. Kamu punya mimpi besar di dunia teknologi, tapi mimpi itu tidak akan terwujud kalau kamu terus memanjakan rasa malas dan pola tidur yang berantakan.'
+      : "Learning from start to finish. Stop waiting for the right mood to act. You have big dreams in tech, but those dreams won't come true if you keep giving in to laziness and a messy sleep schedule.";
+    setTypedDesc('');
+    setTypingDone(false);
+    let i = 0;
+    const speed = 22;
+    const tick = () => {
+      if (i <= fullText.length) {
+        setTypedDesc(fullText.slice(0, i));
+        i++;
+        setTimeout(tick, speed);
+      } else {
+        setTypingDone(true);
+      }
+    };
+    const delay = setTimeout(tick, 600);
+    return () => clearTimeout(delay);
+  }, [pageReady, isID]);
+
+  // ── LOOPING AUVAROSE name variants ──
+  useEffect(() => {
+    const variants = ['Auvarose', 'Aura✦', 'Builder', 'Developer', 'Learner', 'Auvarose'];
+    let idx = 0;
+    let charIdx = variants[0].length;
+    let deleting = true;
+    let t;
+    const tick = () => {
+      const current = variants[idx];
+      if (deleting) {
+        charIdx--;
+        setLoopName(current.slice(0, charIdx));
+        if (charIdx === 0) { deleting = false; idx = (idx + 1) % variants.length; t = setTimeout(tick, 300); return; }
+        t = setTimeout(tick, 55);
+      } else {
+        charIdx++;
+        setLoopName(variants[idx].slice(0, charIdx));
+        if (charIdx === variants[idx].length) {
+          deleting = true;
+          t = setTimeout(tick, idx === variants.length - 1 ? 2500 : 1400);
+          return;
+        }
+        t = setTimeout(tick, 80);
+      }
+    };
+    t = setTimeout(tick, 2800);
+    return () => clearTimeout(t);
+  }, []);
+
+  // ── TYPING for About section (triggers when scrolled into view) ──
+  const aboutRef = useRef(null);
+  useEffect(() => {
+    if (!aboutVisible) return;
+    const p1 = isID
+      ? 'Hai! Saya Aura Auvarose, seorang mahasiswa Informatika semester 1 yang sedang meniti jalan di dunia teknologi. Perjalanan saya bukan tentang kemudahan, melainkan tentang ketekunan di tengah keterbatasan.'
+      : "Hi! I'm Aura Auvarose, a first-semester Informatics student carving my path in the tech world. My journey isn't about ease — it's about persistence through limitations.";
+    const p2 = isID
+      ? 'Saat ini, saya sedang aktif mendalami Fedora Linux dan membangun portofolio pribadi sebagai bukti nyata perkembangan saya. Fokus saya saat ini adalah menguasai logika pemrograman yang kuat dan terus konsisten belajar setiap malam demi mencapai level profesional.'
+      : "Currently I'm actively exploring Fedora Linux and building this personal portfolio as real proof of my growth. My focus is on mastering strong programming logic and staying consistent — learning every night to reach a professional level.";
+    setTypedAbout1(''); setTypedAbout2(''); setAboutTypingDone(false);
+    let i = 0; const speed = 18;
+    const tick1 = () => {
+      if (i <= p1.length) { setTypedAbout1(p1.slice(0,i)); i++; setTimeout(tick1, speed); }
+      else { let j = 0; const tick2 = () => {
+        if (j <= p2.length) { setTypedAbout2(p2.slice(0,j)); j++; setTimeout(tick2, speed); }
+        else setAboutTypingDone(true);
+      }; setTimeout(tick2, 300); }
+    };
+    setTimeout(tick1, 200);
+  }, [aboutVisible, isID]);
+
+  useEffect(() => {
+    if (!aboutRef.current) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setAboutVisible(true); obs.disconnect(); } }, { threshold: 0.3 });
+    obs.observe(aboutRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  // Sync html bg + site-dark class — matches bgTheme selection
   useEffect(() => {
     document.documentElement.classList.toggle('site-dark', d);
+    document.documentElement.style.background = d ? curBg.darkBg : curBg.lightBg;
     document.body.style.margin = '0';
     document.body.style.padding = '0';
-  }, [d]);
+  }, [d, bgTheme]);
 
   // Scroll reveal via IntersectionObserver — re-run when projects/certs load
   useEffect(() => {
@@ -91,9 +206,8 @@ export default function Home() {
     return () => obs.disconnect();
   }, [projects, certificates, pageReady, lang]);
 
-  // Magnetic hover effect — desktop only (skip on mobile/touch)
+  // Magnetic hover effect on cards
   useEffect(() => {
-    if (isMobile.current) return; // no mousemove on touch
     const handler = (e) => {
       const card = e.currentTarget;
       const r = card.getBoundingClientRect();
@@ -113,17 +227,6 @@ export default function Home() {
       const { data } = await supabase.from('views').select('count').eq('slug', 'home').single();
       if (data) { const n = data.count + 1; setViews(n); await supabase.from('views').update({ count: n }).eq('slug', 'home'); }
     };
-    const trackVisitor = async () => {
-      try {
-        await supabase.from('visitors').insert([{
-          user_agent: navigator.userAgent,
-          screen_size: `${window.screen.width}x${window.screen.height}`,
-          language: navigator.language || 'unknown',
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown',
-          referrer: document.referrer || 'direct',
-        }]);
-      } catch (_) { /* silent fail — tabel mungkin belum ada */ }
-    };
     const loadComments = async () => {
       const { data } = await supabase.from('comments').select('*').order('created_at', { ascending: false });
       if (data) setComments(data);
@@ -137,12 +240,17 @@ export default function Home() {
       if (data) setProjects(data);
     };
     const loadProfileImage = async () => {
-      const { data } = await supabase.from('settings').select('value').eq('key', 'profile_image').single();
-      if (data?.value) setProfileImage(data.value);
+      const { data } = await supabase.from('settings').select('key,value');
+      if (data) data.forEach(row => {
+        if (row.key === 'profile_image' && row.value) setProfileImage(row.value);
+        if (row.key === 'theme_color'   && row.value) setThemeColor(row.value);
+        if (row.key === 'bg_theme'      && row.value) setBgTheme(row.value);
+        if (row.key === 'font_choice'   && row.value) setFontChoice(row.value);
+        if (row.key === 'music_url'     && row.value) setMusicUrl(row.value);
+      });
     };
     const init = async () => {
       await Promise.all([loadCerts(), loadProjects(), loadViews(), loadComments(), loadProfileImage()]);
-      trackVisitor(); // fire and forget — don't block page load
       setTimeout(() => setPageReady(true), 300);
     };
     init();
@@ -166,6 +274,16 @@ export default function Home() {
     isPlaying ? audioRef.current.pause() : audioRef.current.play();
     setIsPlaying(!isPlaying);
   };
+
+  // Reload audio when musicUrl changes (updated from admin)
+  useEffect(() => {
+    if (audioRef.current) {
+      const wasPlaying = isPlaying;
+      audioRef.current.pause();
+      audioRef.current.load();
+      if (wasPlaying) audioRef.current.play().catch(() => {});
+    }
+  }, [musicUrl]);
 
   // ── TRANSLATIONS ──
   const tx = {
@@ -266,7 +384,7 @@ export default function Home() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,400;1,9..144,700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,400;1,9..144,700&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;600;700;800&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,700;1,400&family=Lato:wght@400;700&display=swap');
         *,*::before,*::after{box-sizing:border-box;}
         html{
           margin:0;padding:0;width:100%;overflow-x:hidden;
@@ -310,7 +428,7 @@ export default function Home() {
         .loader-bar-wrap{width:160px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
         .loader-bar{height:100%;width:0%;background:#d4eb00;border-radius:2px;animation:loadProgress 1.2s cubic-bezier(.4,0,.2,1) forwards;}
         @keyframes loadProgress{0%{width:0%;}60%{width:75%;}100%{width:100%;}}
-        .loader-text{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(240,239,232,0.4);}
+        .loader-text{font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(240,239,232,0.4);}
 
         /* ── THEME VARS ── */
         .rw{
@@ -318,7 +436,9 @@ export default function Home() {
           --ink:#1a1a1a; --ink2:#555555; --ink3:#999999;
           --bg:#ffffff; --bg2:#f4f4f0; --bd:rgba(0,0,0,0.09);
           --shadow:rgba(0,0,0,0.07);
-          font-family:'Plus Jakarta Sans',sans-serif;
+          --font-heading:'Fraunces',serif;
+          --font-body:'Plus Jakarta Sans',sans-serif;
+          font-family:var(--font-body);
           background:var(--bg); color:var(--ink);
           min-height:100vh; width:100%;
           transition:background 0.5s ease,color 0.5s ease;
@@ -329,9 +449,24 @@ export default function Home() {
           --bg:#111110; --bg2:#1c1c1a; --bd:rgba(255,255,255,0.07);
           --shadow:rgba(0,0,0,0.3);
         }
-        /* targeted transitions only — global wildcard is too expensive on mobile */
-        .rw .nav,.rw .btn-theme,.rw .btn-admin,.rw .btn-dark,.rw .btn-acc,.rw .about-tag,.rw .social-btn,.rw .skill-card,.rw .goal-card,.rw .proj-card,.rw .cert-card,.rw .form-i,.rw .form-t,.rw .comment-card{transition-property:background-color,border-color,color,box-shadow;transition-duration:0.4s;transition-timing-function:ease;}
+        .rw *{transition-property:background-color,border-color,color,box-shadow;transition-duration:0.5s;transition-timing-function:ease;}
         .rw img,.rw canvas,.rw video,.rw .orb,.rw [data-reveal],.rw .theme-ripple{transition:none!important;}
+
+        /* ── LIGHT MODE CARD SHADOWS ── */
+        .rw:not(.dark) .skill-card{box-shadow:0 2px 16px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.05);}
+        .rw:not(.dark) .skill-card:hover{box-shadow:0 8px 32px rgba(0,0,0,0.12),0 2px 8px rgba(0,0,0,0.07);}
+        .rw:not(.dark) .goal-card{box-shadow:0 2px 16px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.05);}
+        .rw:not(.dark) .goal-card:hover{box-shadow:0 8px 32px rgba(0,0,0,0.12);}
+        .rw:not(.dark) .proj-card{box-shadow:0 2px 20px rgba(0,0,0,0.08),0 1px 4px rgba(0,0,0,0.05);}
+        .rw:not(.dark) .proj-card:hover{box-shadow:0 12px 40px rgba(0,0,0,0.14);}
+        .rw:not(.dark) .cert-card{box-shadow:0 2px 20px rgba(0,0,0,0.08),0 1px 4px rgba(0,0,0,0.05);}
+        .rw:not(.dark) .cert-card:hover{box-shadow:0 12px 40px rgba(0,0,0,0.14);}
+        .rw:not(.dark) .comment-card{box-shadow:0 1px 8px rgba(0,0,0,0.06);}
+        .rw:not(.dark) .nav{box-shadow:0 1px 24px rgba(0,0,0,0.08);}
+        .rw:not(.dark) .gh-activity{box-shadow:0 2px 20px rgba(0,0,0,0.07);}
+        .rw:not(.dark) .stat{box-shadow:inset -1px 0 0 rgba(0,0,0,0.06);}
+        .rw:not(.dark) .footer-views{box-shadow:0 1px 8px rgba(0,0,0,0.06);}
+        .rw:not(.dark) .social-btn{box-shadow:0 1px 6px rgba(0,0,0,0.06);}
 
         /* ── DARK MODE ORBS ── */
         .orb{
@@ -346,13 +481,6 @@ export default function Home() {
         @keyframes orbFloat1{0%,100%{transform:translate(0,0);}50%{transform:translate(40px,30px);}}
         @keyframes orbFloat2{0%,100%{transform:translate(0,0);}50%{transform:translate(-30px,-40px);}}
         @keyframes orbFloat3{0%,100%{transform:translate(0,0);}50%{transform:translate(20px,-20px);}}
-        /* Mobile: orbs static (no animation = big GPU saving) */
-        @media(max-width:900px){
-          .orb-1,.orb-2,.orb-3{animation:none!important;filter:blur(70px);}
-          .orb-1{width:300px;height:300px;}
-          .orb-2{width:250px;height:250px;}
-          .orb-3{width:200px;height:200px;}
-        }
 
         /* ── SCROLL REVEAL ── */
         [data-reveal]{opacity:0;transform:translateY(28px);transition:opacity 0.65s ease,transform 0.65s ease;}
@@ -366,9 +494,9 @@ export default function Home() {
         .mag{transition:transform 0.3s ease,box-shadow 0.3s ease;transform-style:preserve-3d;perspective:800px;}
 
         /* ── NAV ── */
-        .nav{position:fixed;top:0;left:0;right:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--bd);transition:background 0.4s,border-color 0.4s;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+        .nav{position:fixed;top:0;left:0;right:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--bd);transition:background 0.5s,border-color 0.5s;backdrop-filter:blur(12px);}
         .nav-in{max-width:1140px;margin:0 auto;padding:0 40px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
-        .logo{font-family:'Fraunces',serif;font-size:22px;font-weight:900;color:var(--ink);text-decoration:none;letter-spacing:-0.5px;flex-shrink:0;}
+        .logo{font-family:var(--font-heading);font-size:22px;font-weight:900;color:var(--ink);text-decoration:none;letter-spacing:-0.5px;flex-shrink:0;}
         .logo em{font-style:normal;color:var(--acc);}
         .nav-links{display:flex;gap:28px;list-style:none;margin:0;padding:0;flex-shrink:0;}
         .nav-links a{font-size:13px;font-weight:600;letter-spacing:0.03em;color:var(--ink2);text-decoration:none;transition:color 0.2s;position:relative;padding-bottom:2px;}
@@ -377,7 +505,7 @@ export default function Home() {
         .nav-links a:hover::after{width:100%;}
         .nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
         .btn-admin{padding:8px 16px;background:var(--acc);color:#0d0d0d;border:none;border-radius:100px;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:0.04em;text-decoration:none;display:flex;align-items:center;gap:5px;transition:all 0.2s;}
-        .btn-admin:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(212,235,0,0.45);}
+        .btn-admin:hover{transform:translateY(-2px);box-shadow:0 6px 20px var(--acc-bg);}
         .btn-theme{padding:8px 14px;border:1px solid var(--bd);background:var(--bg2);color:var(--ink);border-radius:100px;font-family:inherit;font-size:12px;font-weight:700;transition:all 0.2s;}
         .btn-theme:hover{transform:translateY(-1px);border-color:var(--acc);}
 
@@ -388,8 +516,17 @@ export default function Home() {
         .hero-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:0.1em;color:var(--ink2);text-transform:uppercase;margin-bottom:18px;}
         .hero-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);animation:blink 2s ease infinite;flex-shrink:0;}
         @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
-        .hero-h1{font-family:'Fraunces',serif;font-size:clamp(38px,6vw,84px);font-weight:900;line-height:0.93;letter-spacing:-0.02em;color:var(--ink);margin:0 0 22px;}
+        .hero-h1{font-family:var(--font-heading);font-size:clamp(38px,6vw,84px);font-weight:900;line-height:0.93;letter-spacing:-0.02em;color:var(--ink);margin:0 0 22px;}
+        .hero-line-1{display:block;animation:heroSlideIn 0.7s cubic-bezier(.22,1,.36,1) both;}
+        .hero-line-2{display:block;animation:heroSlideIn 0.7s 0.15s cubic-bezier(.22,1,.36,1) both;}
+        .hero-loop-name{animation:heroSlideIn 0.7s 0.25s cubic-bezier(.22,1,.36,1) both;font-style:italic;font-weight:400;color:var(--ink2);}
+        @keyframes heroSlideIn{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
+        .hero-cursor{display:inline-block;color:var(--acc);animation:cursorBlink 0.75s step-end infinite;margin-left:1px;font-style:normal;font-weight:900;}
+        .type-cursor{color:var(--acc);animation:cursorBlink 0.75s step-end infinite;font-weight:300;}
+        .type-cursor.done{display:none;}
+        @keyframes cursorBlink{0%,100%{opacity:1;}50%{opacity:0;}}
         .hero-h1 em{font-style:italic;font-weight:400;color:var(--ink2);}
+        .hero-loop-name em{font-style:inherit;}
         .hero-p{font-size:16px;color:var(--ink2);line-height:1.7;max-width:460px;margin-bottom:34px;}
         .hero-btns{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
         .btn-dark{padding:13px 24px;background:var(--ink);color:var(--bg);border:none;border-radius:100px;font-family:inherit;font-size:14px;font-weight:700;text-decoration:none;display:inline-block;transition:all 0.25s;}
@@ -407,7 +544,7 @@ export default function Home() {
         .stats{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--bd);}
         .stat{padding:36px 0;text-align:center;border-right:1px solid var(--bd);}
         .stat:last-child{border-right:none;}
-        .stat-n{font-family:'Fraunces',serif;font-size:42px;font-weight:900;color:var(--ink);line-height:1;margin-bottom:6px;transition:transform 0.3s;}
+        .stat-n{font-family:var(--font-heading);font-size:42px;font-weight:900;color:var(--ink);line-height:1;margin-bottom:6px;transition:transform 0.3s;}
         .stat:hover .stat-n{transform:scale(1.08);}
         .stat-l{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink2);}
 
@@ -424,8 +561,8 @@ export default function Home() {
         .sec{padding-top:76px;padding-bottom:76px;border-bottom:1px solid var(--bd);}
         .sec-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:48px;}
         .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--ink2);margin-bottom:8px;}
-        .sec-title{font-family:'Fraunces',serif;font-size:clamp(28px,4vw,48px);font-weight:900;line-height:1.05;letter-spacing:-0.02em;color:var(--ink);margin:0;}
-        .sec-num{font-family:'Fraunces',serif;font-size:56px;font-weight:900;color:var(--bd);line-height:1;user-select:none;}
+        .sec-title{font-family:var(--font-heading);font-size:clamp(28px,4vw,48px);font-weight:900;line-height:1.05;letter-spacing:-0.02em;color:var(--ink);margin:0;}
+        .sec-num{font-family:var(--font-heading);font-size:56px;font-weight:900;color:var(--bd);line-height:1;user-select:none;}
 
         /* ── ABOUT ── */
         .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:start;}
@@ -441,7 +578,7 @@ export default function Home() {
         .tl-item:last-child{padding-bottom:0;}
         .tl-dot{position:absolute;left:-30px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--bg);border:2px solid var(--ink3);transition:all 0.3s;}
         .tl-item:hover .tl-dot{border-color:var(--acc);background:var(--acc);transform:scale(1.4);}
-        .tl-year{font-family:'Fraunces',serif;font-size:13px;font-weight:900;color:var(--acc);margin-bottom:4px;letter-spacing:0.05em;}
+        .tl-year{font-family:var(--font-heading);font-size:13px;font-weight:900;color:var(--acc);margin-bottom:4px;letter-spacing:0.05em;}
         .tl-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:5px;}
         .tl-desc{font-size:13px;color:var(--ink2);line-height:1.6;}
 
@@ -472,7 +609,7 @@ export default function Home() {
         .proj-thumb{aspect-ratio:16/9;overflow:hidden;background:var(--bg);position:relative;}
         .proj-thumb img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s;}
         .proj-card:hover .proj-thumb img{transform:scale(1.06);}
-        .proj-thumb-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:48px;font-weight:900;color:var(--bd);}
+        .proj-thumb-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:48px;font-weight:900;color:var(--bd);}
         .proj-body{padding:20px;}
         .proj-title{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:7px;}
         .proj-desc{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:14px;}
@@ -510,7 +647,7 @@ export default function Home() {
         .modal-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:var(--bg);border:1px solid var(--bd);color:var(--ink2);font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;z-index:1;}
         .modal-close:hover{background:var(--ink);color:var(--bg);}
         .modal-note-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--ink3);margin-bottom:6px;position:relative;z-index:1;}
-        .modal-note-title{font-family:'Fraunces',serif;font-size:19px;font-weight:900;color:var(--ink);line-height:1.2;margin-bottom:22px;position:relative;z-index:1;}
+        .modal-note-title{font-family:var(--font-heading);font-size:19px;font-weight:900;color:var(--ink);line-height:1.2;margin-bottom:22px;position:relative;z-index:1;}
         .modal-note-item{margin-bottom:18px;position:relative;z-index:1;}
         .modal-note-key{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--acc);margin-bottom:4px;}
         .modal-note-val{font-size:13px;font-weight:600;color:var(--ink2);}
@@ -530,7 +667,7 @@ export default function Home() {
         .form-btn:disabled{opacity:0.5;}
         .submit-ok{display:flex;align-items:center;gap:8px;padding:13px 16px;border-radius:11px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);color:#16a34a;font-size:13px;font-weight:600;margin-top:10px;animation:up 0.3s ease;}
         .comments-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:18px;}
-        .comments-n{font-family:'Fraunces',serif;font-size:34px;font-weight:900;color:var(--ink);line-height:1;}
+        .comments-n{font-family:var(--font-heading);font-size:34px;font-weight:900;color:var(--ink);line-height:1;}
         .comments-lb{font-size:12px;font-weight:600;color:var(--ink2);}
         .comments-list{max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
         .comment-card{padding:16px 18px;background:var(--bg2);border:1px solid var(--bd);border-radius:14px;transition:border-color 0.2s;}
@@ -551,13 +688,13 @@ export default function Home() {
         .footer{padding-top:40px;padding-bottom:40px;border-top:1px solid var(--bd);}
         .footer-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
         .footer-left{display:flex;flex-direction:column;gap:6px;}
-        .footer-logo{font-family:'Fraunces',serif;font-size:19px;font-weight:900;color:var(--ink);}
+        .footer-logo{font-family:var(--font-heading);font-size:19px;font-weight:900;color:var(--ink);}
         .footer-logo em{font-style:normal;color:var(--acc);}
         .footer-copy{font-size:12px;font-weight:500;color:var(--ink2);margin:0;}
         .footer-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
         .footer-views{display:inline-flex;align-items:center;gap:9px;padding:8px 16px;background:var(--bg2);border:1px solid var(--bd);border-radius:100px;}
         .footer-views-dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:blink 2s ease infinite;flex-shrink:0;}
-        .footer-views-num{font-family:'Fraunces',serif;font-size:14px;font-weight:900;color:var(--ink);}
+        .footer-views-num{font-family:var(--font-heading);font-size:14px;font-weight:900;color:var(--ink);}
         .footer-views-text{font-size:12px;font-weight:600;color:var(--ink2);}
         .footer-made{font-size:12px;font-weight:500;color:var(--ink3);}
 
@@ -583,8 +720,8 @@ export default function Home() {
         .rw.dark .gh-chart-wrap img{filter:invert(1) hue-rotate(180deg) brightness(0.85);}
 
         /* ── AI CHAT ── */
-        .ai-btn{padding:8px 13px;background:linear-gradient(135deg,#d4eb00,#c5da00);color:#0d0d0d;border:none;border-radius:100px;font-family:inherit;font-size:11px;font-weight:800;letter-spacing:0.03em;display:flex;align-items:center;gap:5px;transition:all 0.2s;cursor:pointer;}
-        .ai-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(212,235,0,0.5);}
+        .ai-btn{padding:8px 13px;background:var(--acc);color:#0d0d0d;border:none;border-radius:100px;font-family:inherit;font-size:11px;font-weight:800;letter-spacing:0.03em;display:flex;align-items:center;gap:5px;transition:all 0.2s;cursor:pointer;}
+        .ai-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px var(--acc-bg);}
         .ai-panel{position:fixed;bottom:100px;right:28px;z-index:300;width:340px;background:var(--bg2);border:1px solid var(--bd);border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;animation:up 0.25s ease;}
         .ai-panel-head{padding:14px 18px;background:var(--bg);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;}
         .ai-panel-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);animation:blink 2s ease infinite;}
@@ -700,38 +837,17 @@ export default function Home() {
           .hero-btns{flex-direction:column;align-items:flex-start;}
           .btn-dark,.btn-acc{width:100%;justify-content:center;}
         }
-
-        /* ── MOBILE PERFORMANCE — reduce GPU compositing ── */
-        @media(hover:none),(pointer:coarse){
-          /* No backdrop blur on nav (expensive on Snapdragon) */
-          .nav{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:var(--bg);}
-          /* No 3D transforms on cards (preserve-3d is expensive) */
-          .mag{transform-style:flat!important;perspective:none!important;}
-          /* Simplify hover image scale — use opacity instead */
-          .proj-card:hover .proj-thumb img,
-          .cert-card:hover .cert-img img,
-          .hero-photo-wrap:hover .hero-photo img{transform:none!important;}
-          /* Disable hover translateY on buttons (not needed on touch) */
-          .btn-dark:hover,.btn-acc:hover,.btn-admin:hover,.btn-theme:hover,
-          .social-btn:hover,.about-tag:hover,.btn-login:hover,.form-btn:hover:not(:disabled){transform:none!important;box-shadow:none!important;}
-          /* Reduce transition durations for snappier feel */
-          [data-reveal]{transition-duration:0.4s!important;}
-          /* Promote scroll area to own compositor layer */
-          .rw{-webkit-overflow-scrolling:touch;}
-          /* Reduce hero photo rotation animation */
-          .hero-photo-wrap:hover .hero-photo-bg{transform:rotate(4deg)!important;}
-          /* Disable box shadows (cause repaints on scroll) */
-          .proj-card:hover,.cert-card:hover,.goal-card:hover,.skill-card:hover{box-shadow:none!important;}
-        }
-
-        /* Hint browser to GPU-composite animated elements */
-        .orb{will-change:transform,opacity;}
-        [data-reveal]{will-change:opacity,transform;}
-        .page-loader{will-change:opacity,visibility;}
-        .theme-ripple{will-change:clip-path,opacity;}
       `}</style>
 
-      <div className={`rw${d ? ' dark' : ''}`}>
+      <div className={`rw${d ? ' dark' : ''}`} style={{
+        '--acc':         themeColor,
+        '--acc-bg':      accBg,
+        '--bg':          d ? curBg.darkBg  : curBg.lightBg,
+        '--bg2':         d ? curBg.darkBg2 : curBg.lightBg2,
+        '--font-heading': curFont.heading,
+        '--font-body':    curFont.body,
+        fontFamily:       curFont.body,
+      }}>
         {/* THEME RIPPLE WAVE */}
         {ripple && (
           <div
@@ -779,8 +895,13 @@ export default function Home() {
         <section className="wrap hero">
           <div data-reveal>
             <div className="hero-tag"><span className="hero-dot" />{tx.heroBadge}</div>
-            <h1 className="hero-h1">{tx.heroGreet}<br />Aura <em>Auvarose</em></h1>
-            <p className="hero-p">{tx.heroDesc}</p>
+            <h1 className="hero-h1">
+              <span className="hero-line-1">{tx.heroGreet}</span>
+              <span className="hero-line-2">Aura <em className="hero-loop-name">{loopName}<span className="hero-cursor">|</span></em></span>
+            </h1>
+            <p className="hero-p">
+              {typedDesc}<span className={`type-cursor${typingDone?' done':''}`}>|</span>
+            </p>
             <div className="hero-btns">
               <a href="#contact" className="btn-dark">{tx.heroBtn}</a>
               <div className="btn-acc">🕐 {time || '00:00:00'}</div>
@@ -828,10 +949,10 @@ export default function Home() {
             <div><p className="eyebrow">{tx.aboutEyebrow}</p><h2 className="sec-title" dangerouslySetInnerHTML={{__html: tx.aboutTitle.replace('\n','<br/>')}} /></div>
           </div>
           <div className="about-grid">
-            <div data-reveal>
+            <div data-reveal ref={aboutRef}>
               <div className="about-text">
-                <p>{tx.aboutP1}</p>
-                <p>{tx.aboutP2}</p>
+                <p>{typedAbout1 || ''}<span className={`type-cursor${aboutTypingDone||!aboutVisible?' done':''}`} style={{opacity:typedAbout2?0:1}}>|</span></p>
+                <p>{typedAbout2 || ''}{typedAbout2&&!aboutTypingDone&&<span className="type-cursor">|</span>}</p>
               </div>
               <div className="about-tags">
                 {['Node.js','JavaScript','Python','Next.js','Git','Linux','REST API','Supabase'].map(t2=>(
@@ -1077,7 +1198,7 @@ export default function Home() {
 
         {/* FLOAT: LANG + MUSIC */}
         <audio ref={audioRef} loop>
-          <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg"/>
+          <source src={musicUrl} type="audio/mpeg"/>
         </audio>
         <div className="float-group">
           <button className="lang-btn" onClick={()=>setLang(lang==='id'?'en':'id')} title={lang==='id'?'Switch to English':'Ganti ke Indonesia'}>
