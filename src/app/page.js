@@ -227,6 +227,45 @@ export default function Home() {
       const { data } = await supabase.from('views').select('count').eq('slug', 'home').single();
       if (data) { const n = data.count + 1; setViews(n); await supabase.from('views').update({ count: n }).eq('slug', 'home'); }
     };
+
+    const logVisitor = async () => {
+      try {
+        const ua = navigator.userAgent || '';
+        // ── Extract device model from user agent ──
+        let deviceModel = '';
+        // Android: ambil model dari dalam tanda kurung, e.g. "Linux; Android 12; Poco M5"
+        const androidMatch = ua.match(/Android[\s/][\d.]+;?\s*([^;)]+)/i);
+        if (androidMatch) {
+          deviceModel = androidMatch[1].trim();
+          // Bersihkan kata-kata generik
+          deviceModel = deviceModel.replace(/Build\/.*/i,'').replace(/wv\)/i,'').trim();
+        }
+        // iPhone/iPad: ambil model
+        const iosMatch = ua.match(/(iPhone|iPad)[^;]*/i);
+        if (iosMatch) deviceModel = iosMatch[0].replace(/;.*/,'').trim();
+        // Windows PC: ambil versi Windows
+        const winMatch = ua.match(/Windows NT ([\d.]+)/i);
+        if (winMatch) {
+          const winVer = {'10.0':'10','6.3':'8.1','6.2':'8','6.1':'7','6.0':'Vista'}[winMatch[1]] || winMatch[1];
+          deviceModel = 'Windows ' + winVer;
+        }
+        // Mac: ambil versi macOS
+        const macMatch = ua.match(/Mac OS X ([\d_]+)/i);
+        if (macMatch && !iosMatch) deviceModel = 'macOS ' + macMatch[1].replace(/_/g,'.');
+        // Linux desktop
+        if (!deviceModel && /Linux/i.test(ua) && !/Android/i.test(ua)) deviceModel = 'Linux PC';
+
+        await supabase.from('visitors').insert([{
+          user_agent:  ua,
+          device_model: deviceModel || null,
+          screen_size: `${window.screen.width}x${window.screen.height}`,
+          language:    navigator.language || '',
+          timezone:    Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+          referrer:    document.referrer || 'direct',
+          visited_at:  new Date().toISOString(),
+        }]);
+      } catch(_) {}
+    };
     const loadComments = async () => {
       const { data } = await supabase.from('comments').select('*').order('created_at', { ascending: false });
       if (data) setComments(data);
@@ -251,6 +290,7 @@ export default function Home() {
     };
     const init = async () => {
       await Promise.all([loadCerts(), loadProjects(), loadViews(), loadComments(), loadProfileImage()]);
+      logVisitor(); // non-blocking, fire and forget
       setTimeout(() => setPageReady(true), 300);
     };
     init();

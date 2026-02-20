@@ -585,12 +585,15 @@ export default function AdminPage() {
                 : <div className="vis-list">
                   {visitors.map((v,i)=>{
                     const mob=/mobile|android|iphone|ipad/i.test(v.user_agent||'');
+                    const model = v.device_model || '';
                     return(
                       <div key={v.id||i} className="vis-item">
                         <div className="vis-icon">{getDeviceIcon(v.user_agent)}</div>
                         <div className="vis-info">
                           <div className="vis-device">
-                            {getBrowser(v.user_agent)} on {getOS(v.user_agent)}
+                            <span style={{fontWeight:700,color:'var(--ink)'}}>{getBrowser(v.user_agent)}</span>
+                            {' · '}{getOS(v.user_agent)}
+                            {model&&<span style={{color:'var(--acc)',fontWeight:700,fontSize:'11px',marginLeft:'6px',padding:'1px 7px',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:'100px'}}>📱 {model}</span>}
                             <span className={`vis-badge ${mob?'mob':'desk'}`}>{mob?'Mobile':'Desktop'}</span>
                           </div>
                           <div className="vis-meta">
