@@ -26,6 +26,8 @@ export default function Home() {
   const [aiLoading, setAiLoading] = useState(false);
   const audioRef = useRef(null);
   const themeBtnRef = useRef(null);
+  const isMobile = useRef(false);
+  useEffect(() => { isMobile.current = window.matchMedia("(hover:none),(pointer:coarse)").matches; }, []);
   const aiEndRef = useRef(null);
   const d = isDark;
   const isID = lang === 'id';
@@ -89,8 +91,9 @@ export default function Home() {
     return () => obs.disconnect();
   }, [projects, certificates, pageReady, lang]);
 
-  // Magnetic hover effect on cards
+  // Magnetic hover effect — desktop only (skip on mobile/touch)
   useEffect(() => {
+    if (isMobile.current) return; // no mousemove on touch
     const handler = (e) => {
       const card = e.currentTarget;
       const r = card.getBoundingClientRect();
@@ -326,7 +329,8 @@ export default function Home() {
           --bg:#111110; --bg2:#1c1c1a; --bd:rgba(255,255,255,0.07);
           --shadow:rgba(0,0,0,0.3);
         }
-        .rw *{transition-property:background-color,border-color,color,box-shadow;transition-duration:0.5s;transition-timing-function:ease;}
+        /* targeted transitions only — global wildcard is too expensive on mobile */
+        .rw .nav,.rw .btn-theme,.rw .btn-admin,.rw .btn-dark,.rw .btn-acc,.rw .about-tag,.rw .social-btn,.rw .skill-card,.rw .goal-card,.rw .proj-card,.rw .cert-card,.rw .form-i,.rw .form-t,.rw .comment-card{transition-property:background-color,border-color,color,box-shadow;transition-duration:0.4s;transition-timing-function:ease;}
         .rw img,.rw canvas,.rw video,.rw .orb,.rw [data-reveal],.rw .theme-ripple{transition:none!important;}
 
         /* ── DARK MODE ORBS ── */
@@ -342,6 +346,13 @@ export default function Home() {
         @keyframes orbFloat1{0%,100%{transform:translate(0,0);}50%{transform:translate(40px,30px);}}
         @keyframes orbFloat2{0%,100%{transform:translate(0,0);}50%{transform:translate(-30px,-40px);}}
         @keyframes orbFloat3{0%,100%{transform:translate(0,0);}50%{transform:translate(20px,-20px);}}
+        /* Mobile: orbs static (no animation = big GPU saving) */
+        @media(max-width:900px){
+          .orb-1,.orb-2,.orb-3{animation:none!important;filter:blur(70px);}
+          .orb-1{width:300px;height:300px;}
+          .orb-2{width:250px;height:250px;}
+          .orb-3{width:200px;height:200px;}
+        }
 
         /* ── SCROLL REVEAL ── */
         [data-reveal]{opacity:0;transform:translateY(28px);transition:opacity 0.65s ease,transform 0.65s ease;}
@@ -355,7 +366,7 @@ export default function Home() {
         .mag{transition:transform 0.3s ease,box-shadow 0.3s ease;transform-style:preserve-3d;perspective:800px;}
 
         /* ── NAV ── */
-        .nav{position:fixed;top:0;left:0;right:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--bd);transition:background 0.5s,border-color 0.5s;backdrop-filter:blur(12px);}
+        .nav{position:fixed;top:0;left:0;right:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--bd);transition:background 0.4s,border-color 0.4s;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
         .nav-in{max-width:1140px;margin:0 auto;padding:0 40px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
         .logo{font-family:'Fraunces',serif;font-size:22px;font-weight:900;color:var(--ink);text-decoration:none;letter-spacing:-0.5px;flex-shrink:0;}
         .logo em{font-style:normal;color:var(--acc);}
@@ -689,6 +700,35 @@ export default function Home() {
           .hero-btns{flex-direction:column;align-items:flex-start;}
           .btn-dark,.btn-acc{width:100%;justify-content:center;}
         }
+
+        /* ── MOBILE PERFORMANCE — reduce GPU compositing ── */
+        @media(hover:none),(pointer:coarse){
+          /* No backdrop blur on nav (expensive on Snapdragon) */
+          .nav{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:var(--bg);}
+          /* No 3D transforms on cards (preserve-3d is expensive) */
+          .mag{transform-style:flat!important;perspective:none!important;}
+          /* Simplify hover image scale — use opacity instead */
+          .proj-card:hover .proj-thumb img,
+          .cert-card:hover .cert-img img,
+          .hero-photo-wrap:hover .hero-photo img{transform:none!important;}
+          /* Disable hover translateY on buttons (not needed on touch) */
+          .btn-dark:hover,.btn-acc:hover,.btn-admin:hover,.btn-theme:hover,
+          .social-btn:hover,.about-tag:hover,.btn-login:hover,.form-btn:hover:not(:disabled){transform:none!important;box-shadow:none!important;}
+          /* Reduce transition durations for snappier feel */
+          [data-reveal]{transition-duration:0.4s!important;}
+          /* Promote scroll area to own compositor layer */
+          .rw{-webkit-overflow-scrolling:touch;}
+          /* Reduce hero photo rotation animation */
+          .hero-photo-wrap:hover .hero-photo-bg{transform:rotate(4deg)!important;}
+          /* Disable box shadows (cause repaints on scroll) */
+          .proj-card:hover,.cert-card:hover,.goal-card:hover,.skill-card:hover{box-shadow:none!important;}
+        }
+
+        /* Hint browser to GPU-composite animated elements */
+        .orb{will-change:transform,opacity;}
+        [data-reveal]{will-change:opacity,transform;}
+        .page-loader{will-change:opacity,visibility;}
+        .theme-ripple{will-change:clip-path,opacity;}
       `}</style>
 
       <div className={`rw${d ? ' dark' : ''}`}>
