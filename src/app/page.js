@@ -110,6 +110,17 @@ export default function Home() {
       const { data } = await supabase.from('views').select('count').eq('slug', 'home').single();
       if (data) { const n = data.count + 1; setViews(n); await supabase.from('views').update({ count: n }).eq('slug', 'home'); }
     };
+    const trackVisitor = async () => {
+      try {
+        await supabase.from('visitors').insert([{
+          user_agent: navigator.userAgent,
+          screen_size: `${window.screen.width}x${window.screen.height}`,
+          language: navigator.language || 'unknown',
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown',
+          referrer: document.referrer || 'direct',
+        }]);
+      } catch (_) { /* silent fail — tabel mungkin belum ada */ }
+    };
     const loadComments = async () => {
       const { data } = await supabase.from('comments').select('*').order('created_at', { ascending: false });
       if (data) setComments(data);
@@ -128,6 +139,7 @@ export default function Home() {
     };
     const init = async () => {
       await Promise.all([loadCerts(), loadProjects(), loadViews(), loadComments(), loadProfileImage()]);
+      trackVisitor(); // fire and forget — don't block page load
       setTimeout(() => setPageReady(true), 300);
     };
     init();
