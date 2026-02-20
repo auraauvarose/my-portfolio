@@ -1,55 +1,75 @@
-// Letakkan file ini di: src/app/api/chat/route.js
-// API key TIDAK pernah keluar ke browser - aman 100%
+// src/app/api/chat/route.js
 
 export async function POST(request) {
   try {
-    const { messages } = await request.json();
+    let body;
+    try { body = await request.json(); }
+    catch { return Response.json({ error: 'Request tidak valid' }, { status: 400 }); }
+
+    const { messages } = body;
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return Response.json({ error: 'messages tidak valid' }, { status: 400 });
+    }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return Response.json({ error: 'API key tidak ditemukan' }, { status: 500 });
+      return Response.json({ reply: '⚙️ AI belum dikonfigurasi. Hubungi admin.' });
     }
 
-    // Build Gemini history from messages array
-    const history = messages.slice(0, -1).map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
+    const history = messages.slice(0, -1)
+      .filter(m => m?.role && m?.content)
+      .map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: String(m.content) }],
+      }));
 
     const lastMsg = messages[messages.length - 1];
+    if (!lastMsg?.content) {
+      return Response.json({ reply: 'Pesan kosong, coba lagi.' });
+    }
 
-    const res = await fetch(
+    const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemInstruction: {
-            parts: [{
-              text: 'Kamu adalah asisten AI pribadi di portofolio Aura Auvarose, mahasiswa Informatika semester 1 dari Indonesia. Kamu ramah, singkat, dan membantu. Jawab dalam bahasa yang sama dengan pertanyaan (Indonesia/Inggris). Info tentang Aura: belajar Python, JavaScript, Next.js, Supabase, Git, Linux. Fokus pada logika pemrograman dan konsisten belajar setiap malam.'
-            }]
+            parts: [{ text: `Kamu adalah asisten AI pribadi bernama "AI Aura" di portofolio Aura Auvarose, mahasiswa Informatika semester 1 dari Indonesia. Kepribadian kamu ramah, singkat, dan sedikit kasual. Jawab dalam bahasa yang sama dengan pertanyaan. Info Aura: belajar Python, JavaScript, Node.js, Next.js, Supabase, Git, Linux (Fedora). Goals: jadi software architect, bangun startup, kontribusi ke komunitas IT.` }]
           },
           contents: [
             ...history,
-            { role: 'user', parts: [{ text: lastMsg.content }] }
+            { role: 'user', parts: [{ text: String(lastMsg.content) }] }
           ],
-          generationConfig: { maxOutputTokens: 800, temperature: 0.7 },
+          generationConfig: { maxOutputTokens: 600, temperature: 0.75 },
         }),
       }
     );
 
-    const data = await res.json();
+    const data = await geminiRes.json();
 
-    if (!res.ok) {
-      console.error('Gemini error:', data);
-      return Response.json({ error: data.error?.message || 'Gemini error' }, { status: res.status });
+    if (!geminiRes.ok) {
+      const errMsg = data?.error?.message || '';
+      // Quota exceeded — pesan ramah ke user
+      if (geminiRes.status === 429 || errMsg.includes('quota') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+        return Response.json({ reply: '⏳ AI sedang istirahat sebentar karena terlalu banyak permintaan. Coba lagi dalam 1 menit ya!' });
+      }
+      // API key invalid
+      if (geminiRes.status === 400 || geminiRes.status === 403) {
+        return Response.json({ reply: '🔑 Konfigurasi AI bermasalah. Hubungi admin.' });
+      }
+      return Response.json({ reply: `❌ Error ${geminiRes.status}. Coba lagi nanti.` });
     }
 
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Tidak ada respons.';
-    return Response.json({ reply });
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!reply) {
+      return Response.json({ reply: 'Maaf, AI tidak merespons. Coba pertanyaan lain!' });
+    }
+
+    return Response.json({ reply: reply.trim() });
 
   } catch (err) {
     console.error('Route error:', err);
-    return Response.json({ error: 'Server error' }, { status: 500 });
+    return Response.json({ reply: '❌ Server error. Coba lagi nanti.' }, { status: 500 });
   }
 }
