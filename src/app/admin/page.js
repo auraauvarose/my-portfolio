@@ -618,7 +618,7 @@ export default function AdminPage() {
               <div className="panel">
                 <div className="panel-head">
                   <h2 className="panel-title">🎨 Warna Aksen</h2>
-                  <span style={{fontSize:'12px',color:'var(--ink2)'}}>Tersimpan otomatis</span>
+                  <span style={{fontSize:'12px',color:'var(--ink2)'}}>Tersimpan Otomatis</span>
                 </div>
                 <div className="theme-grid">
                   {THEMES.map(t=>(
