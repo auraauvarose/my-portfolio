@@ -31,6 +31,19 @@ export default function Home() {
   const [aboutTypingDone, setAboutTypingDone] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
   const [loopName, setLoopName] = useState('Auvarose');
+  const [ghRepos, setGhRepos] = useState([]);
+  const [ghStatus, setGhStatus] = useState({ detail: 'my-portfolio', since: '' });
+  const [likeCount, setLikeCount] = useState(0);
+  const [liked, setLiked] = useState(false);
+  const [likeAnim, setLikeAnim] = useState(false);
+  const [commentReplies, setCommentReplies] = useState({});
+  const [replyInput, setReplyInput] = useState({});
+  const [replyOpen, setReplyOpen] = useState({});
+  const [communityPhotos, setCommunityPhotos] = useState([]);
+  const [photoForm, setPhotoForm] = useState({ name:'', caption:'' });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoSubmitDone, setPhotoSubmitDone] = useState(false);
+  const [photoSubmitting, setPhotoSubmitting] = useState(false);
   const [themeColor, setThemeColor] = useState('#d4eb00');
   const [bgTheme, setBgTheme]       = useState('default');
   const [fontChoice, setFontChoice] = useState('fraunces');
@@ -43,11 +56,14 @@ export default function Home() {
 
   // ── THEME DATA (sama persis dengan admin) ──
   const BG_THEMES = {
-    default: { darkBg:'#111110', darkBg2:'#1c1c1a', lightBg:'#ffffff',  lightBg2:'#f4f4f0' },
-    warm:    { darkBg:'#1a1410', darkBg2:'#271e14', lightBg:'#f5f0e8',  lightBg2:'#ece5d5' },
-    navy:    { darkBg:'#0d1117', darkBg2:'#161b22', lightBg:'#fdf6e3',  lightBg2:'#f0e8cc' },
-    forest:  { darkBg:'#0d1a0f', darkBg2:'#142518', lightBg:'#f0f7f0',  lightBg2:'#dceadc' },
-    slate:   { darkBg:'#0f1117', darkBg2:'#181c27', lightBg:'#f8f9fb',  lightBg2:'#eaedf2' },
+    default:  { darkBg:'#111110', darkBg2:'#1c1c1a', lightBg:'#ffffff',  lightBg2:'#f4f4f0' },
+    warm:     { darkBg:'#1a1410', darkBg2:'#271e14', lightBg:'#f5f0e8',  lightBg2:'#ece5d5' },
+    navy:     { darkBg:'#0d1117', darkBg2:'#161b22', lightBg:'#fdf6e3',  lightBg2:'#f0e8cc' },
+    forest:   { darkBg:'#0d1a0f', darkBg2:'#142518', lightBg:'#f0f7f0',  lightBg2:'#dceadc' },
+    slate:    { darkBg:'#0f1117', darkBg2:'#181c27', lightBg:'#f8f9fb',  lightBg2:'#eaedf2' },
+    mocha:    { darkBg:'#1c1510', darkBg2:'#2a1e14', lightBg:'#faf3e8',  lightBg2:'#ede0cc' },
+    midnight: { darkBg:'#0a0a14', darkBg2:'#12121f', lightBg:'#f0eeff',  lightBg2:'#e3ddff' },
+    rose_bg:  { darkBg:'#180d12', darkBg2:'#25101a', lightBg:'#fff0f4',  lightBg2:'#ffe0ea' },
   };
   const FONTS = {
     fraunces:  { heading:"'Fraunces',serif",           body:"'Plus Jakarta Sans',sans-serif" },
@@ -208,17 +224,28 @@ export default function Home() {
 
   // Magnetic hover effect on cards
   useEffect(() => {
+    // Disable 3D mag on touch/low-end devices
+    if (window.matchMedia('(pointer:coarse)').matches) return;
+    // Disable during scroll to prevent lag
+    let scrolling = false, scrollTimer;
+    const onScroll = () => { scrolling = true; clearTimeout(scrollTimer); scrollTimer = setTimeout(()=>{ scrolling=false; },150); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+
     const handler = (e) => {
+      if (scrolling) return;
       const card = e.currentTarget;
       const r = card.getBoundingClientRect();
-      const x = ((e.clientX - r.left) / r.width - 0.5) * 10;
-      const y = ((e.clientY - r.top) / r.height - 0.5) * 10;
-      card.style.transform = `translateY(-6px) rotateX(${-y}deg) rotateY(${x}deg)`;
+      const x = ((e.clientX - r.left) / r.width - 0.5) * 8;
+      const y = ((e.clientY - r.top) / r.height - 0.5) * 8;
+      card.style.transform = `translateY(-4px) rotateX(${-y}deg) rotateY(${x}deg)`;
     };
     const reset = (e) => { e.currentTarget.style.transform = ''; };
     const cards = document.querySelectorAll('.mag');
     cards.forEach(c => { c.addEventListener('mousemove', handler); c.addEventListener('mouseleave', reset); });
-    return () => cards.forEach(c => { c.removeEventListener('mousemove', handler); c.removeEventListener('mouseleave', reset); });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cards.forEach(c => { c.removeEventListener('mousemove', handler); c.removeEventListener('mouseleave', reset); });
+    };
   });
 
   useEffect(() => {
@@ -291,6 +318,41 @@ export default function Home() {
     const init = async () => {
       await Promise.all([loadCerts(), loadProjects(), loadViews(), loadComments(), loadProfileImage()]);
       logVisitor(); // non-blocking, fire and forget
+
+      // Load approved community photos
+      supabase.from('user_photos').select('*').eq('approved',true).order('created_at',{ascending:false}).then(({data})=>{
+        if (data) setCommunityPhotos(data);
+      });
+
+      // Load like count
+      supabase.from('views').select('count').eq('slug','likes').single().then(({data})=>{
+        if (data) setLikeCount(data.count||0);
+      });
+      // Check if user already liked
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('site_liked')) setLiked(true);
+
+      // Load replies
+      supabase.from('replies').select('*').order('created_at',{ascending:true}).then(({data})=>{
+        if (!data) return;
+        const map = {};
+        data.forEach(r => { if (!map[r.comment_id]) map[r.comment_id]=[]; map[r.comment_id].push(r); });
+        setCommentReplies(map);
+      });
+
+      // GitHub public API — no key needed
+      fetch('https://api.github.com/users/auraauvarose/repos?sort=pushed&per_page=4')
+        .then(r => r.json()).then(d => { if (Array.isArray(d)) setGhRepos(d.slice(0,4)); }).catch(()=>{});
+      fetch('https://api.github.com/users/auraauvarose/events/public?per_page=10')
+        .then(r => r.json()).then(events => {
+          if (!Array.isArray(events)) return;
+          const push = events.find(e => e.type === 'PushEvent');
+          if (!push) return;
+          const repo = (push.repo?.name || '').split('/')[1] || 'repository';
+          const msg  = push.payload?.commits?.[0]?.message || 'Commit terbaru';
+          const mins = Math.round((Date.now() - new Date(push.created_at)) / 60000);
+          const ago  = mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins/60)}h ago` : `${Math.round(mins/1440)}d ago`;
+          setGhStatus({ detail: repo, since: ago, msg: msg.split('\n')[0].slice(0,60) });
+        }).catch(()=>{});
       setTimeout(() => setPageReady(true), 300);
     };
     init();
@@ -313,6 +375,50 @@ export default function Home() {
   const toggleMusic = () => {
     isPlaying ? audioRef.current.pause() : audioRef.current.play();
     setIsPlaying(!isPlaying);
+  };
+
+  const handleLike = async () => {
+    if (liked) return;
+    setLiked(true);
+    setLikeAnim(true);
+    setTimeout(() => setLikeAnim(false), 800);
+    localStorage.setItem('site_liked', '1');
+    const { data } = await supabase.from('views').select('count').eq('slug','likes').single();
+    const n = (data?.count || 0) + 1;
+    setLikeCount(n);
+    await supabase.from('views').upsert({ slug:'likes', count:n }, { onConflict:'slug' });
+  };
+
+  const submitPhoto = async (e) => {
+    e.preventDefault();
+    if (!photoFile || !photoForm.name) return;
+    setPhotoSubmitting(true);
+    try {
+      const ext = photoFile.name.split('.').pop();
+      const fname = `community_${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('certificates').upload(fname, photoFile, { upsert: false });
+      if (error) { alert('Upload gagal: ' + error.message); setPhotoSubmitting(false); return; }
+      const url = supabase.storage.from('certificates').getPublicUrl(fname).data.publicUrl;
+      await supabase.from('user_photos').insert([{ sender_name: photoForm.name, caption: photoForm.caption, image_url: url, approved: false }]);
+      setPhotoSubmitDone(true);
+      setPhotoForm({ name:'', caption:'' });
+      setPhotoFile(null);
+      setTimeout(() => setPhotoSubmitDone(false), 4000);
+    } catch(err) { alert('Error: '+err.message); }
+    setPhotoSubmitting(false);
+  };
+
+  const submitReply = async (commentId, name) => {
+    const text = replyInput[commentId]?.trim();
+    if (!text || !name) return;
+    await supabase.from('replies').insert([{ comment_id: commentId, name: name||'Anonim', message: text }]);
+    setReplyInput(prev => ({...prev, [commentId]:''}));
+    const { data } = await supabase.from('replies').select('*').order('created_at',{ascending:true});
+    if (data) {
+      const map = {};
+      data.forEach(r => { if (!map[r.comment_id]) map[r.comment_id]=[]; map[r.comment_id].push(r); });
+      setCommentReplies(map);
+    }
   };
 
   // Reload audio when musicUrl changes (updated from admin)
@@ -389,6 +495,7 @@ export default function Home() {
     { icon: 'IG', name: 'Instagram', url: 'https://www.instagram.com/aura_auvarose_/', handle: '@aura_auvarose_' },
     { icon: 'LI', name: 'LinkedIn', url: 'https://linkedin.com/in/USERNAME', handle: 'Belum Ada' },
     { icon: '✉', name: 'Email', url: 'mailto:auraauvaroseendica@gmail.com', handle: 'auraauvaroseendica@gmail.com' },
+    { icon: 'DC', name: 'Discord', url: 'https://discord.com/users/862306063054667786', handle: '@Rur^a!' },
   ];
 
   const skills = [
@@ -403,6 +510,7 @@ export default function Home() {
     { name : 'Linux', cat: 'OS', level: 65 },
     { name: 'SQL', cat: 'Database', level: 30 },
     { name: 'Next.js', cat: 'Framework', level: 50 },
+    
   ];
 
   const timeline = isID ? [
@@ -467,10 +575,10 @@ export default function Home() {
           transition:opacity 0.5s ease, visibility 0.5s ease;
         }
         .page-loader.done{opacity:0;visibility:hidden;pointer-events:none;}
-        .loader-logo{font-family:'Fraunces',serif;font-size:52px;font-weight:900;color:#f0efe8;letter-spacing:-2px;}
-        .loader-logo em{font-style:normal;color:#d4eb00;}
+        .loader-logo{font-family:var(--font-body,'Plus Jakarta Sans'),sans-serif;font-size:22px;font-weight:800;color:#f0efe8;letter-spacing:0.18em;text-transform:lowercase;}
+        .loader-logo em{font-style:normal;color:var(--loader-acc,#d4eb00);}
         .loader-bar-wrap{width:160px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
-        .loader-bar{height:100%;width:0%;background:#d4eb00;border-radius:2px;animation:loadProgress 1.2s cubic-bezier(.4,0,.2,1) forwards;}
+        .loader-bar{height:100%;width:0%;background:var(--loader-acc,#d4eb00);border-radius:2px;animation:loadProgress 1.2s cubic-bezier(.4,0,.2,1) forwards;}
         @keyframes loadProgress{0%{width:0%;}60%{width:75%;}100%{width:100%;}}
         .loader-text{font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(240,239,232,0.4);}
 
@@ -494,6 +602,11 @@ export default function Home() {
           --shadow:rgba(0,0,0,0.3);
         }
         .rw *{transition-property:background-color,border-color,color,box-shadow;transition-duration:0.5s;transition-timing-function:ease;}
+        /* Perf: promote heavy animated elements to own layer */
+        .hero-photo-wrap,.proj-card,.cert-card,.skill-card,.gh-repo-card{transform:translateZ(0);}
+        /* Reduce paint during scroll */
+        .nav{contain:layout style;}
+        .footer{contain:layout style;}
         .rw img,.rw canvas,.rw video,.rw .orb,.rw [data-reveal],.rw .theme-ripple{transition:none!important;}
 
         /* ── LIGHT MODE CARD SHADOWS ── */
@@ -517,6 +630,8 @@ export default function Home() {
           position:fixed; border-radius:50%; pointer-events:none;
           filter:blur(90px); z-index:0; opacity:0;
           transition:opacity 0.6s ease;
+          will-change:transform; transform:translateZ(0);
+          contain:strict;
         }
         .rw.dark .orb{opacity:1;}
         .orb-1{width:500px;height:500px;background:radial-gradient(circle,rgba(212,235,0,0.12),transparent 70%);top:-100px;left:-100px;animation:orbFloat1 12s ease-in-out infinite;}
@@ -529,13 +644,16 @@ export default function Home() {
         /* ── SCROLL REVEAL ── */
         [data-reveal]{opacity:0;transform:translateY(28px);transition:opacity 0.65s ease,transform 0.65s ease;}
         [data-reveal].revealed{opacity:1;transform:translateY(0);}
+        /* Mobile: disable reveal animation — show everything immediately */
+        @media(max-width:768px){[data-reveal]{opacity:1!important;transform:none!important;transition:none!important;}}
         [data-reveal][data-delay="1"]{transition-delay:0.1s;}
         [data-reveal][data-delay="2"]{transition-delay:0.2s;}
         [data-reveal][data-delay="3"]{transition-delay:0.3s;}
         [data-reveal][data-delay="4"]{transition-delay:0.4s;}
 
         /* ── MAGNETIC CARDS ── */
-        .mag{transition:transform 0.3s ease,box-shadow 0.3s ease;transform-style:preserve-3d;perspective:800px;}
+        .mag{transition:transform 0.25s ease,box-shadow 0.25s ease;transform-style:preserve-3d;perspective:800px;will-change:transform;}
+        @media(max-width:768px){.mag{transform-style:flat;perspective:none;}} /* disable 3D on mobile = less GPU */
 
         /* ── NAV ── */
         .nav{position:fixed;top:0;left:0;right:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--bd);transition:background 0.5s,border-color 0.5s;backdrop-filter:blur(12px);}
@@ -753,7 +871,89 @@ export default function Home() {
 
 
         /* ── GITHUB ACTIVITY ── */
-        .gh-activity{background:var(--bg2);border:1px solid var(--bd);border-radius:20px;padding:20px 24px;margin-bottom:36px;overflow:hidden;}
+        /* ── DISCORD ACTIVITY ── */
+        .disc-block{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;padding:14px 18px;margin-bottom:14px;}
+        .disc-head-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+        .disc-label-text{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);}
+        .disc-since{font-size:10px;color:var(--ink3);margin-left:auto;}
+        .disc-card{display:flex;align-items:center;gap:13px;}
+        .disc-vscode-icon{width:46px;height:46px;border-radius:10px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+        .disc-info{flex:1;min-width:0;}
+        .disc-app-name{font-size:13px;font-weight:700;color:var(--ink);}
+        .disc-detail-line{font-size:11px;color:var(--ink2);margin-top:2px;}
+        .disc-detail-line strong{color:var(--acc);}
+        .disc-workspace{font-size:10px;color:var(--ink3);margin-top:1px;}
+        .disc-online-badge{font-size:10px;font-weight:700;color:#23d05e;white-space:nowrap;padding:3px 9px;background:rgba(35,208,94,.1);border:1px solid rgba(35,208,94,.2);border-radius:100px;flex-shrink:0;}
+
+        /* ── GITHUB REPOS ── */
+        .gh-repos-block{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;padding:14px 18px;margin-bottom:36px;}
+        .gh-repos-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+        .gh-repos-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);}
+        .gh-repos-link{font-size:11px;font-weight:700;color:var(--acc);text-decoration:none;opacity:.85;transition:opacity .2s;}
+        .gh-repos-link:hover{opacity:1;}
+        .gh-repos-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+        .gh-repo-card{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:11px 13px;text-decoration:none;display:flex;flex-direction:column;gap:5px;transition:border-color .2s,transform .15s;will-change:transform;}
+        .gh-repo-card:hover{border-color:var(--acc);transform:translateY(-2px);}
+        .gh-repo-name{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink);overflow:hidden;}
+        .gh-repo-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .gh-repo-desc{font-size:10px;color:var(--ink2);line-height:1.45;}
+        .gh-repo-meta{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--ink3);margin-top:auto;flex-wrap:wrap;}
+        .gh-repo-lang{display:flex;align-items:center;gap:3px;}
+        .gh-lang-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+        @media(max-width:580px){.gh-repos-grid{grid-template-columns:1fr;}}
+
+        /* ── SKELETON LOADER ── */
+        .gh-repo-skeleton{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:8px;}
+        .skel{background:linear-gradient(90deg,var(--bd) 25%,var(--bg2) 50%,var(--bd) 75%);background-size:200% 100%;animation:skelShimmer 1.4s ease infinite;border-radius:4px;}
+        .skel-title{height:12px;width:60%;}
+        .skel-desc{height:10px;width:90%;}
+        .skel-meta{height:9px;width:40%;}
+        @keyframes skelShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+        /* ── LIKE BUTTON ── */
+        .like-section{padding:32px 0;border-top:1px solid var(--bd);text-align:center;}
+        .like-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
+        .like-btn{display:flex;align-items:center;gap:10px;padding:14px 28px;background:var(--bg2);border:2px solid var(--bd);border-radius:100px;font-family:inherit;font-size:14px;font-weight:700;color:var(--ink);transition:all .25s;}
+        .like-btn:hover:not(:disabled){border-color:var(--acc);transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow);}
+        .like-btn.liked{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.06);color:#dc2626;}
+        .like-btn.anim .like-heart{animation:heartPop .6s cubic-bezier(.34,1.56,.64,1);}
+        .like-heart{font-size:20px;line-height:1;}
+        @keyframes heartPop{0%{transform:scale(1);}40%{transform:scale(1.6);}70%{transform:scale(0.9);}100%{transform:scale(1);}}
+        .like-count{display:flex;align-items:center;gap:6px;}
+        .like-num{font-size:28px;font-weight:900;font-family:var(--font-heading);color:var(--ink);}
+        .like-sub{font-size:12px;color:var(--ink2);font-weight:600;}
+
+        /* ── COMMUNITY GALLERY ── */
+        .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
+        .gallery-item{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1;background:var(--bg2);}
+        .gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
+        .gallery-item:hover img{transform:scale(1.05);}
+        .gallery-overlay{position:absolute;bottom:0;left:0;right:0;padding:10px 12px;background:linear-gradient(transparent,rgba(0,0,0,.65));opacity:0;transition:opacity .3s;}
+        .gallery-item:hover .gallery-overlay{opacity:1;}
+        .gallery-name{font-size:12px;font-weight:700;color:#fff;}
+        .gallery-caption{font-size:10px;color:rgba(255,255,255,.75);margin-top:2px;}
+        .gallery-empty{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--ink2);font-size:14px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+        .gallery-upload-link{font-size:13px;font-weight:700;color:var(--acc);text-decoration:none;}
+        .gallery-cta-btn{display:inline-flex;align-items:center;padding:10px 20px;background:var(--bg2);border:1px solid var(--bd);border-radius:100px;font-size:12px;font-weight:700;color:var(--ink);text-decoration:none;transition:all .2s;white-space:nowrap;align-self:flex-start;}
+        .gallery-cta-btn:hover{border-color:var(--acc);transform:translateY(-2px);}
+        .gallery-item-featured{grid-column:span 1;border:2px solid var(--acc);}
+        .gallery-badge{font-size:9px;font-weight:800;background:var(--acc);color:#000;padding:2px 7px;border-radius:100px;display:inline-block;margin-bottom:3px;}
+
+
+        /* ── COMMENT REPLIES ── */
+        .reply-item{display:flex;align-items:flex-start;gap:7px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd);}
+        .reply-arrow{color:var(--acc);font-size:12px;flex-shrink:0;margin-top:2px;}
+        .reply-name{font-size:11px;font-weight:700;color:var(--ink);margin-right:6px;}
+        .reply-msg{font-size:12px;color:var(--ink2);}
+        .reply-toggle{margin-top:8px;}
+        .reply-btn{font-size:11px;font-weight:700;color:var(--acc);background:none;border:none;padding:0;cursor:pointer;opacity:.8;transition:opacity .2s;}
+        .reply-btn:hover{opacity:1;}
+        .reply-form{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+        .reply-input{padding:8px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;font-family:inherit;font-size:12px;color:var(--ink);outline:none;transition:border-color .2s;}
+        .reply-input:focus{border-color:var(--acc);}
+        .reply-send{padding:7px 14px;background:var(--acc);color:#0d0d0d;border:none;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;align-self:flex-end;}
+
+        .gh-activity{background:var(--bg2);border:1px solid var(--bd);border-radius:20px;padding:20px 24px;margin-bottom:14px;overflow:hidden;}
         .gh-activity-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
         .gh-status-dot{width:8px;height:8px;border-radius:50%;background:#2ea043;animation:blink 2s ease infinite;flex-shrink:0;}
         .gh-activity-title{font-size:13px;font-weight:700;color:var(--ink);}
@@ -901,8 +1101,8 @@ export default function Home() {
           />
         )}
         {/* LOADING SCREEN */}
-        <div className={`page-loader${pageReady ? ' done' : ''}`}>
-          <div className="loader-logo"><em>A.</em></div>
+        <div className={`page-loader${pageReady ? ' done' : ''}`} style={{'--loader-acc': themeColor}}>
+          <div className="loader-logo">aura<em>au</em>varose</div>
           <div className="loader-bar-wrap"><div className="loader-bar" /></div>
           <div className="loader-text">{isID ? 'Memuat...' : 'Loading...'}</div>
         </div>
@@ -1058,7 +1258,29 @@ export default function Home() {
 
         {/* PROJECTS */}
         <section className="wrap sec" id="projects">
-          {/* GITHUB ACTIVITY */}
+          {/* ── DISCORD ACTIVITY STATUS ── */}
+          <div className="disc-block" data-reveal>
+            <div className="disc-head-row">
+              <span className="disc-label-text">Current Activity</span>
+              {ghStatus.since && <span className="disc-since">{ghStatus.since}</span>}
+            </div>
+            <div className="disc-card">
+              <div className="disc-vscode-icon">
+                <svg viewBox="0 0 100 100" width="32" height="32">
+                  <rect width="100" height="100" rx="16" fill="#2b5fce"/>
+                  <path d="M70 15L40 47 22 33l-8 6 18 16-18 16 8 6 18-14 30 32 10-5V20z" fill="white" opacity=".9"/>
+                </svg>
+              </div>
+              <div className="disc-info">
+                <div className="disc-app-name">Visual Studio Code</div>
+                <div className="disc-detail-line">Editing <strong>{ghStatus.detail || 'my-portfolio'}</strong></div>
+                <div className="disc-workspace">Workspace: my-portfolio</div>
+              </div>
+              <span className="disc-online-badge">🟢 Online</span>
+            </div>
+          </div>
+
+          {/* ── GITHUB CONTRIBUTION CHART ── */}
           <div className="gh-activity" data-reveal>
             <div className="gh-activity-head">
               <span className="gh-status-dot"/>
@@ -1066,12 +1288,51 @@ export default function Home() {
               <span className="gh-activity-sub">@auraauvarose · 370 contributions this year</span>
             </div>
             <div className="gh-chart-wrap">
-              <img
-                src="https://ghchart.rshah.org/2ea043/auraauvarose"
-                alt="GitHub Contribution Chart"
-                loading="lazy"
-              />
+              <img src="https://ghchart.rshah.org/2ea043/auraauvarose" alt="GitHub Contribution Chart" loading="lazy"/>
             </div>
+          </div>
+
+          {/* ── RECENT REPOS ── */}
+          {/* ── RECENT REPOS ── */}
+          <div className="gh-repos-block" data-reveal>
+            <div className="gh-repos-hd">
+              <span className="gh-repos-title">Repositori Terbaru</span>
+              <a href="https://github.com/auraauvarose" target="_blank" rel="noopener noreferrer" className="gh-repos-link">Lihat semua →</a>
+            </div>
+            {ghRepos.length === 0 ? (
+              <div className="gh-repos-grid">
+                {[1,2,3,4].map(n => (
+                  <div key={n} className="gh-repo-skeleton">
+                    <div className="skel skel-title"/><div className="skel skel-desc"/><div className="skel skel-meta"/>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="gh-repos-grid">
+                {ghRepos.map(repo => {
+                  const mins = Math.round((Date.now() - new Date(repo.pushed_at)) / 60000);
+                  const ago = mins < 60 ? mins+'m ago' : mins < 1440 ? Math.round(mins/60)+'h ago' : Math.round(mins/1440)+'d ago';
+                  const LC = {JavaScript:'#f7df1e',TypeScript:'#3178c6',Python:'#3776ab',CSS:'#264de4',HTML:'#e34c26',Shell:'#89e051'};
+                  const lc = (repo.language && LC[repo.language]) || 'var(--ink3)';
+                  return (
+                    <a key={repo.id} href={repo.html_url} target="_blank" rel="noopener noreferrer" className="gh-repo-card">
+                      <div className="gh-repo-name">
+                        <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" style={{opacity:.5,flexShrink:0}}>
+                          <path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 010-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9z"/>
+                        </svg>
+                        <span>{repo.name}</span>
+                      </div>
+                      {repo.description && <div className="gh-repo-desc">{repo.description.slice(0,65)}{repo.description.length>65?'...':''}</div>}
+                      <div className="gh-repo-meta">
+                        {repo.language && <span className="gh-repo-lang"><span className="gh-lang-dot" style={{background:lc}}/>{repo.language}</span>}
+                        <span className="gh-repo-time">🕒 {ago}</span>
+                        {repo.stargazers_count > 0 && <span>⭐{repo.stargazers_count}</span>}
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </div>
           <div className="sec-head" data-reveal>
             <div><p className="eyebrow">{tx.projEyebrow}</p><h2 className="sec-title">{tx.projTitle}</h2></div>
@@ -1126,6 +1387,46 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ── UNIFIED GALLERY: Admin Photos + Community Photos ── */}
+        <section className="wrap sec" id="gallery">
+          <div className="sec-head" data-reveal>
+            <div>
+              <p className="eyebrow">GALERI FOTO</p>
+              <h2 className="sec-title">Momen &<br/>Kenangan</h2>
+            </div>
+            <a href="/submit-photo" target="_blank" className="gallery-cta-btn">📷 Kirim Fotomu →</a>
+          </div>
+          <div className="gallery-grid" data-reveal>
+            {/* Admin personal photos first (profileImage as first item if exists) */}
+            {profileImage && (
+              <div className="gallery-item gallery-item-featured">
+                <img src={profileImage} alt="Aura Auvarose"/>
+                <div className="gallery-overlay">
+                  <div className="gallery-badge">📌 Admin</div>
+                  <div className="gallery-name">Aura Auvarose</div>
+                </div>
+              </div>
+            )}
+            {/* Community photos (approved) */}
+            {communityPhotos.map(p=>(
+              <div key={p.id} className="gallery-item">
+                <img src={p.image_url} alt={p.sender_name}/>
+                <div className="gallery-overlay">
+                  <div className="gallery-name">{p.sender_name}</div>
+                  {p.caption && <div className="gallery-caption">{p.caption}</div>}
+                </div>
+              </div>
+            ))}
+            {!profileImage && communityPhotos.length === 0 && (
+              <div className="gallery-empty">
+                <span style={{fontSize:'40px'}}>📸</span>
+                <p>Belum ada foto.</p>
+                <a href="/submit-photo" target="_blank" className="gallery-upload-link">Jadilah yang pertama kirim foto →</a>
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* CONTACT */}
         <section className="wrap sec" id="contact">
           <div className="sec-head" data-reveal>
@@ -1153,6 +1454,28 @@ export default function Home() {
                       <p className="comment-name">{c.name}</p>
                       <p className="comment-msg">{c.message}</p>
                       <p className="comment-dt">{new Date(c.created_at).toLocaleDateString(isID?'id-ID':'en-US',{day:'numeric',month:'long',year:'numeric'})}</p>
+                      {/* Replies */}
+                      {(commentReplies[c.id]||[]).map((r,ri)=>(
+                        <div key={ri} className="reply-item">
+                          <span className="reply-arrow">↳</span>
+                          <div>
+                            <span className="reply-name">{r.name}</span>
+                            <span className="reply-msg">{r.message}</span>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="reply-toggle">
+                        <button className="reply-btn" onClick={()=>setReplyOpen(prev=>({...prev,[c.id]:!prev[c.id]}))}>
+                          {replyOpen[c.id] ? '✕ Tutup' : `💬 Balas${(commentReplies[c.id]||[]).length>0?' ('+commentReplies[c.id].length+')':''}`}
+                        </button>
+                      </div>
+                      {replyOpen[c.id] && (
+                        <div className="reply-form">
+                          <input className="reply-input" placeholder="Nama kamu..." value={replyInput[`${c.id}_name`]||''} onChange={e=>setReplyInput(prev=>({...prev,[`${c.id}_name`]:e.target.value}))}/>
+                          <input className="reply-input" placeholder="Balasan..." value={replyInput[c.id]||''} onChange={e=>setReplyInput(prev=>({...prev,[c.id]:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&submitReply(c.id, replyInput[`${c.id}_name`])}/>
+                          <button className="reply-send" onClick={()=>submitReply(c.id, replyInput[`${c.id}_name`])}>Kirim</button>
+                        </div>
+                      )}
                     </div>
                   ))
                 }
@@ -1160,6 +1483,20 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* ── COMMUNITY PHOTOS ── */}
+        
+
+        {/* ── LIKE BUTTON ── */}
+        <div className="like-section" data-reveal>
+          <div className="like-wrap">
+            <button className={`like-btn${liked?' liked':''}${likeAnim?' anim':''}`} onClick={handleLike} disabled={liked}>
+              <span className="like-heart">{liked ? '❤️' : '🤍'}</span>
+              <span className="like-label">{liked ? 'Terima kasih!' : 'Suka website ini?'}</span>
+            </button>
+            <div className="like-count"><span className="like-num">{likeCount}</span><span className="like-sub">orang menyukai ini</span></div>
+          </div>
+        </div>
 
         {/* FOOTER */}
         <footer className="wrap footer" data-reveal>

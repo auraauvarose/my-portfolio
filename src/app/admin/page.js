@@ -39,15 +39,23 @@ export default function AdminPage() {
   const [musicUploading, setMusicUploading] = useState(false);
   const [musicSuccess, setMusicSuccess] = useState('');
   const musicFileRef = useRef();
+  // User photos
+  const [userPhotos, setUserPhotos] = useState([]);
+  const [photoSuccess, setPhotoSuccess] = useState('');
 
   const d = isDark;
 
   const THEMES = [
-    { id: 'lime',    name: 'Lime',       color: '#d4eb00', desc: 'Original · Energik' },
-    { id: 'cyan',    name: 'Cyber Blue', color: '#00d4ff', desc: 'Modern · Tech' },
-    { id: 'rose',    name: 'Rose',       color: '#ff6b9d', desc: 'Soft · Feminine' },
-    { id: 'emerald', name: 'Emerald',    color: '#00e676', desc: 'Fresh · Natural' },
-    { id: 'minimal', name: 'Minimal',    color: '#e0e0e0', desc: 'Clean · Simpel' },
+    { id: 'lime',     name: 'Lime',       color: '#d4eb00', desc: 'Original · Energik' },
+    { id: 'cyan',     name: 'Cyber Blue', color: '#00d4ff', desc: 'Modern · Tech' },
+    { id: 'rose',     name: 'Rose',       color: '#ff6b9d', desc: 'Soft · Feminine' },
+    { id: 'emerald',  name: 'Emerald',    color: '#00e676', desc: 'Fresh · Natural' },
+    { id: 'minimal',  name: 'Minimal',    color: '#e0e0e0', desc: 'Clean · Simpel' },
+    { id: 'violet',   name: 'Violet',     color: '#a855f7', desc: 'Bold · Kreatif' },
+    { id: 'orange',   name: 'Sunset',     color: '#fb923c', desc: 'Warm · Energik' },
+    { id: 'gold',     name: 'Gold',       color: '#fbbf24', desc: 'Premium · Mewah' },
+    { id: 'red',      name: 'Red Hot',    color: '#f43f5e', desc: 'Berani · Dramatis' },
+    { id: 'indigo',   name: 'Indigo',     color: '#6366f1', desc: 'Deep · Profesional' },
   ];
 
   const BG_THEMES = [
@@ -56,6 +64,9 @@ export default function AdminPage() {
     { id: 'navy',    name: 'Navy / Krim',       darkBg:'#0d1117', lightBg:'#fdf6e3', desc:'Dev / GitHub vibes' },
     { id: 'forest',  name: 'Hutan / Putih',     darkBg:'#0d1a0f', lightBg:'#f0f7f0', desc:'Natural · Fresh' },
     { id: 'slate',   name: 'Batu Tulis / Perak',darkBg:'#0f1117', lightBg:'#f8f9fb', desc:'Cool · Profesional' },
+    { id: 'mocha',   name: 'Mocha / Krem',      darkBg:'#1c1510', lightBg:'#faf3e8', desc:'Coffee · Cozy' },
+    { id: 'midnight',name: 'Midnight / Lavender',darkBg:'#0a0a14', lightBg:'#f0eeff', desc:'Night · Mystis' },
+    { id: 'rose_bg', name: 'Mawar / Blush',     darkBg:'#180d12', lightBg:'#fff0f4', desc:'Romantic · Soft' },
   ];
 
   const FONTS = [
@@ -96,12 +107,16 @@ export default function AdminPage() {
       supabase.from('views').select('count').eq('slug', 'home').single(),
       supabase.from('visitors').select('*').order('visited_at', { ascending: false }).limit(200),
       supabase.from('settings').select('key,value'),
+      supabase.from('user_photos').select('*').order('created_at',{ascending:false}),
     ]);
     if (c.data) setCertificates(c.data);
     if (p.data) setProjects(p.data);
     if (cm.data) setComments(cm.data);
     if (vw.data) setViewCount(vw.data.count);
     if (vi.data) setVisitors(vi.data);
+    // user_photos - index 6
+    const up = await supabase.from('user_photos').select('*').order('created_at',{ascending:false});
+    if (up.data) setUserPhotos(up.data);
     if (st.data) st.data.forEach(row => {
       if (row.key === 'theme_color') setThemeColor(row.value);
       if (row.key === 'bg_theme') setBgTheme(row.value);
@@ -229,6 +244,20 @@ export default function AdminPage() {
     await saveSetting('music_url', DEFAULT_MUSIC);
     setMusicUrl(DEFAULT_MUSIC);
     toast(setMusicSuccess, '✓ Music direset ke default!');
+  };
+
+  // ── USER PHOTOS ──
+  const handleApprovePhoto = async (id) => {
+    await supabase.from('user_photos').update({approved:true}).eq('id',id);
+    const {data} = await supabase.from('user_photos').select('*').order('created_at',{ascending:false});
+    if (data) setUserPhotos(data);
+    toast(setPhotoSuccess, '✓ Foto disetujui!');
+  };
+  const handleRejectPhoto = async (id) => {
+    if (!confirm('Hapus foto ini?')) return;
+    await supabase.from('user_photos').delete().eq('id',id);
+    const {data} = await supabase.from('user_photos').select('*').order('created_at',{ascending:false});
+    if (data) setUserPhotos(data);
   };
 
   const css = `
@@ -442,6 +471,7 @@ export default function AdminPage() {
               {id:'comments',label:'Komentar',count:comments.length},
               {id:'visitors',label:'Pengunjung',count:visitors.length},
               {id:'appearance',label:'Tampilan',count:null},
+              {id:'photos',label:'Foto Komunitas',count:userPhotos.filter(p=>!p.approved).length||null},
             ].map(t=>(
               <button key={t.id} className={`tab-btn${activeTab===t.id?' active':''}`} onClick={()=>setActiveTab(t.id)}>
                 {t.label}{t.count!==null && <span className="tab-count">{t.count}</span>}
@@ -705,6 +735,41 @@ export default function AdminPage() {
                 </div>
               </div>
 
+            </div>
+          )}
+
+          {/* ── FOTO KOMUNITAS ── */}
+          {activeTab==='photos' && (
+            <div style={{padding:'24px 0'}}>
+              {photoSuccess && <div className="toast" style={{marginBottom:'16px'}}>{photoSuccess}</div>}
+              <div className="panel">
+                <div className="panel-head">
+                  <h2 className="panel-title">📸 Foto Komunitas</h2>
+                  <span style={{fontSize:'12px',color:'var(--ink2)'}}>Foto dikirim pengunjung, perlu persetujuanmu</span>
+                </div>
+                {userPhotos.length === 0 && <div className="empty-st">Belum ada foto yang dikirim.</div>}
+                <div className="items-grid">
+                  {userPhotos.map(photo=>(
+                    <div key={photo.id} className="ac-card" style={{border: photo.approved?'2px solid rgba(34,197,94,.4)':'2px solid var(--bd)'}}>
+                      <div className="ac-thumb">
+                        {photo.image_url ? <img src={photo.image_url} alt={photo.sender_name}/> : <div className="ac-thumb-empty">📷</div>}
+                      </div>
+                      <div className="ac-foot">
+                        <div className="ac-title">{photo.sender_name||'Anonim'}{photo.instagram&&<span style={{fontSize:'10px',color:'var(--acc)',marginLeft:'6px'}}>@{photo.instagram}</span>}</div>
+                        <div className="ac-sub">{photo.caption?.slice(0,50)||''}</div>
+                        <div style={{fontSize:'10px',color:'var(--ink3)',marginTop:'4px'}}>{new Date(photo.created_at).toLocaleDateString('id-ID')}</div>
+                        {photo.approved
+                          ? <div style={{fontSize:'11px',fontWeight:'700',color:'#16a34a',marginTop:'6px'}}>✓ Disetujui</div>
+                          : <div className="ac-actions">
+                              <button className="btn-edit" style={{background:'rgba(34,197,94,.1)',color:'#16a34a',borderColor:'rgba(34,197,94,.3)'}} onClick={()=>handleApprovePhoto(photo.id)}>✓ Setujui</button>
+                              <button className="btn-del" onClick={()=>handleRejectPhoto(photo.id)}>🗑 Tolak</button>
+                            </div>
+                        }
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
