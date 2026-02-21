@@ -139,11 +139,11 @@ export default function Home() {
     };
     const delay = setTimeout(tick, 600);
     return () => clearTimeout(delay);
-  }, [pageReady, isID]);
+  }, [pageReady, isID]);  
 
   // ── LOOPING AUVAROSE name variants ──
   useEffect(() => {
-    const variants = ['Auvarose', 'Aura✦', 'Builder', 'Developer', 'Learner', 'Auvarose'];
+    const variants = ['Auvarose', 'Turu', 'MC', 'Gabut', 'Py', 'Auvarose'];
     let idx = 0;
     let charIdx = variants[0].length;
     let deleting = true;
@@ -496,6 +496,7 @@ export default function Home() {
     { icon: 'LI', name: 'LinkedIn', url: 'https://linkedin.com/in/USERNAME', handle: 'Belum Ada' },
     { icon: '✉', name: 'Email', url: 'mailto:auraauvaroseendica@gmail.com', handle: 'auraauvaroseendica@gmail.com' },
     { icon: 'DC', name: 'Discord', url: 'https://discord.com/users/862306063054667786', handle: '@Rur^a!' },
+    { icon: 'Tiktok', name: 'TikTok', url: 'https://www.tiktok.com/@au.rose', handle: '@au.rose' },
   ];
 
   const skills = [

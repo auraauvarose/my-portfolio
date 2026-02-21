@@ -94,7 +94,7 @@ export default function AdminPage() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (password === 'aura123') { setIsAuthenticated(true); fetchAll(); }
+    if (password === 'aura200788') { setIsAuthenticated(true); fetchAll(); }
     else setLoginError('Password salah.');
   };
 
