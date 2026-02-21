@@ -781,14 +781,41 @@ export default function Home() {
         .stat:hover .stat-n{transform:scale(1.08);}
         .stat-l{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink2);}
 
-        /* ── SOCIAL STRIP ── */
-        .social-strip{padding-top:24px;padding-bottom:24px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;overflow-x:auto;}
-        .social-strip::-webkit-scrollbar{height:0;}
-        .social-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink3);margin-right:4px;flex-shrink:0;}
-        .social-btn{display:flex;align-items:center;gap:8px;padding:9px 16px;background:var(--bg2);border:1px solid var(--bd);border-radius:100px;text-decoration:none;color:var(--ink);font-size:13px;font-weight:600;transition:all 0.25s;flex-shrink:0;white-space:nowrap;}
-        .social-btn:hover{transform:translateY(-3px);border-color:var(--acc);box-shadow:0 6px 20px var(--shadow);}
-        .social-icon{font-size:10px;font-weight:800;letter-spacing:0.05em;color:var(--ink3);}
+        /* ── SOCIAL MARQUEE ── */
+        .social-strip{
+          padding:6px 0 6px;border-bottom:1px solid var(--bd);
+          position:relative;overflow:visible;
+        }
+        .social-strip-inner{
+          overflow:hidden;
+          padding:14px 0;
+          position:relative;
+        }
+        .social-strip-inner::before,.social-strip-inner::after{
+          content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2;pointer-events:none;
+        }
+        .social-strip-inner::before{left:0;background:linear-gradient(to right,var(--bg),transparent);}
+        .social-strip-inner::after{right:0;background:linear-gradient(to left,var(--bg),transparent);}
+        .social-track{
+          display:flex;gap:10px;width:max-content;
+          animation:pingPong 22s ease-in-out infinite alternate;
+        }
+        .social-track:hover{animation-play-state:paused;}
+        @keyframes pingPong{
+          0%{transform:translateX(0);}
+          100%{transform:translateX(calc(-100% + 100vw - 160px));}
+        }
+        .social-btn{
+          display:flex;align-items:center;gap:8px;padding:9px 16px;
+          background:var(--bg2);border:1px solid var(--bd);border-radius:100px;
+          text-decoration:none;color:var(--ink);font-size:13px;font-weight:600;
+          transition:transform .25s,border-color .25s,box-shadow .25s;
+          flex-shrink:0;white-space:nowrap;
+        }
+        .social-btn:hover{transform:translateY(-4px);border-color:var(--acc);box-shadow:0 8px 24px var(--shadow);}
+        .social-icon{font-size:10px;font-weight:800;letter-spacing:.05em;color:var(--ink3);}
         .social-handle{font-size:11px;color:var(--ink2);}
+        @media(max-width:768px){.social-track{animation-duration:16s;}}
 
         /* ── SECTION ── */
         .sec{padding-top:76px;padding-bottom:76px;border-bottom:1px solid var(--bd);}
@@ -973,6 +1000,9 @@ export default function Home() {
         .gh-lang-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
         @media(max-width:580px){.gh-repos-grid{grid-template-columns:1fr;}}
 
+        /* Mobile: hide scroll dots on desktop */
+        .mobile-scroll-hint{display:none;}
+
         /* ── SKELETON LOADER ── */
         .gh-repo-skeleton{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:8px;}
         .skel{background:linear-gradient(90deg,var(--bd) 25%,var(--bg2) 50%,var(--bd) 75%);background-size:200% 100%;animation:skelShimmer 1.4s ease infinite;border-radius:4px;}
@@ -1126,8 +1156,20 @@ export default function Home() {
           .goals-grid{grid-template-columns:1fr;gap:12px;}
           .goal-card{padding:20px;}
 
-          .proj-grid{grid-template-columns:1fr;}
-          .cert-grid{grid-template-columns:1fr;}
+          /* Mobile carousel for projects, certs, gallery */
+          .proj-grid{display:flex;overflow-x:auto;gap:14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:16px;scrollbar-width:none;}
+          .proj-grid::-webkit-scrollbar{display:none;}
+          .proj-grid .proj-card{min-width:82vw;max-width:82vw;scroll-snap-align:start;flex-shrink:0;}
+          .cert-grid{display:flex;overflow-x:auto;gap:14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:16px;scrollbar-width:none;}
+          .cert-grid::-webkit-scrollbar{display:none;}
+          .cert-grid .cert-card{min-width:78vw;max-width:78vw;scroll-snap-align:start;flex-shrink:0;}
+          .gallery-grid{display:flex;overflow-x:auto;gap:10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:12px;scrollbar-width:none;}
+          .gallery-grid::-webkit-scrollbar{display:none;}
+          .gallery-grid .gallery-item{min-width:72vw;max-width:72vw;scroll-snap-align:start;flex-shrink:0;}
+          /* Scroll dots indicators */
+          .mobile-scroll-hint{display:flex!important;justify-content:center;gap:5px;margin-top:10px;}
+          .mobile-scroll-hint span{width:6px;height:6px;border-radius:50%;background:var(--bd);}
+          .mobile-scroll-hint span.active{background:var(--acc);}
 
           .contact-grid{gap:32px;}
           .comments-list{max-height:320px;}
@@ -1261,16 +1303,19 @@ export default function Home() {
           </div>
         </div>
 
-        {/* SOCIAL STRIP */}
-        <div className="wrap social-strip" data-reveal>
-          <span className="social-label">{tx.socialLabel}</span>
-          {socials.map(s=>(
-            <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" className="social-btn">
-              <span className="social-icon">{s.icon}</span>
-              <span>{s.name}</span>
-              <span className="social-handle">{s.handle}</span>
-            </a>
-          ))}
+        {/* SOCIAL MARQUEE */}
+        <div className="social-strip" data-reveal>
+          <div className="social-strip-inner">
+            <div className="social-track">
+              {socials.map(s=>(
+                <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" className="social-btn">
+                  <span className="social-icon">{s.icon}</span>
+                  <span>{s.name}</span>
+                  <span className="social-handle">{s.handle}</span>
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* ABOUT + TIMELINE */}
@@ -1450,6 +1495,10 @@ export default function Home() {
               );
             })}
           </div>
+          {/* Mobile scroll indicator */}
+          <div className="mobile-scroll-hint">
+            {projects.length > 0 && projects.map((_,i)=><span key={i}/>)}
+          </div>
         </section>
 
         {/* CERTIFICATES */}
@@ -1473,6 +1522,9 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+          <div className="mobile-scroll-hint">
+            {certificates.length > 0 && certificates.map((_,i)=><span key={i}/>)}
           </div>
         </section>
 
@@ -1513,6 +1565,10 @@ export default function Home() {
                 <a href="/submit-photo" target="_blank" className="gallery-upload-link">{tx.galleryUpload}</a>
               </div>
             )}
+          </div>
+          <div className="mobile-scroll-hint">
+            {(communityPhotos.length + (profileImage ? 1 : 0)) > 0 &&
+              Array.from({length: communityPhotos.length + (profileImage ? 1 : 0)}).map((_,i)=><span key={i}/>)}
           </div>
         </section>
 
