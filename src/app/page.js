@@ -32,14 +32,17 @@ export default function Home() {
   const [aboutVisible, setAboutVisible] = useState(false);
   const [loopName, setLoopName] = useState('Auvarose');
   const [ghRepos, setGhRepos] = useState([]);
-  const [ghStatus, setGhStatus] = useState({ detail: 'my-portfolio', since: '' });
+  const [ghStatus, setGhStatus] = useState({ detail: 'my-portfolio', since: '', online: false });
   const [likeCount, setLikeCount] = useState(0);
   const [liked, setLiked] = useState(false);
   const [likeAnim, setLikeAnim] = useState(false);
+  const [likeId, setLikeId] = useState('');
+  const [updateMsg, setUpdateMsg] = useState('');
   const [commentReplies, setCommentReplies] = useState({});
   const [replyInput, setReplyInput] = useState({});
   const [replyOpen, setReplyOpen] = useState({});
   const [communityPhotos, setCommunityPhotos] = useState([]);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoForm, setPhotoForm] = useState({ name:'', caption:'' });
   const [photoFile, setPhotoFile] = useState(null);
   const [photoSubmitDone, setPhotoSubmitDone] = useState(false);
@@ -64,6 +67,11 @@ export default function Home() {
     mocha:    { darkBg:'#1c1510', darkBg2:'#2a1e14', lightBg:'#faf3e8',  lightBg2:'#ede0cc' },
     midnight: { darkBg:'#0a0a14', darkBg2:'#12121f', lightBg:'#f0eeff',  lightBg2:'#e3ddff' },
     rose_bg:  { darkBg:'#180d12', darkBg2:'#25101a', lightBg:'#fff0f4',  lightBg2:'#ffe0ea' },
+    ash:      { darkBg:'#141414', darkBg2:'#1f1f1f', lightBg:'#f5f5f5',  lightBg2:'#ebebeb' },
+    obsidian: { darkBg:'#0c0c0c', darkBg2:'#181818', lightBg:'#fffde8',  lightBg2:'#fff9cc' },
+    aurora:   { darkBg:'#060d14', darkBg2:'#0d1a24', lightBg:'#e8fff9',  lightBg2:'#ccfff0' },
+    sangria:  { darkBg:'#1a0a0a', darkBg2:'#2a1010', lightBg:'#fff3ee',  lightBg2:'#ffe5d8' },
+    dusk:     { darkBg:'#120d06', darkBg2:'#1e1508', lightBg:'#fff8f0',  lightBg2:'#ffecda' },
   };
   const FONTS = {
     fraunces:  { heading:"'Fraunces',serif",           body:"'Plus Jakarta Sans',sans-serif" },
@@ -139,11 +147,11 @@ export default function Home() {
     };
     const delay = setTimeout(tick, 600);
     return () => clearTimeout(delay);
-  }, [pageReady, isID]);  
+  }, [pageReady, isID]);
 
   // ── LOOPING AUVAROSE name variants ──
   useEffect(() => {
-    const variants = ['Auvarose', 'Turu', 'MC', 'Gabut', 'Py', 'Auvarose'];
+    const variants = ['Auvarose', 'Aura✦', 'Builder', 'Developer', 'Learner', 'Auvarose'];
     let idx = 0;
     let charIdx = variants[0].length;
     let deleting = true;
@@ -319,17 +327,37 @@ export default function Home() {
       await Promise.all([loadCerts(), loadProjects(), loadViews(), loadComments(), loadProfileImage()]);
       logVisitor(); // non-blocking, fire and forget
 
+      // Listen for theme updates from admin (realtime)
+      const channel = supabase
+        .channel('settings-watch')
+        .on('postgres_changes', { event:'UPDATE', schema:'public', table:'settings', filter:'key=eq.last_update' }, (payload) => {
+          try {
+            const info = JSON.parse(payload.new.value);
+            setUpdateMsg(info.msg || '🔄 Tema diperbarui');
+            setTimeout(() => window.location.reload(), 3500);
+          } catch(_) {}
+        })
+        .subscribe();
+
       // Load approved community photos
       supabase.from('user_photos').select('*').eq('approved',true).order('created_at',{ascending:false}).then(({data})=>{
         if (data) setCommunityPhotos(data);
       });
 
-      // Load like count
-      supabase.from('views').select('count').eq('slug','likes').single().then(({data})=>{
-        if (data) setLikeCount(data.count||0);
+      // Load like count from dedicated likes table
+      supabase.from('likes').select('count', { count:'exact', head:true }).then(({count})=>{
+        setLikeCount(count||0);
       });
-      // Check if user already liked
-      if (typeof localStorage !== 'undefined' && localStorage.getItem('site_liked')) setLiked(true);
+      // Generate stable device ID and check if already liked
+      let devId = typeof localStorage !== 'undefined' ? localStorage.getItem('_dev_id') : null;
+      if (!devId) {
+        devId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        if (typeof localStorage !== 'undefined') localStorage.setItem('_dev_id', devId);
+      }
+      setLikeId(devId);
+      supabase.from('likes').select('id').eq('device_id', devId).single().then(({data})=>{
+        if (data) setLiked(true);
+      }).catch(()=>{});
 
       // Load replies
       supabase.from('replies').select('*').order('created_at',{ascending:true}).then(({data})=>{
@@ -345,13 +373,17 @@ export default function Home() {
       fetch('https://api.github.com/users/auraauvarose/events/public?per_page=10')
         .then(r => r.json()).then(events => {
           if (!Array.isArray(events)) return;
+          // Find most recent push
           const push = events.find(e => e.type === 'PushEvent');
-          if (!push) return;
+          if (!push) { setGhStatus({ detail: null, since: null, online: false }); return; }
           const repo = (push.repo?.name || '').split('/')[1] || 'repository';
           const msg  = push.payload?.commits?.[0]?.message || 'Commit terbaru';
           const mins = Math.round((Date.now() - new Date(push.created_at)) / 60000);
           const ago  = mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins/60)}h ago` : `${Math.round(mins/1440)}d ago`;
-          setGhStatus({ detail: repo, since: ago, msg: msg.split('\n')[0].slice(0,60) });
+          // Only show "Online" if pushed within last 60 minutes
+          // Show online if VSCode was open recently (pushed within 8h)
+          const isRecent = mins < 480;
+          setGhStatus({ detail: repo, since: ago, msg: msg.split('\n')[0].slice(0,60), online: isRecent });
         }).catch(()=>{});
       setTimeout(() => setPageReady(true), 300);
     };
@@ -378,15 +410,18 @@ export default function Home() {
   };
 
   const handleLike = async () => {
-    if (liked) return;
+    if (liked || !likeId) return;
     setLiked(true);
     setLikeAnim(true);
     setTimeout(() => setLikeAnim(false), 800);
-    localStorage.setItem('site_liked', '1');
-    const { data } = await supabase.from('views').select('count').eq('slug','likes').single();
-    const n = (data?.count || 0) + 1;
-    setLikeCount(n);
-    await supabase.from('views').upsert({ slug:'likes', count:n }, { onConflict:'slug' });
+    const { error } = await supabase.from('likes').insert([{ device_id: likeId }]);
+    if (!error) {
+      const { count } = await supabase.from('likes').select('count', { count:'exact', head:true });
+      setLikeCount(count||0);
+    } else {
+      // Already liked from another session
+      setLiked(true);
+    }
   };
 
   const submitPhoto = async (e) => {
@@ -488,6 +523,25 @@ export default function Home() {
     footerViews: isID ? 'Website ini telah dibuka' : 'This site has been visited',
     footerTimes: isID ? 'kali' : 'times',
     footerMade: isID ? 'Dibuat dengan Next.js & Supabase' : 'Made with Next.js & Supabase',
+    galleryEyebrow: isID ? 'GALERI FOTO' : 'PHOTO GALLERY',
+    galleryTitle: isID ? 'Momen & Kenangan' : 'Moments & Memories',
+    galleryCta: isID ? '📷 Kirim Fotomu →' : '📷 Send Your Photo →',
+    galleryEmpty: isID ? 'Belum ada foto.' : 'No photos yet.',
+    galleryUpload: isID ? 'Jadilah yang pertama kirim foto →' : 'Be the first to send a photo →',
+    replyOpen: isID ? '💬 Balas' : '💬 Reply',
+    replyClose: isID ? '✕ Tutup' : '✕ Close',
+    replyNamePh: isID ? 'Nama kamu...' : 'Your name...',
+    replyMsgPh: isID ? 'Balasan...' : 'Reply...',
+    replySend: isID ? 'Kirim' : 'Send',
+    likeLabel: isID ? 'Suka website ini?' : 'Like this website?',
+    likedLabel: isID ? 'Terima kasih!' : 'Thank you!',
+    likeSubLabel: isID ? 'orang menyukai ini' : 'people liked this',
+    currentActivity: isID ? 'Aktivitas Saat Ini' : 'Current Activity',
+    onlineLabel: isID ? '🟢 Online' : '🟢 Online',
+    offlineLabel: isID ? '⚫ Offline' : '⚫ Offline',
+    recentRepos: isID ? 'Repositori Terbaru' : 'Recent Repositories',
+    viewAll: isID ? 'Lihat semua →' : 'View all →',
+    discWorkspace: isID ? 'Workspace: my-portfolio' : 'Workspace: my-portfolio',
   };
 
   const socials = [
@@ -496,7 +550,6 @@ export default function Home() {
     { icon: 'LI', name: 'LinkedIn', url: 'https://linkedin.com/in/USERNAME', handle: 'Belum Ada' },
     { icon: '✉', name: 'Email', url: 'mailto:auraauvaroseendica@gmail.com', handle: 'auraauvaroseendica@gmail.com' },
     { icon: 'DC', name: 'Discord', url: 'https://discord.com/users/862306063054667786', handle: '@Rur^a!' },
-    { icon: 'Tiktok', name: 'TikTok', url: 'https://www.tiktok.com/@au.rose', handle: '@au.rose' },
   ];
 
   const skills = [
@@ -627,6 +680,22 @@ export default function Home() {
         .rw:not(.dark) .social-btn{box-shadow:0 1px 6px rgba(0,0,0,0.06);}
 
         /* ── DARK MODE ORBS ── */
+        /* ── UPDATE BANNER ── */
+        .update-banner{
+          position:fixed;top:0;left:0;right:0;z-index:999;
+          background:var(--acc);color:#0d0d0d;
+          display:flex;align-items:center;justify-content:center;gap:8px;
+          padding:10px 20px;font-size:13px;font-weight:700;
+          animation:slideDown .4s cubic-bezier(.22,1,.36,1);
+        }
+        @keyframes slideDown{from{transform:translateY(-100%);}to{transform:translateY(0);}}
+        .update-icon{font-size:16px;}
+        .update-progress{
+          position:absolute;bottom:0;left:0;height:3px;background:rgba(0,0,0,.2);
+          animation:progressBar 3.5s linear forwards;
+        }
+        @keyframes progressBar{from{width:100%;}to{width:0%;}}
+
         .orb{
           position:fixed; border-radius:50%; pointer-events:none;
           filter:blur(90px); z-index:0; opacity:0;
@@ -926,7 +995,13 @@ export default function Home() {
 
         /* ── COMMUNITY GALLERY ── */
         .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
-        .gallery-item{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1;background:var(--bg2);}
+        .gallery-item{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1;background:var(--bg2);cursor:pointer;}
+        .gallery-modal{background:var(--bg);border:1px solid var(--bd);border-radius:20px;overflow:hidden;max-width:480px;width:90vw;position:relative;}
+        .gallery-modal-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;}
+        .gallery-modal-info{padding:16px 20px;}
+        .gallery-modal-name{font-size:16px;font-weight:800;color:var(--ink);}
+        .gallery-modal-caption{font-size:13px;color:var(--ink2);margin-top:4px;line-height:1.5;}
+        .gallery-modal-ig{font-size:12px;color:var(--acc);font-weight:700;margin-top:6px;}
         .gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
         .gallery-item:hover img{transform:scale(1.05);}
         .gallery-overlay{position:absolute;bottom:0;left:0;right:0;padding:10px 12px;background:linear-gradient(transparent,rgba(0,0,0,.65));opacity:0;transition:opacity .3s;}
@@ -1108,6 +1183,15 @@ export default function Home() {
           <div className="loader-text">{isID ? 'Memuat...' : 'Loading...'}</div>
         </div>
         {/* DARK MODE ORBS */}
+        {/* UPDATE BANNER */}
+        {updateMsg && (
+          <div className="update-banner">
+            <span className="update-icon">✨</span>
+            <span>{updateMsg} — halaman akan dimuat ulang...</span>
+            <div className="update-progress"/>
+          </div>
+        )}
+
         <div className="orb orb-1" />
         <div className="orb orb-2" />
         <div className="orb orb-3" />
@@ -1262,7 +1346,7 @@ export default function Home() {
           {/* ── DISCORD ACTIVITY STATUS ── */}
           <div className="disc-block" data-reveal>
             <div className="disc-head-row">
-              <span className="disc-label-text">Current Activity</span>
+              <span className="disc-label-text">{tx.currentActivity}</span>
               {ghStatus.since && <span className="disc-since">{ghStatus.since}</span>}
             </div>
             <div className="disc-card">
@@ -1275,9 +1359,12 @@ export default function Home() {
               <div className="disc-info">
                 <div className="disc-app-name">Visual Studio Code</div>
                 <div className="disc-detail-line">Editing <strong>{ghStatus.detail || 'my-portfolio'}</strong></div>
-                <div className="disc-workspace">Workspace: my-portfolio</div>
+                <div className="disc-workspace">{tx.discWorkspace}</div>
               </div>
-              <span className="disc-online-badge">🟢 Online</span>
+              {ghStatus.online
+                ? <span className="disc-online-badge">{tx.onlineLabel}</span>
+                : <span className="disc-online-badge" style={{color:'var(--ink3)',background:'var(--bg)',border:'1px solid var(--bd)'}}>{tx.offlineLabel}</span>
+              }
             </div>
           </div>
 
@@ -1297,8 +1384,8 @@ export default function Home() {
           {/* ── RECENT REPOS ── */}
           <div className="gh-repos-block" data-reveal>
             <div className="gh-repos-hd">
-              <span className="gh-repos-title">Repositori Terbaru</span>
-              <a href="https://github.com/auraauvarose" target="_blank" rel="noopener noreferrer" className="gh-repos-link">Lihat semua →</a>
+              <span className="gh-repos-title">{tx.recentRepos}</span>
+              <a href="https://github.com/auraauvarose" target="_blank" rel="noopener noreferrer" className="gh-repos-link">{tx.viewAll}</a>
             </div>
             {ghRepos.length === 0 ? (
               <div className="gh-repos-grid">
@@ -1392,15 +1479,15 @@ export default function Home() {
         <section className="wrap sec" id="gallery">
           <div className="sec-head" data-reveal>
             <div>
-              <p className="eyebrow">GALERI FOTO</p>
-              <h2 className="sec-title">Momen &<br/>Kenangan</h2>
+              <p className="eyebrow">{tx.galleryEyebrow}</p>
+              <h2 className="sec-title">{isID?"Momen &":"Moments &"}<br/>{isID?"Kenangan":"Memories"}</h2>
             </div>
-            <a href="/submit-photo" target="_blank" className="gallery-cta-btn">📷 Kirim Fotomu →</a>
+            <a href="/submit-photo" target="_blank" className="gallery-cta-btn">{tx.galleryCta}</a>
           </div>
           <div className="gallery-grid" data-reveal>
             {/* Admin personal photos first (profileImage as first item if exists) */}
             {profileImage && (
-              <div className="gallery-item gallery-item-featured">
+              <div className="gallery-item gallery-item-featured" onClick={()=>setSelectedPhoto({image_url:profileImage, sender_name:'Aura Auvarose', caption:'', badge:'Admin'})}>
                 <img src={profileImage} alt="Aura Auvarose"/>
                 <div className="gallery-overlay">
                   <div className="gallery-badge">📌 Admin</div>
@@ -1410,7 +1497,7 @@ export default function Home() {
             )}
             {/* Community photos (approved) */}
             {communityPhotos.map(p=>(
-              <div key={p.id} className="gallery-item">
+              <div key={p.id} className="gallery-item" onClick={()=>setSelectedPhoto(p)}>
                 <img src={p.image_url} alt={p.sender_name}/>
                 <div className="gallery-overlay">
                   <div className="gallery-name">{p.sender_name}</div>
@@ -1421,8 +1508,8 @@ export default function Home() {
             {!profileImage && communityPhotos.length === 0 && (
               <div className="gallery-empty">
                 <span style={{fontSize:'40px'}}>📸</span>
-                <p>Belum ada foto.</p>
-                <a href="/submit-photo" target="_blank" className="gallery-upload-link">Jadilah yang pertama kirim foto →</a>
+                <p>{tx.galleryEmpty}</p>
+                <a href="/submit-photo" target="_blank" className="gallery-upload-link">{tx.galleryUpload}</a>
               </div>
             )}
           </div>
@@ -1431,7 +1518,7 @@ export default function Home() {
         {/* CONTACT */}
         <section className="wrap sec" id="contact">
           <div className="sec-head" data-reveal>
-            <div><p className="eyebrow">{tx.contactEyebrow}</p><h2 className="sec-title">Tinggalkan<br/>Pesan</h2></div>
+            <div><p className="eyebrow">{tx.contactEyebrow}</p><h2 className="sec-title" dangerouslySetInnerHTML={{__html: tx.contactTitle.replace("\n","<br/>")}} /></div>
           </div>
           <div className="contact-grid">
             <div data-reveal>
@@ -1467,14 +1554,14 @@ export default function Home() {
                       ))}
                       <div className="reply-toggle">
                         <button className="reply-btn" onClick={()=>setReplyOpen(prev=>({...prev,[c.id]:!prev[c.id]}))}>
-                          {replyOpen[c.id] ? '✕ Tutup' : `💬 Balas${(commentReplies[c.id]||[]).length>0?' ('+commentReplies[c.id].length+')':''}`}
+                          {replyOpen[c.id] ? tx.replyClose : `${tx.replyOpen}${(commentReplies[c.id]||[]).length>0?' ('+commentReplies[c.id].length+')':''}`}
                         </button>
                       </div>
                       {replyOpen[c.id] && (
                         <div className="reply-form">
-                          <input className="reply-input" placeholder="Nama kamu..." value={replyInput[`${c.id}_name`]||''} onChange={e=>setReplyInput(prev=>({...prev,[`${c.id}_name`]:e.target.value}))}/>
-                          <input className="reply-input" placeholder="Balasan..." value={replyInput[c.id]||''} onChange={e=>setReplyInput(prev=>({...prev,[c.id]:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&submitReply(c.id, replyInput[`${c.id}_name`])}/>
-                          <button className="reply-send" onClick={()=>submitReply(c.id, replyInput[`${c.id}_name`])}>Kirim</button>
+                          <input className="reply-input" placeholder={tx.replyNamePh} value={replyInput[`${c.id}_name`]||''} onChange={e=>setReplyInput(prev=>({...prev,[`${c.id}_name`]:e.target.value}))}/>
+                          <input className="reply-input" placeholder={tx.replyMsgPh} value={replyInput[c.id]||''} onChange={e=>setReplyInput(prev=>({...prev,[c.id]:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&submitReply(c.id, replyInput[`${c.id}_name`])}/>
+                          <button className="reply-send" onClick={()=>submitReply(c.id, replyInput[`${c.id}_name`])}>{tx.replySend}</button>
                         </div>
                       )}
                     </div>
@@ -1493,9 +1580,9 @@ export default function Home() {
           <div className="like-wrap">
             <button className={`like-btn${liked?' liked':''}${likeAnim?' anim':''}`} onClick={handleLike} disabled={liked}>
               <span className="like-heart">{liked ? '❤️' : '🤍'}</span>
-              <span className="like-label">{liked ? 'Terima kasih!' : 'Suka website ini?'}</span>
+              <span className="like-label">{liked ? tx.likedLabel : tx.likeLabel}</span>
             </button>
-            <div className="like-count"><span className="like-num">{likeCount}</span><span className="like-sub">orang menyukai ini</span></div>
+            <div className="like-count"><span className="like-num">{likeCount}</span><span className="like-sub">{tx.likeSubLabel}</span></div>
           </div>
         </div>
 
@@ -1518,6 +1605,22 @@ export default function Home() {
         </footer>
 
         {/* CERT MODAL */}
+        {/* ── GALLERY PHOTO MODAL ── */}
+        {selectedPhoto && (
+          <div className="modal-overlay" onClick={()=>setSelectedPhoto(null)}>
+            <div className="gallery-modal" onClick={e=>e.stopPropagation()}>
+              <img src={selectedPhoto.image_url} alt={selectedPhoto.sender_name} className="gallery-modal-img"/>
+              <div className="gallery-modal-info">
+                {selectedPhoto.badge && <span className="gallery-badge" style={{marginBottom:'6px',display:'inline-block'}}>📌 {selectedPhoto.badge}</span>}
+                <div className="gallery-modal-name">{selectedPhoto.sender_name}</div>
+                {selectedPhoto.caption && <div className="gallery-modal-caption">{selectedPhoto.caption}</div>}
+                {selectedPhoto.instagram && <div className="gallery-modal-ig">@{selectedPhoto.instagram}</div>}
+              </div>
+              <button className="modal-close" onClick={()=>setSelectedPhoto(null)}>✕</button>
+            </div>
+          </div>
+        )}
+
         {selectedCert && (
           <div className="modal-overlay" onClick={()=>setSelectedCert(null)}>
             <div className="modal-box" onClick={e=>e.stopPropagation()}>
@@ -1573,7 +1676,7 @@ export default function Home() {
                 onChange={e => setAiInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendAI()}
               />
-              <button className="ai-send" onClick={sendAI} disabled={aiLoading}>Kirim</button>
+              <button className="ai-send" onClick={sendAI} disabled={aiLoading}>{tx.replySend}</button>
             </div>
           </div>
         )}

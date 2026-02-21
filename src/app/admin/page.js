@@ -42,6 +42,13 @@ export default function AdminPage() {
   // User photos
   const [userPhotos, setUserPhotos] = useState([]);
   const [photoSuccess, setPhotoSuccess] = useState('');
+  // Profile photo
+  const [profilePreview, setProfilePreview] = useState('');
+  const [profileFile, setProfileFile] = useState(null);
+  const [profileUploading, setProfileUploading] = useState(false);
+  const profileFileRef = useRef();
+  // Update broadcast
+  const [updateBanner, setUpdateBanner] = useState('');
 
   const d = isDark;
 
@@ -64,9 +71,14 @@ export default function AdminPage() {
     { id: 'navy',    name: 'Navy / Krim',       darkBg:'#0d1117', lightBg:'#fdf6e3', desc:'Dev / GitHub vibes' },
     { id: 'forest',  name: 'Hutan / Putih',     darkBg:'#0d1a0f', lightBg:'#f0f7f0', desc:'Natural · Fresh' },
     { id: 'slate',   name: 'Batu Tulis / Perak',darkBg:'#0f1117', lightBg:'#f8f9fb', desc:'Cool · Profesional' },
-    { id: 'mocha',   name: 'Mocha / Krem',      darkBg:'#1c1510', lightBg:'#faf3e8', desc:'Coffee · Cozy' },
-    { id: 'midnight',name: 'Midnight / Lavender',darkBg:'#0a0a14', lightBg:'#f0eeff', desc:'Night · Mystis' },
-    { id: 'rose_bg', name: 'Mawar / Blush',     darkBg:'#180d12', lightBg:'#fff0f4', desc:'Romantic · Soft' },
+    { id: 'mocha',   name: 'Mocha / Krem',       darkBg:'#1c1510', lightBg:'#faf3e8', desc:'Coffee · Cozy' },
+    { id: 'midnight',name: 'Midnight / Lavender', darkBg:'#0a0a14', lightBg:'#f0eeff', desc:'Night · Mystis' },
+    { id: 'rose_bg', name: 'Mawar / Blush',       darkBg:'#180d12', lightBg:'#fff0f4', desc:'Romantic · Soft' },
+    { id: 'ash',     name: 'Abu / Putih Bersih',  darkBg:'#141414', lightBg:'#f5f5f5', desc:'Minimalis · Modern' },
+    { id: 'obsidian',name: 'Obsidian / Emas',     darkBg:'#0c0c0c', lightBg:'#fffde8', desc:'Premium · Luxury' },
+    { id: 'aurora',  name: 'Aurora / Neon',       darkBg:'#060d14', lightBg:'#e8fff9', desc:'Futuristik · Vivid' },
+    { id: 'sangria', name: 'Sangria / Peach',     darkBg:'#1a0a0a', lightBg:'#fff3ee', desc:'Bold · Hangat' },
+    { id: 'dusk',    name: 'Senja / Jingga',      darkBg:'#120d06', lightBg:'#fff8f0', desc:'Golden hour · Damai' },
   ];
 
   const FONTS = [
@@ -119,6 +131,7 @@ export default function AdminPage() {
     if (up.data) setUserPhotos(up.data);
     if (st.data) st.data.forEach(row => {
       if (row.key === 'theme_color') setThemeColor(row.value);
+      if (row.key === 'profile_image') setProfilePreview(row.value);
       if (row.key === 'bg_theme') setBgTheme(row.value);
       if (row.key === 'font_choice') setFontChoice(row.value);
       if (row.key === 'music_url') setMusicUrl(row.value);
@@ -222,8 +235,29 @@ export default function AdminPage() {
   const getOS = (ua='') => /windows/i.test(ua)?'Windows':/android/i.test(ua)?'Android':/iphone|ipad/i.test(ua)?'iOS':/mac/i.test(ua)?'macOS':/linux/i.test(ua)?'Linux':'OS lain';
 
   // ── APPEARANCE ──
-  const handleThemeChange = async (color) => { setThemeColor(color); await saveSetting('theme_color', color); toast(setSettingsSaved, '✓ Warna tersimpan!'); };
-  const handleBgThemeChange = async (id) => { setBgTheme(id); await saveSetting('bg_theme', id); toast(setSettingsSaved, '✓ Background tersimpan!'); };
+  const handleProfileUpload = async () => {
+    if (!profileFile) return;
+    setProfileUploading(true);
+    try {
+      const ext = profileFile.name.split('.').pop();
+      const fname = `profile_${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('certificates').upload(fname, profileFile, {upsert:false});
+      if (error) throw error;
+      const url = supabase.storage.from('certificates').getPublicUrl(fname).data.publicUrl;
+      await saveSetting('profile_image', url);
+      setProfilePreview(url);
+      setProfileFile(null);
+      toast(setSettingsSaved, '✓ Foto profil tersimpan!');
+      await broadcastUpdate('👤 Foto profil diperbarui');
+    } catch(err) { alert('Upload gagal: ' + err.message); }
+    setProfileUploading(false);
+  };
+
+  const broadcastUpdate = async (msg) => {
+    await saveSetting('last_update', JSON.stringify({ msg, ts: Date.now() }));
+  };
+  const handleThemeChange = async (color) => { setThemeColor(color); await saveSetting('theme_color', color); await broadcastUpdate('🎨 Tema warna diperbarui'); toast(setSettingsSaved, '✓ Warna tersimpan!'); };
+  const handleBgThemeChange = async (id) => { setBgTheme(id); await saveSetting('bg_theme', id); await broadcastUpdate('🖼 Background tema diperbarui'); toast(setSettingsSaved, '✓ Background tersimpan!'); };
   const handleFontChange = async (id) => { setFontChoice(id); await saveSetting('font_choice', id); toast(setSettingsSaved, '✓ Font tersimpan!'); };
 
   // ── MUSIC ──
@@ -647,6 +681,42 @@ export default function AdminPage() {
             <div style={{padding:'24px 0'}}>
               {settingsSaved && <div className="toast" style={{marginBottom:'16px'}}>{settingsSaved}</div>}
 
+              {/* ── FOTO PROFIL ── */}
+              <div className="panel" style={{marginBottom:'20px'}}>
+                <div className="panel-head"><h2 className="panel-title">👤 Foto Profil</h2></div>
+                <div style={{display:'flex',alignItems:'flex-start',gap:'20px',flexWrap:'wrap'}}>
+                  <div style={{flexShrink:0}}>
+                    {profilePreview
+                      ? <img src={profilePreview} style={{width:'90px',height:'90px',borderRadius:'12px',objectFit:'cover',border:'2px solid var(--bd)'}} alt="Profil"/>
+                      : <div style={{width:'90px',height:'90px',borderRadius:'12px',background:'var(--bg)',border:'2px dashed var(--bd)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'32px'}}>👤</div>
+                    }
+                  </div>
+                  <div style={{flex:1,minWidth:'200px',display:'flex',flexDirection:'column',gap:'10px'}}>
+                    <label style={{cursor:'pointer',display:'inline-flex',alignItems:'center',gap:'8px',padding:'10px 16px',background:'var(--bg2)',border:'1px solid var(--bd)',borderRadius:'10px',fontSize:'13px',fontWeight:'700',color:'var(--ink)',width:'fit-content'}}>
+                      📁 {profileFile ? profileFile.name : 'Pilih foto profil...'}
+                      <input ref={profileFileRef} type="file" accept="image/*" style={{display:'none'}} onChange={e=>{
+                        const f = e.target.files[0]; if(!f) return;
+                        setProfileFile(f);
+                        const r = new FileReader(); r.onload=ev=>setProfilePreview(ev.target.result); r.readAsDataURL(f);
+                      }}/>
+                    </label>
+                    <div style={{display:'flex',gap:'8px'}}>
+                      <button className="btn-add" onClick={handleProfileUpload} disabled={!profileFile||profileUploading}>
+                        {profileUploading ? 'Mengupload...' : '⬆ Upload & Simpan'}
+                      </button>
+                      {profilePreview && (
+                        <button className="btn-del" style={{padding:'8px 14px'}} onClick={async()=>{
+                          await saveSetting('profile_image',''); setProfilePreview(''); setProfileFile(null);
+                          if(profileFileRef.current) profileFileRef.current.value='';
+                          toast(setSettingsSaved,'✓ Foto profil dihapus');
+                        }}>🗑 Hapus</button>
+                      )}
+                    </div>
+                    <p style={{fontSize:'11px',color:'var(--ink2)',margin:0}}>Foto ini tampil di galeri halaman utama sebagai foto pribadimu.</p>
+                  </div>
+                </div>
+              </div>
+
               {/* ACCENT COLOR */}
               <div className="panel">
                 <div className="panel-head">
@@ -758,13 +828,15 @@ export default function AdminPage() {
                         <div className="ac-title">{photo.sender_name||'Anonim'}{photo.instagram&&<span style={{fontSize:'10px',color:'var(--acc)',marginLeft:'6px'}}>@{photo.instagram}</span>}</div>
                         <div className="ac-sub">{photo.caption?.slice(0,50)||''}</div>
                         <div style={{fontSize:'10px',color:'var(--ink3)',marginTop:'4px'}}>{new Date(photo.created_at).toLocaleDateString('id-ID')}</div>
-                        {photo.approved
-                          ? <div style={{fontSize:'11px',fontWeight:'700',color:'#16a34a',marginTop:'6px'}}>✓ Disetujui</div>
-                          : <div className="ac-actions">
-                              <button className="btn-edit" style={{background:'rgba(34,197,94,.1)',color:'#16a34a',borderColor:'rgba(34,197,94,.3)'}} onClick={()=>handleApprovePhoto(photo.id)}>✓ Setujui</button>
-                              <button className="btn-del" onClick={()=>handleRejectPhoto(photo.id)}>🗑 Tolak</button>
-                            </div>
-                        }
+                        <div className="ac-actions">
+                          {!photo.approved && (
+                            <button className="btn-edit" style={{background:'rgba(34,197,94,.1)',color:'#16a34a',borderColor:'rgba(34,197,94,.3)'}} onClick={()=>handleApprovePhoto(photo.id)}>✓ Setujui</button>
+                          )}
+                          {photo.approved && (
+                            <span style={{fontSize:'10px',fontWeight:'700',color:'#16a34a',padding:'3px 8px',background:'rgba(34,197,94,.1)',borderRadius:'6px'}}>✓ Live</span>
+                          )}
+                          <button className="btn-del" onClick={()=>handleRejectPhoto(photo.id)}>🗑 Hapus</button>
+                        </div>
                       </div>
                     </div>
                   ))}
