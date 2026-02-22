@@ -63,6 +63,11 @@ export default function AdminPage() {
     { id: 'gold',     name: 'Gold',       color: '#fbbf24', desc: 'Premium · Mewah' },
     { id: 'red',      name: 'Red Hot',    color: '#f43f5e', desc: 'Berani · Dramatis' },
     { id: 'indigo',   name: 'Indigo',     color: '#6366f1', desc: 'Deep · Profesional' },
+    { id: 'sage',    name: 'Soft Sage',  color: '#ACC8A2', desc: 'Natural · Botanical' },
+    { id: 'pumpkin', name: 'Pumpkin',    color: '#FD802E', desc: 'Vibrant · Bold' },
+    { id: 'honey',   name: 'Honey Tan',  color: '#E3C586', desc: 'Warm · Premium' },
+    { id: 'periwinkle', name: 'Periwinkle', color: '#DBD5F2', desc: 'Dreamy · Soft' },
+    { id: 'muted_violet', name: 'Muted Violet', color: '#544470', desc: 'Deep · Mystis' },
   ];
 
   const BG_THEMES = [
@@ -79,6 +84,10 @@ export default function AdminPage() {
     { id: 'aurora',  name: 'Aurora / Neon',       darkBg:'#060d14', lightBg:'#e8fff9', desc:'Futuristik · Vivid' },
     { id: 'sangria', name: 'Sangria / Peach',     darkBg:'#1a0a0a', lightBg:'#fff3ee', desc:'Bold · Hangat' },
     { id: 'dusk',    name: 'Senja / Jingga',      darkBg:'#120d06', lightBg:'#fff8f0', desc:'Golden hour · Damai' },
+    { id: 'sage_olive',   name: 'Sage / Deep Olive',      darkBg:'#1A2517', lightBg:'#ACC8A2', desc:'Natural · Botanical' },
+    { id: 'pumpkin_charcoal', name: 'Pumpkin / Charcoal', darkBg:'#233D4C', lightBg:'#FD802E', desc:'Bold · Industrial' },
+    { id: 'honey_black',  name: 'Honey Tan / Jet Black',  darkBg:'#171717', lightBg:'#E3C586', desc:'Warm · Premium' },
+    { id: 'periwinkle_violet', name: 'Periwinkle / Violet', darkBg:'#544470', lightBg:'#DBD5F2', desc:'Dreamy · Pastel' },
   ];
 
   const FONTS = [
@@ -87,6 +96,10 @@ export default function AdminPage() {
     { id: 'space',     name: 'Teknologi',    heading: 'Space Grotesk',      body: 'Space Grotesk',     desc: 'Geometric · Tech vibes' },
     { id: 'syne',      name: 'Avant-Garde',  heading: 'Syne',               body: 'DM Sans',           desc: 'Display bold · Kontemporer' },
     { id: 'cormorant', name: 'Elegan',       heading: 'Cormorant Garamond', body: 'Lato',              desc: 'High fashion · Halus' },
+    { id: 'sugo',      name: 'Display Bold', heading: 'Bebas Neue',         body: 'Inter',             desc: 'Ultra bold · Display (Sugo-style)' },
+    { id: 'wildcat',   name: 'Geometric',    heading: 'Teko',               body: 'Nunito',            desc: 'Condensed · Geometric (Wildcat-style)' },
+    { id: 'sugarpie',  name: 'Cursive',      heading: 'Pacifico',           body: 'Plus Jakarta Sans', desc: 'Playful · Script (Sugar Pie-style)' },
+    { id: 'tan',       name: 'Editorial+',   heading: 'Libre Caslon Display', body: 'Libre Caslon Text', desc: 'Wide · Editorial (Tan Headline-style)' },
   ];
 
   const DEFAULT_MUSIC = 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3';
@@ -295,7 +308,7 @@ export default function AdminPage() {
   };
 
   const css = `
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Fraunces:opsz,wght@9..144,900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Fraunces:opsz,wght@9..144,900&family=Bebas+Neue&family=Teko:wght@400;600;700&family=Pacifico&family=Libre+Caslon+Display&family=Libre+Caslon+Text:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap');
     *,*::before,*::after{box-sizing:border-box;}
     html{margin:0;padding:0;width:100%;scrollbar-width:none;}
     html::-webkit-scrollbar{display:none;}

@@ -1,6 +1,3 @@
-// src/app/api/test-env/route.js
-// File SEMENTARA untuk debug — hapus setelah AI berfungsi
-
 export async function GET() {
   const key = process.env.GEMINI_API_KEY;
 
@@ -41,3 +38,5 @@ export async function GET() {
     geminiError: geminiError || null,
   });
 }
+
+// ini untuk mengtes apakah API key sudah terbaca dan bisa dipakai untuk request ke Gemini. Hapus file ini setelah AI berfungsi.

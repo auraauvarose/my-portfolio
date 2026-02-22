@@ -74,8 +74,6 @@
 //   }
 // }
 
-// // perbaikan final
-
 
 import { NextResponse } from 'next/server';
 
@@ -88,9 +86,6 @@ export async function POST(req) {
       return NextResponse.json({ error: 'API Key tidak ditemukan' }, { status: 500 });
     }
 
-    // Normalisasi input: dukung kedua format
-    // - frontend lama: { messages: [{ role, content }, ...] }
-    // - frontend baru (opsional): { history, userMsg } already in Gemini format
     let contents = null;
     if (Array.isArray(body.messages)) {
       const messages = body.messages;
@@ -131,7 +126,6 @@ export async function POST(req) {
 
     if (!res.ok) {
       const errMsg = data?.error?.message || '';
-      // In development show full error details to help debugging
       if (process.env.NODE_ENV !== 'production' && data?.error) {
         return NextResponse.json({ reply: data.error.message || `Error ${res.status}`, error: data.error }, { status: res.status });
       }

@@ -72,6 +72,11 @@ export default function Home() {
     aurora:   { darkBg:'#060d14', darkBg2:'#0d1a24', lightBg:'#e8fff9',  lightBg2:'#ccfff0' },
     sangria:  { darkBg:'#1a0a0a', darkBg2:'#2a1010', lightBg:'#fff3ee',  lightBg2:'#ffe5d8' },
     dusk:     { darkBg:'#120d06', darkBg2:'#1e1508', lightBg:'#fff8f0',  lightBg2:'#ffecda' },
+    // ── New from TikTok palettes ──
+    sage_olive:         { darkBg:'#1A2517', darkBg2:'#243320', lightBg:'#ACC8A2',  lightBg2:'#9ab891' },
+    pumpkin_charcoal:   { darkBg:'#233D4C', darkBg2:'#1a2e39', lightBg:'#FFF0E6',  lightBg2:'#ffe0cc' },
+    honey_black:        { darkBg:'#171717', darkBg2:'#202020', lightBg:'#E3C586',  lightBg2:'#d4b06a' },
+    periwinkle_violet:  { darkBg:'#544470', darkBg2:'#3e3354', lightBg:'#DBD5F2',  lightBg2:'#ccc4eb' },
   };
   const FONTS = {
     fraunces:  { heading:"'Fraunces',serif",           body:"'Plus Jakarta Sans',sans-serif" },
@@ -79,6 +84,11 @@ export default function Home() {
     space:     { heading:"'Space Grotesk',sans-serif", body:"'Space Grotesk',sans-serif" },
     syne:      { heading:"'Syne',sans-serif",           body:"'DM Sans',sans-serif" },
     cormorant: { heading:"'Cormorant Garamond',serif",  body:"'Lato',sans-serif" },
+    // ── New from TikTok fonts ──
+    sugo:      { heading:"'Bebas Neue',sans-serif",            body:"'Inter',sans-serif" },
+    wildcat:   { heading:"'Teko',sans-serif",                  body:"'Nunito',sans-serif" },
+    sugarpie:  { heading:"'Pacifico',cursive",                 body:"'Plus Jakarta Sans',sans-serif" },
+    tan:       { heading:"'Libre Caslon Display',serif",       body:"'Libre Caslon Text',serif" },
   };
   const curBg   = BG_THEMES[bgTheme]   || BG_THEMES.default;
   const curFont = FONTS[fontChoice]     || FONTS.fraunces;
@@ -591,7 +601,7 @@ export default function Home() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,400;1,9..144,700&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;600;700;800&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,700;1,400&family=Lato:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,400;1,9..144,700&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;600;700;800&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,700;1,400&family=Lato:wght@400;700&family=Bebas+Neue&family=Teko:wght@400;600;700&family=Pacifico&family=Libre+Caslon+Display&family=Libre+Caslon+Text:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap');
         *,*::before,*::after{box-sizing:border-box;}
         html{
           margin:0;padding:0;width:100%;overflow-x:hidden;
@@ -798,12 +808,13 @@ export default function Home() {
         .social-strip-inner::after{right:0;background:linear-gradient(to left,var(--bg),transparent);}
         .social-track{
           display:flex;gap:10px;width:max-content;
+          padding:0 80px;
           animation:pingPong 22s ease-in-out infinite alternate;
         }
         .social-track:hover{animation-play-state:paused;}
         @keyframes pingPong{
           0%{transform:translateX(0);}
-          100%{transform:translateX(calc(-100% + 100vw - 160px));}
+          100%{transform:translateX(calc(-100% + 100vw));}
         }
         .social-btn{
           display:flex;align-items:center;gap:8px;padding:9px 16px;
