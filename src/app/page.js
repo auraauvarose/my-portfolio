@@ -43,6 +43,9 @@ export default function Home() {
   const [replyOpen, setReplyOpen] = useState({});
   const [communityPhotos, setCommunityPhotos] = useState([]);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [certActiveIdx, setCertActiveIdx] = useState(0);
+  const [projActiveIdx, setProjActiveIdx] = useState(0);
+  const [galleryActiveIdx, setGalleryActiveIdx] = useState(0);
   const [photoForm, setPhotoForm] = useState({ name:'', caption:'' });
   const [photoFile, setPhotoFile] = useState(null);
   const [photoSubmitDone, setPhotoSubmitDone] = useState(false);
@@ -54,6 +57,9 @@ export default function Home() {
   const audioRef = useRef(null);
   const themeBtnRef = useRef(null);
   const aiEndRef = useRef(null);
+  const certGridRef = useRef(null);
+  const projGridRef = useRef(null);
+  const galleryGridRef = useRef(null);
   const d = isDark;
   const isID = lang === 'id';
 
@@ -475,6 +481,32 @@ export default function Home() {
       if (wasPlaying) audioRef.current.play().catch(() => {});
     }
   }, [musicUrl]);
+
+  // ── CAROUSEL SCROLL DOTS ──
+  useEffect(() => {
+    const makeHandler = (ref, setter, total) => () => {
+      if (!ref.current || total === 0) return;
+      const el = ref.current;
+      const cardWidth = el.scrollWidth / total;
+      const idx = Math.round(el.scrollLeft / cardWidth);
+      setter(Math.min(idx, total - 1));
+    };
+    const cEl = certGridRef.current;
+    const pEl = projGridRef.current;
+    const gEl = galleryGridRef.current;
+    const cH = makeHandler(certGridRef, setCertActiveIdx, certificates.length);
+    const pH = makeHandler(projGridRef, setProjActiveIdx, projects.length);
+    const gTotal = communityPhotos.length + (profileImage ? 1 : 0);
+    const gH = makeHandler(galleryGridRef, setGalleryActiveIdx, gTotal);
+    if (cEl) cEl.addEventListener("scroll", cH, { passive: true });
+    if (pEl) pEl.addEventListener("scroll", pH, { passive: true });
+    if (gEl) gEl.addEventListener("scroll", gH, { passive: true });
+    return () => {
+      if (cEl) cEl.removeEventListener("scroll", cH);
+      if (pEl) pEl.removeEventListener("scroll", pH);
+      if (gEl) gEl.removeEventListener("scroll", gH);
+    };
+  }, [certificates, projects, communityPhotos, profileImage]);
 
   // ── TRANSLATIONS ──
   const tx = {
@@ -1178,9 +1210,9 @@ export default function Home() {
           .gallery-grid::-webkit-scrollbar{display:none;}
           .gallery-grid .gallery-item{min-width:72vw;max-width:72vw;scroll-snap-align:start;flex-shrink:0;}
           /* Scroll dots indicators */
-          .mobile-scroll-hint{display:flex!important;justify-content:center;gap:5px;margin-top:10px;}
-          .mobile-scroll-hint span{width:6px;height:6px;border-radius:50%;background:var(--bd);}
-          .mobile-scroll-hint span.active{background:var(--acc);}
+          .mobile-scroll-hint{display:flex!important;justify-content:center;gap:6px;margin-top:14px;align-items:center;}
+          .mobile-scroll-hint span{width:6px;height:6px;border-radius:50%;background:var(--bd);transition:background 0.3s ease,width 0.3s ease;display:inline-block;}
+          .mobile-scroll-hint span.active{background:var(--acc);width:20px;border-radius:4px;}
 
           .contact-grid{gap:32px;}
           .comments-list{max-height:320px;}
@@ -1483,7 +1515,7 @@ export default function Home() {
             <div><p className="eyebrow">{tx.projEyebrow}</p><h2 className="sec-title">{tx.projTitle}</h2></div>
             <span className="sec-num">0{projects.length}</span>
           </div>
-          <div className="proj-grid">
+          <div className="proj-grid" ref={projGridRef}>
             {projects.length === 0 ? (
               <div className="proj-empty">{tx.projEmpty}</div>
             ) : projects.map((p,i)=>{
@@ -1508,7 +1540,7 @@ export default function Home() {
           </div>
           {/* Mobile scroll indicator */}
           <div className="mobile-scroll-hint">
-            {projects.length > 0 && projects.map((_,i)=><span key={i}/>)}
+            {projects.length > 0 && projects.map((_,i)=><span key={i} className={i===projActiveIdx?'active':''}/>)}
           </div>
         </section>
 
@@ -1518,7 +1550,7 @@ export default function Home() {
             <div><p className="eyebrow">{tx.certEyebrow}</p><h2 className="sec-title">{tx.certTitle}</h2></div>
             <span className="sec-num">0{certificates.length}</span>
           </div>
-          <div className="cert-grid">
+          <div className="cert-grid" ref={certGridRef}>
             {certificates.length === 0 ? (
               <div className="cert-empty">{tx.certEmpty}</div>
             ) : certificates.map((cert,i)=>(
@@ -1535,7 +1567,7 @@ export default function Home() {
             ))}
           </div>
           <div className="mobile-scroll-hint">
-            {certificates.length > 0 && certificates.map((_,i)=><span key={i}/>)}
+            {certificates.length > 0 && certificates.map((_,i)=><span key={i} className={i===certActiveIdx?'active':''}/>)}
           </div>
         </section>
 
@@ -1548,7 +1580,7 @@ export default function Home() {
             </div>
             <a href="/submit-photo" target="_blank" className="gallery-cta-btn">{tx.galleryCta}</a>
           </div>
-          <div className="gallery-grid" data-reveal>
+          <div className="gallery-grid" data-reveal ref={galleryGridRef}>
             {/* Admin personal photos first (profileImage as first item if exists) */}
             {profileImage && (
               <div className="gallery-item gallery-item-featured" onClick={()=>setSelectedPhoto({image_url:profileImage, sender_name:'Aura Auvarose', caption:'', badge:'Admin'})}>
@@ -1579,7 +1611,7 @@ export default function Home() {
           </div>
           <div className="mobile-scroll-hint">
             {(communityPhotos.length + (profileImage ? 1 : 0)) > 0 &&
-              Array.from({length: communityPhotos.length + (profileImage ? 1 : 0)}).map((_,i)=><span key={i}/>)}
+              Array.from({length: communityPhotos.length + (profileImage ? 1 : 0)}).map((_,i)=><span key={i} className={i===galleryActiveIdx?'active':''}/>)}
           </div>
         </section>
 
