@@ -9,6 +9,7 @@ export default function AdminPage() {
   const [isDark, setIsDark] = useState(true);
   const [activeTab, setActiveTab] = useState('certs');
   const [isLoading, setIsLoading] = useState(false);
+  
   const [certificates, setCertificates] = useState([]);
   const [certForm, setCertForm] = useState({ image_url: '', title: '', issuer: '' });
   const [certFile, setCertFile] = useState(null);
@@ -17,6 +18,7 @@ export default function AdminPage() {
   const [certSuccess, setCertSuccess] = useState('');
   const [editingCert, setEditingCert] = useState(null);
   const certFileRef = useRef();
+  
   const [projects, setProjects] = useState([]);
   const [projForm, setProjForm] = useState({ title: '', description: '', tech_stack: '', github_url: '', demo_url: '', image_url: '' });
   const [projFile, setProjFile] = useState(null);
@@ -25,28 +27,36 @@ export default function AdminPage() {
   const [projSuccess, setProjSuccess] = useState('');
   const [editingProj, setEditingProj] = useState(null);
   const projFileRef = useRef();
+  
   const [comments, setComments] = useState([]);
   const [visitors, setVisitors] = useState([]);
   const [viewCount, setViewCount] = useState(0);
-  // Appearance
+  
+  // Appearance & Settings
   const [themeColor, setThemeColor] = useState('#d4eb00');
   const [bgTheme, setBgTheme] = useState('default');
   const [fontChoice, setFontChoice] = useState('fraunces');
+  const [defaultTheme, setDefaultTheme] = useState('dark');
+  const [bgAnimation, setBgAnimation] = useState('none');
   const [settingsSaved, setSettingsSaved] = useState('');
+  
   // Music
   const [musicUrl, setMusicUrl] = useState('https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3');
   const [musicFile, setMusicFile] = useState(null);
   const [musicUploading, setMusicUploading] = useState(false);
   const [musicSuccess, setMusicSuccess] = useState('');
   const musicFileRef = useRef();
+  
   // User photos
   const [userPhotos, setUserPhotos] = useState([]);
   const [photoSuccess, setPhotoSuccess] = useState('');
+  
   // Profile photo
   const [profilePreview, setProfilePreview] = useState('');
   const [profileFile, setProfileFile] = useState(null);
   const [profileUploading, setProfileUploading] = useState(false);
   const profileFileRef = useRef();
+  
   // Update broadcast
   const [updateBanner, setUpdateBanner] = useState('');
 
@@ -116,6 +126,9 @@ export default function AdminPage() {
     await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
   };
   const toast = (setter, msg) => { setter(msg); setTimeout(() => setter(''), 2500); };
+  const broadcastUpdate = async (msg) => {
+    await saveSetting('last_update', JSON.stringify({ msg, ts: Date.now() }));
+  };
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -139,16 +152,21 @@ export default function AdminPage() {
     if (cm.data) setComments(cm.data);
     if (vw.data) setViewCount(vw.data.count);
     if (vi.data) setVisitors(vi.data);
-    // user_photos - index 6
+    
     const up = await supabase.from('user_photos').select('*').order('created_at',{ascending:false});
     if (up.data) setUserPhotos(up.data);
-    if (st.data) st.data.forEach(row => {
-      if (row.key === 'theme_color') setThemeColor(row.value);
-      if (row.key === 'profile_image') setProfilePreview(row.value);
-      if (row.key === 'bg_theme') setBgTheme(row.value);
-      if (row.key === 'font_choice') setFontChoice(row.value);
-      if (row.key === 'music_url') setMusicUrl(row.value);
-    });
+    
+    if (st.data) {
+      st.data.forEach(row => {
+        if (row.key === 'theme_color') setThemeColor(row.value);
+        if (row.key === 'profile_image') setProfilePreview(row.value);
+        if (row.key === 'bg_theme') setBgTheme(row.value);
+        if (row.key === 'font_choice') setFontChoice(row.value);
+        if (row.key === 'music_url') setMusicUrl(row.value);
+        if (row.key === 'default_theme') setDefaultTheme(row.value);
+        if (row.key === 'bg_animation') setBgAnimation(row.value);
+      });
+    }
     setIsLoading(false);
   };
 
@@ -247,7 +265,7 @@ export default function AdminPage() {
   const getBrowser = (ua='') => /edg/i.test(ua)?'Edge':/chrome/i.test(ua)?'Chrome':/firefox/i.test(ua)?'Firefox':/safari/i.test(ua)?'Safari':'Browser lain';
   const getOS = (ua='') => /windows/i.test(ua)?'Windows':/android/i.test(ua)?'Android':/iphone|ipad/i.test(ua)?'iOS':/mac/i.test(ua)?'macOS':/linux/i.test(ua)?'Linux':'OS lain';
 
-  // ── APPEARANCE ──
+  // ── APPEARANCE & SETTINGS HANDLERS ──
   const handleProfileUpload = async () => {
     if (!profileFile) return;
     setProfileUploading(true);
@@ -266,12 +284,23 @@ export default function AdminPage() {
     setProfileUploading(false);
   };
 
-  const broadcastUpdate = async (msg) => {
-    await saveSetting('last_update', JSON.stringify({ msg, ts: Date.now() }));
-  };
   const handleThemeChange = async (color) => { setThemeColor(color); await saveSetting('theme_color', color); await broadcastUpdate('🎨 Tema warna diperbarui'); toast(setSettingsSaved, '✓ Warna tersimpan!'); };
   const handleBgThemeChange = async (id) => { setBgTheme(id); await saveSetting('bg_theme', id); await broadcastUpdate('🖼 Background tema diperbarui'); toast(setSettingsSaved, '✓ Background tersimpan!'); };
   const handleFontChange = async (id) => { setFontChoice(id); await saveSetting('font_choice', id); toast(setSettingsSaved, '✓ Font tersimpan!'); };
+  
+  // Handlers baru untuk Default Theme & Bg Animation
+  const saveDefaultTheme = async (val) => {
+    setDefaultTheme(val);
+    await saveSetting('default_theme', val);
+    await broadcastUpdate('Tema default diperbarui');
+    toast(setSettingsSaved, '✓ Tema default tersimpan!');
+  };
+  const saveBgAnimation = async (val) => {
+    setBgAnimation(val);
+    await saveSetting('bg_animation', val);
+    await broadcastUpdate('Animasi background diperbarui');
+    toast(setSettingsSaved, '✓ Animasi tersimpan!');
+  };
 
   // ── MUSIC ──
   const handleMusicUpload = async () => {
@@ -328,7 +357,6 @@ export default function AdminPage() {
     .awrap{max-width:1200px;margin:0 auto;padding:0 32px;}
     .lbar{position:fixed;top:60px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),transparent);background-size:200% 100%;animation:shimmer 1.2s ease infinite;z-index:100;}
     @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-    /* LOGIN */
     .login-outer{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
     .login-card{width:100%;max-width:400px;padding:44px 36px;background:var(--bg2);border:1px solid var(--bd);border-radius:22px;}
     .l-eye{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--ink2);margin-bottom:10px;}
@@ -340,12 +368,10 @@ export default function AdminPage() {
     .l-err{padding:10px 13px;border-radius:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#dc2626;font-size:12px;font-weight:600;margin-bottom:12px;}
     .btn-login{width:100%;padding:14px;background:var(--ink);color:var(--bg);border:none;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;letter-spacing:.04em;transition:all .2s;}
     .btn-login:hover{transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow);}
-    /* DASH */
     .dash-hdr{padding-top:80px;padding-bottom:32px;border-bottom:1px solid var(--bd);}
     .d-eye{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--ink2);margin-bottom:8px;}
     .d-title{font-family:'Fraunces',serif;font-size:clamp(28px,4vw,48px);font-weight:900;line-height:.95;letter-spacing:-.02em;color:var(--ink);margin:0;}
     .d-title em{font-style:italic;font-weight:400;color:var(--ink2);}
-    /* STATS */
     .dstats{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--bd);}
     .dstat{padding:24px 0;text-align:center;border-right:1px solid var(--bd);}
     .dstat:last-child{border-right:none;}
@@ -354,14 +380,12 @@ export default function AdminPage() {
     .dstat-action{margin-top:8px;}
     .btn-reset{padding:4px 11px;background:var(--danger);border:1px solid var(--danger-bd);color:#dc2626;border-radius:100px;font-family:inherit;font-size:10px;font-weight:700;transition:all .2s;}
     .btn-reset:hover{background:#ef4444;color:white;border-color:#ef4444;}
-    /* TABS */
     .tabs{display:flex;gap:0;border-bottom:1px solid var(--bd);margin-top:28px;overflow-x:auto;}
     .tab-btn{padding:12px 20px;background:transparent;border:none;font-family:inherit;font-size:13px;font-weight:700;color:var(--ink2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;white-space:nowrap;}
     .tab-btn:hover{color:var(--ink);}
     .tab-btn.active{color:var(--ink);border-bottom-color:var(--acc);}
     .tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:100px;background:var(--bg2);font-size:10px;font-weight:700;color:var(--ink2);margin-left:6px;padding:0 4px;}
     .tab-btn.active .tab-count{background:var(--acc);color:#0d0d0d;}
-    /* PANEL */
     .panel{padding:28px 0;border-bottom:1px solid var(--bd);}
     .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
     .panel-title{font-family:'Fraunces',serif;font-size:20px;font-weight:900;color:var(--ink);margin:0;}
@@ -392,7 +416,6 @@ export default function AdminPage() {
     .btn-cancel{padding:11px 16px;background:transparent;border:1px solid var(--bd);color:var(--ink2);border-radius:10px;font-family:inherit;font-size:12px;font-weight:700;transition:all .2s;}
     .btn-cancel:hover{border-color:var(--ink);color:var(--ink);}
     .toast{display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:9px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);color:#16a34a;font-size:12px;font-weight:600;}
-    /* ITEMS */
     .items-grid{padding:24px 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
     .empty-st{padding:50px 24px;text-align:center;border:1px dashed var(--bd);border-radius:18px;color:var(--ink2);font-size:13px;grid-column:1/-1;}
     .ac-card{background:var(--bg2);border:1.5px solid var(--bd);border-radius:16px;overflow:hidden;transition:border-color .2s;}
@@ -408,7 +431,6 @@ export default function AdminPage() {
     .btn-edit{flex:1;padding:7px;background:var(--acc);color:#0d0d0d;border:none;border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;}
     .btn-del{flex:1;padding:7px;background:var(--danger);border:1px solid var(--danger-bd);color:#dc2626;border-radius:8px;font-family:inherit;font-size:11px;font-weight:700;transition:all .2s;}
     .btn-del:hover{background:#ef4444;color:white;border-color:#ef4444;}
-    /* COMMENTS */
     .comments-list{display:flex;flex-direction:column;gap:10px;padding:20px 0;}
     .comment-item{padding:14px 16px;background:var(--bg2);border:1.5px solid var(--bd);border-radius:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
     .comment-item-body{flex:1;min-width:0;}
@@ -419,7 +441,6 @@ export default function AdminPage() {
     .comment-del:hover{background:#ef4444;color:white;border-color:#ef4444;}
     .sec-actions{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;}
     .sec-label{font-size:13px;font-weight:600;color:var(--ink2);}
-    /* VISITORS */
     .vis-list{display:flex;flex-direction:column;gap:8px;padding:16px 0;}
     .vis-item{padding:14px 16px;background:var(--bg2);border:1.5px solid var(--bd);border-radius:14px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;}
     .vis-icon{font-size:22px;}
@@ -430,7 +451,6 @@ export default function AdminPage() {
     .vis-badge.desk{background:rgba(34,197,94,.1);color:#16a34a;border:1px solid rgba(34,197,94,.2);}
     .vis-meta{font-size:11px;color:var(--ink3);display:flex;gap:12px;flex-wrap:wrap;}
     .vis-time{font-size:11px;font-weight:600;color:var(--ink3);text-align:right;white-space:nowrap;}
-    /* APPEARANCE GRID */
     .theme-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
     .bg-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
     .font-list{display:flex;flex-direction:column;gap:10px;}
@@ -727,6 +747,75 @@ export default function AdminPage() {
                     </div>
                     <p style={{fontSize:'11px',color:'var(--ink2)',margin:0}}>Foto ini tampil di galeri halaman utama sebagai foto pribadimu.</p>
                   </div>
+                </div>
+              </div>
+
+              {/* ── TEMA DEFAULT ── */}
+              <div className="panel">
+                <div className="panel-head">
+                  <h2 className="panel-title">🌓 Tampilan Default</h2>
+                  <span style={{fontSize:'12px',color:'var(--ink2)'}}>Tema saat website pertama dibuka pengunjung</span>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {[
+                    { val: 'dark',  label: '🌙 Dark Mode',  desc: 'Tema gelap (default)' },
+                    { val: 'light', label: '☀️ Light Mode', desc: 'Tema terang' },
+                  ].map(opt => (
+                    <button
+                      key={opt.val}
+                      onClick={() => saveDefaultTheme(opt.val)}
+                      style={{
+                        flex: 1, minWidth: '140px', padding: '16px 20px',
+                        background: defaultTheme === opt.val ? 'var(--acc)' : 'var(--bg2)',
+                        border: `2px solid ${defaultTheme === opt.val ? 'var(--acc)' : 'var(--bd)'}`,
+                        borderRadius: '14px',
+                        color: defaultTheme === opt.val ? '#0d0d0d' : 'var(--ink)',
+                        fontFamily: 'inherit', fontWeight: 700, fontSize: '14px',
+                        cursor: 'pointer', transition: 'all 0.2s',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                      }}
+                    >
+                      <span style={{ fontSize: '22px' }}>{opt.label.split(' ')[0]}</span>
+                      <span>{opt.label.split(' ').slice(1).join(' ')}</span>
+                      <span style={{ fontSize: '11px', fontWeight: 500, opacity: 0.7 }}>{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── ANIMASI BACKGROUND ── */}
+              <div className="panel">
+                <div className="panel-head">
+                  <h2 className="panel-title">✨ Animasi Background</h2>
+                  <span style={{fontSize:'12px',color:'var(--ink2)'}}>Pilih animasi yang tampil di latar belakang website</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
+                  {[
+                    { val: 'none',      label: '⬛ Tidak Ada',  desc: 'Tanpa animasi' },
+                    { val: 'particles', label: '✦ Particles',   desc: 'Titik-titik bergerak' },
+                    { val: 'bubbles',   label: '🫧 Bubbles',    desc: 'Gelembung naik' },
+                    { val: 'stars',     label: '⭐ Stars',       desc: 'Bintang berkedip' },
+                    { val: 'matrix',    label: '💻 Matrix',     desc: 'Hujan kode' },
+                  ].map(opt => (
+                    <button
+                      key={opt.val}
+                      onClick={() => saveBgAnimation(opt.val)}
+                      style={{
+                        padding: '14px 12px',
+                        background: bgAnimation === opt.val ? 'var(--acc)' : 'var(--bg2)',
+                        border: `2px solid ${bgAnimation === opt.val ? 'var(--acc)' : 'var(--bd)'}`,
+                        borderRadius: '14px',
+                        color: bgAnimation === opt.val ? '#0d0d0d' : 'var(--ink)',
+                        fontFamily: 'inherit', fontWeight: 700, fontSize: '13px',
+                        cursor: 'pointer', transition: 'all 0.2s',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                      }}
+                    >
+                      <span style={{ fontSize: '20px' }}>{opt.label.split(' ')[0]}</span>
+                      <span>{opt.label.split(' ').slice(1).join(' ')}</span>
+                      <span style={{ fontSize: '10px', fontWeight: 500, opacity: 0.6 }}>{opt.desc}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
