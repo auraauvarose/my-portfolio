@@ -14,7 +14,7 @@ Website portofolio pribadi yang interaktif, responsif, dan dinamis. Dibangun unt
 * **Backend:** Next.js Route Handlers
 * **Database:** Supabase (PostgreSQL)
 * **AI API:** Google Gemini API
-* **Deployment:** Vercel
+* **Deployment:** Vercel yang gratis2 aja
 
 ## 💻 Cara Menjalankan di Lokal (Local Development)
 
@@ -22,3 +22,7 @@ Website portofolio pribadi yang interaktif, responsif, dan dinamis. Dibangun unt
    ```bash
    git clone [https://github.com/auraauvarose/nama-repo-kamu.git](https://github.com/auraauvarose/nama-repo-kamu.git)
    cd nama-repo-kamu
+
+2. **Run program**
+   ```bash 
+   npm run dev 

@@ -53,6 +53,7 @@ export default function Home() {
   const [communityPhotos, setCommunityPhotos] = useState([]);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [certActiveIdx, setCertActiveIdx] = useState(0);
+  const [certPage, setCertPage] = useState(0);
   const [projActiveIdx, setProjActiveIdx] = useState(0);
   const [galleryActiveIdx, setGalleryActiveIdx] = useState(0);
   const [photoForm, setPhotoForm] = useState({ name:'', caption:'' });
@@ -66,9 +67,10 @@ export default function Home() {
 
   // ── NEW STATES ──
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [bgAnimation, setBgAnimation] = useState('none'); // 'none' | 'particles' | 'bubbles' | 'stars' | 'matrix'
+  const [bgAnimation, setBgAnimation] = useState('none');
   const [loveParticles, setLoveParticles] = useState([]);
-  const [defaultThemeMode, setDefaultThemeMode] = useState('dark'); // loaded from settings
+  const [defaultThemeMode, setDefaultThemeMode] = useState('dark');
+  const [isMobile, setIsMobile] = useState(false);
 
   const audioRef = useRef(null);
   const themeBtnRef = useRef(null);
@@ -159,7 +161,13 @@ export default function Home() {
 
   useEffect(() => { aiEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages]);
 
-  // ── TYPING ANIMATION for hero description ──
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   useEffect(() => {
     if (!pageReady) return;
     const fullText = isID
@@ -182,7 +190,6 @@ export default function Home() {
     return () => clearTimeout(delay);
   }, [pageReady, isID]);
 
-  // ── LOOPING AUVAROSE name variants ──
   useEffect(() => {
     const variants = ['Auvarose', 'NPC', 'Turu', 'Gg', 'Py', 'Auvarose'];
     let idx = 0;
@@ -211,7 +218,6 @@ export default function Home() {
     return () => clearTimeout(t);
   }, []);
 
-  // ── TYPING for About section ──
   const aboutRef = useRef(null);
   useEffect(() => {
     if (!aboutVisible) return;
@@ -240,7 +246,6 @@ export default function Home() {
     return () => obs.disconnect();
   }, []);
 
-  // Sync html bg + site-dark class
   useEffect(() => {
     document.documentElement.classList.toggle('site-dark', d);
     document.documentElement.style.background = d ? curBg.darkBg : curBg.lightBg;
@@ -248,19 +253,17 @@ export default function Home() {
     document.body.style.padding = '0';
   }, [d, bgTheme]);
 
-  // Scroll reveal
   useEffect(() => {
     const els = document.querySelectorAll('[data-reveal]');
     const obs = new IntersectionObserver((entries) => {
       entries.forEach(e => {
         if (e.isIntersecting) { e.target.classList.add('revealed'); obs.unobserve(e.target); }
       });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
     els.forEach(el => obs.observe(el));
     return () => obs.disconnect();
   }, [projects, certificates, pageReady, lang]);
 
-  // Magnetic hover
   useEffect(() => {
     if (window.matchMedia('(pointer:coarse)').matches) return;
     let scrolling = false, scrollTimer;
@@ -283,7 +286,6 @@ export default function Home() {
     };
   });
 
-  // ── BACKGROUND ANIMATION CANVAS ──
   useEffect(() => {
     const canvas = bgCanvasRef.current;
     if (!canvas) return;
@@ -311,7 +313,6 @@ export default function Home() {
     let particles = [];
 
     if (bgAnimation === 'particles') {
-      // Floating particles
       particles = Array.from({ length: 60 }, () => ({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
@@ -333,7 +334,6 @@ export default function Home() {
           ctx.fillStyle = `rgba(${r},${g},${b},${p.a})`;
           ctx.fill();
         });
-        // connections
         for (let i = 0; i < particles.length; i++) {
           for (let j = i + 1; j < particles.length; j++) {
             const dx = particles[i].x - particles[j].x;
@@ -429,32 +429,98 @@ export default function Home() {
     };
   }, [bgAnimation, themeColor, isDark]);
 
-  // ── GALLERY AUTO-SCROLL (mobile only) ──
   useEffect(() => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 600;
-    if (!isMobile || !galleryGridRef.current) return;
+    const el = galleryGridRef.current;
+    if (!el) return;
     const total = communityPhotos.length + (profileImage ? 1 : 0);
     if (total <= 1) return;
 
     let currentIdx = 0;
-    let stopped = false;
+    let direction = 1;
+    let paused = false;
+
+    const getCardW = () => el.scrollWidth / total;
 
     const autoScroll = () => {
-      if (!galleryGridRef.current || stopped) return;
-      const next = currentIdx + 1;
-      if (next >= total) { stopped = true; return; } // stop at last photo
-      currentIdx = next;
-      const el = galleryGridRef.current;
-      const cardW = el.scrollWidth / total;
-      el.scrollTo({ left: cardW * currentIdx, behavior: 'smooth' });
+      if (!galleryGridRef.current || paused) return;
+      const next = currentIdx + direction;
+      if (next >= total) { direction = -1; currentIdx = total - 2; }
+      else if (next < 0) { direction = 1; currentIdx = 1; }
+      else { currentIdx = next; }
+      el.scrollTo({ left: getCardW() * currentIdx, behavior: 'smooth' });
+      setGalleryActiveIdx(currentIdx);
     };
 
     gallerAutoRef.current = setInterval(autoScroll, 2800);
-    // If new photo added, allow continue
-    return () => { stopped = true; clearInterval(gallerAutoRef.current); };
+
+    const onScroll = () => {
+      const w = getCardW();
+      if (w > 0) setGalleryActiveIdx(Math.round(el.scrollLeft / w));
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+
+    let touchStartX = 0;
+    let touchStartScroll = 0;
+    const onTouchStart = (e) => {
+      paused = true;
+      touchStartX = e.touches[0].clientX;
+      touchStartScroll = el.scrollLeft;
+      clearInterval(gallerAutoRef.current);
+    };
+    const onTouchMove = (e) => {
+      const dx = touchStartX - e.touches[0].clientX;
+      el.scrollLeft = touchStartScroll + dx;
+    };
+    const onTouchEnd = () => {
+      const w = getCardW();
+      currentIdx = Math.round(el.scrollLeft / w);
+      el.scrollTo({ left: w * currentIdx, behavior: 'smooth' });
+      setGalleryActiveIdx(currentIdx);
+      paused = false;
+      gallerAutoRef.current = setInterval(autoScroll, 2800);
+    };
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: true });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    let isDown = false, startX = 0, startScroll = 0;
+    const onMouseDown = (e) => {
+      isDown = true; paused = true;
+      startX = e.pageX; startScroll = el.scrollLeft;
+      el.style.cursor = 'grabbing';
+      clearInterval(gallerAutoRef.current);
+    };
+    const onMouseMove = (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      el.scrollLeft = startScroll - (e.pageX - startX);
+    };
+    const onMouseUp = () => {
+      if (!isDown) return;
+      isDown = false; el.style.cursor = '';
+      const w = getCardW();
+      currentIdx = Math.round(el.scrollLeft / w);
+      el.scrollTo({ left: w * currentIdx, behavior: 'smooth' });
+      setGalleryActiveIdx(currentIdx);
+      paused = false;
+      gallerAutoRef.current = setInterval(autoScroll, 2800);
+    };
+    el.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      clearInterval(gallerAutoRef.current);
+      el.removeEventListener('scroll', onScroll);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
   }, [communityPhotos, profileImage]);
 
-  // ── SOCIAL TRACK DRAG (desktop) ──
   useEffect(() => {
     const el = socialTrackRef.current;
     if (!el) return;
@@ -519,7 +585,6 @@ export default function Home() {
         if (row.key === 'bg_theme'        && row.value) setBgTheme(row.value);
         if (row.key === 'font_choice'     && row.value) setFontChoice(row.value);
         if (row.key === 'music_url'       && row.value) setMusicUrl(row.value);
-        // NEW: default theme mode & bg animation
         if (row.key === 'default_theme'   && row.value) { setDefaultThemeMode(row.value); setIsDark(row.value === 'dark'); }
         if (row.key === 'bg_animation'    && row.value) setBgAnimation(row.value);
       });
@@ -599,7 +664,6 @@ export default function Home() {
     setLikeAnim(true);
     setTimeout(() => setLikeAnim(false), 800);
 
-    // ── LOVE PARTICLES animation ──
     const newParticles = Array.from({ length: 20 }, (_, i) => ({
       id: Date.now() + i,
       x: Math.random() * 100,
@@ -662,7 +726,6 @@ export default function Home() {
     }
   }, [musicUrl]);
 
-  // ── CAROUSEL SCROLL DOTS ──
   useEffect(() => {
     const makeHandler = (ref, setter, total) => () => {
       if (!ref.current || total === 0) return;
@@ -688,7 +751,6 @@ export default function Home() {
     };
   }, [certificates, projects, communityPhotos, profileImage]);
 
-  // ── TRANSLATIONS ──
   const tx = {
     navHome: isID ? 'Beranda' : 'Home',
     navAbout: isID ? 'Tentang' : 'About',
@@ -809,6 +871,7 @@ export default function Home() {
         html{margin:0;padding:0;width:100%;overflow-x:hidden;background:#111110;transition:background 0.5s ease;scrollbar-width:thin;scrollbar-color:rgba(100,100,100,0.5) transparent;}
         html.site-dark{background:#111110;}
         html:not(.site-dark){background:#ffffff;}
+        html{scrollbar-gutter:stable;}
         html::-webkit-scrollbar{width:4px;}
         html::-webkit-scrollbar-track{background:transparent;}
         html::-webkit-scrollbar-thumb{background:rgba(100,100,100,0.4);border-radius:4px;}
@@ -818,7 +881,7 @@ export default function Home() {
         a,button{cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="magenta" stroke="white" stroke-width="1.5"><path d="M3 3l7 17 2.5-7.5L20 10z"/></svg>'),pointer;}
 
         /* ── BG CANVAS ── */
-        .bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.55;}
+        .bg-canvas{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.7;}
 
         /* ── WAVE RIPPLE ── */
         .theme-ripple{position:fixed;inset:0;z-index:9997;pointer-events:none;background:var(--ripple-color,#ffffff);clip-path:circle(0% at var(--rx,50%) var(--ry,50%));animation:waveRipple 0.65s cubic-bezier(0.22,1,0.36,1) forwards;}
@@ -877,13 +940,29 @@ export default function Home() {
         @keyframes orbFloat3{0%,100%{transform:translate(0,0);}50%{transform:translate(20px,-20px);}}
 
         /* ── SCROLL REVEAL ── */
-        [data-reveal]{opacity:0;transform:translateY(28px);transition:opacity 0.65s ease,transform 0.65s ease;}
-        [data-reveal].revealed{opacity:1;transform:translateY(0);}
-        @media(max-width:768px){[data-reveal]{opacity:1!important;transform:none!important;transition:none!important;}}
-        [data-reveal][data-delay="1"]{transition-delay:0.1s;}
-        [data-reveal][data-delay="2"]{transition-delay:0.2s;}
-        [data-reveal][data-delay="3"]{transition-delay:0.3s;}
-        [data-reveal][data-delay="4"]{transition-delay:0.4s;}
+        [data-reveal]{opacity:0.95;transform:translate3d(0,16px,0);transition:opacity 0.5s cubic-bezier(.22,1,.36,1),transform 0.5s cubic-bezier(.22,1,.36,1);will-change:opacity,transform;contain:layout style;}
+        [data-reveal].revealed{opacity:1;transform:translate3d(0,0,0);}
+        [data-reveal][data-delay="1"]{transition-delay:0.08s;}
+        [data-reveal][data-delay="2"]{transition-delay:0.16s;}
+        [data-reveal][data-delay="3"]{transition-delay:0.24s;}
+        [data-reveal][data-delay="4"]{transition-delay:0.32s;}
+        /* Reveal variants for cards — subtle slide up + fade */
+        .skill-card[data-reveal]{transform:translate3d(0,16px,0);}
+        .skill-card[data-reveal].revealed{transform:translate3d(0,0,0);}
+        .goal-card[data-reveal]{transform:translate3d(0,16px,0);}
+        .goal-card[data-reveal].revealed{transform:translate3d(0,0,0);}
+        .cert-card[data-reveal]{transform:translate3d(0,12px,0);}
+        .cert-card[data-reveal].revealed{transform:translate3d(0,0,0);}
+        .proj-card[data-reveal]{transform:translate3d(0,12px,0);}
+        .proj-card[data-reveal].revealed{transform:translate3d(0,0,0);}
+        /* Sec-head gets a subtle slide */
+        .sec-head[data-reveal]{transform:translate3d(0,10px,0);}
+        .sec-head[data-reveal].revealed{transform:translate3d(0,0,0);}
+        @media(max-width:768px){
+          [data-reveal]{opacity:0.95;transform:translate3d(0,12px,0);transition:opacity 0.35s ease-out,transform 0.35s ease-out;}
+          [data-reveal][data-delay="1"],[data-reveal][data-delay="2"],[data-reveal][data-delay="3"],[data-reveal][data-delay="4"]{transition-delay:0s;}
+          .sec-head[data-reveal]{transform:translate3d(0,10px,0);}
+        }
 
         /* ── MAGNETIC CARDS ── */
         .mag{transition:transform 0.25s ease,box-shadow 0.25s ease;transform-style:preserve-3d;perspective:800px;will-change:transform;}
@@ -1060,20 +1139,34 @@ export default function Home() {
         .proj-link.demo{background:var(--acc);color:#0d0d0d;}
         .proj-link.demo:hover{opacity:0.85;}
 
-        /* ── CERTS ── */
-        .cert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;}
-        .cert-card{background:var(--bg2);border:1px solid var(--bd);border-radius:20px;overflow:hidden;cursor:pointer;transition:border-color 0.25s,box-shadow 0.3s;}
-        .cert-card:hover{border-color:var(--acc);box-shadow:0 16px 40px var(--shadow);}
-        .cert-img{overflow:hidden;aspect-ratio:16/10;}
-        .cert-img img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s;}
-        .cert-card:hover .cert-img img{transform:scale(1.07);}
-        .cert-info{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-        .cert-info-t{min-width:0;}
+        /* ── CERTS (UPDATED FOR 3x2 GRID) ── */
+        .cert-more-label{display:flex;align-items:center;justify-content:space-between;margin:0 0 16px;padding:0 2px;}
+        .cert-more-label span{font-size:13px;font-weight:600;color:var(--ink2);}
+        .cert-nav-btns{display:flex;gap:8px;}
+        .cert-nav-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--bg2);color:var(--ink);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1;}
+        .cert-nav-btn:hover:not(:disabled){border-color:var(--acc);color:var(--acc);}
+        .cert-nav-btn:disabled{opacity:0.3;cursor:not-allowed;}
+        /* ── CERT SLIDER ── */
+        .cert-grid-wrap{overflow:hidden;width:100%;}
+        .cert-grid{display:flex;transition:transform 0.5s cubic-bezier(.4,0,.2,1);will-change:transform;}
+        .cert-page{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;min-width:100%;width:100%;flex-shrink:0;box-sizing:border-box;align-items:start;}
+        .cert-card{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color 0.25s,box-shadow 0.3s;display:block;}
+        .cert-card:hover{border-color:var(--acc);box-shadow:0 12px 32px var(--shadow);}
+        .cert-img{overflow:hidden;width:100%;aspect-ratio:16/10;flex-shrink:0;background:var(--bg);position:relative;}
+        .cert-img img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block;transition:transform 0.5s;}
+        .cert-img::before{content:'🎓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;opacity:0.3;z-index:0;}
+        .cert-img img{position:relative;z-index:1;}
+        .cert-card:hover .cert-img img{transform:scale(1.05);}
+        .cert-info{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2);}
+        .cert-info-t{min-width:0;flex:1;}
         .cert-info-t p{font-size:13px;font-weight:700;color:var(--ink);margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
         .cert-info-t span{font-size:11px;color:var(--ink2);}
-        .cert-arr{width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:transform 0.25s,background 0.2s;}
+        .cert-arr{width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:transform 0.25s,background 0.2s;}
         .cert-card:hover .cert-arr{transform:rotate(45deg);background:var(--acc);color:#0d0d0d;}
         .cert-empty,.proj-empty{grid-column:1/-1;padding:60px 24px;text-align:center;border:1px dashed var(--bd);border-radius:20px;color:var(--ink2);font-size:14px;}
+        .cert-page-dots{display:flex;justify-content:center;gap:8px;margin-top:18px;}
+        .cert-page-dot{width:8px;height:8px;border-radius:100px;background:var(--bd);border:1px solid var(--bd);cursor:pointer;transition:all .3s;}
+        .cert-page-dot.active{width:24px;background:var(--acc);border-color:var(--acc);}
 
         /* ── CERT MODAL ── */
         .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.2s ease;}
@@ -1107,12 +1200,17 @@ export default function Home() {
         .comments-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:18px;}
         .comments-n{font-family:var(--font-heading);font-size:34px;font-weight:900;color:var(--ink);line-height:1;}
         .comments-lb{font-size:12px;font-weight:600;color:var(--ink2);}
-        .comments-list{max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+        
+        /* Menggunakan overflow-y: auto dan menghapus scrollbar-gutter agar tidak menggeser layout */
+        .comments-list{max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px;}
         .comment-card{padding:16px 18px;background:var(--bg2);border:1px solid var(--bd);border-radius:14px;transition:border-color 0.2s;}
         .comment-card:hover{border-color:var(--acc);}
         .comment-name{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:5px;display:flex;align-items:center;gap:10px;}
         .comment-name::after{content:'';flex:1;height:1px;background:var(--bd);}
-        .comment-msg{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:8px;}
+        
+        /* Menambahkan word-break untuk menahan teks terlalu panjang */
+        .comment-msg{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:8px;word-break:break-word;}
+        
         .comment-dt{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;}
         .comments-empty{padding:36px;text-align:center;color:var(--ink2);font-size:13px;}
 
@@ -1213,8 +1311,12 @@ export default function Home() {
         }
 
         /* ── COMMUNITY GALLERY ── */
-        .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
-        .gallery-item{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1;background:var(--bg2);cursor:pointer;}
+        .gallery-slider-wrap{position:relative;overflow:hidden;border-radius:16px;}
+        .gallery-grid{display:flex;overflow-x:auto;gap:12px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;cursor:grab;user-select:none;}
+        .gallery-grid::-webkit-scrollbar{display:none;}
+        .gallery-grid .gallery-item{min-width:calc((100% - 48px) / 5);max-width:calc((100% - 48px) / 5);scroll-snap-align:start;flex-shrink:0;}
+        .gallery-item{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1;background:var(--bg2);cursor:pointer;transition:transform .25s;}
+        .gallery-item:hover{transform:scale(1.02);}
         .gallery-modal{background:var(--bg);border:1px solid var(--bd);border-radius:20px;overflow:hidden;max-width:480px;width:90vw;position:relative;}
         .gallery-modal-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;}
         .gallery-modal-info{padding:16px 20px;}
@@ -1222,17 +1324,20 @@ export default function Home() {
         .gallery-modal-caption{font-size:13px;color:var(--ink2);margin-top:4px;line-height:1.5;}
         .gallery-modal-ig{font-size:12px;color:var(--acc);font-weight:700;margin-top:6px;}
         .gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-        .gallery-item:hover img{transform:scale(1.05);}
+        .gallery-item:hover img{transform:scale(1.06);}
         .gallery-overlay{position:absolute;bottom:0;left:0;right:0;padding:10px 12px;background:linear-gradient(transparent,rgba(0,0,0,.65));opacity:0;transition:opacity .3s;}
         .gallery-item:hover .gallery-overlay{opacity:1;}
         .gallery-name{font-size:12px;font-weight:700;color:#fff;}
         .gallery-caption{font-size:10px;color:rgba(255,255,255,.75);margin-top:2px;}
-        .gallery-empty{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--ink2);font-size:14px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+        .gallery-empty{min-width:100%;text-align:center;padding:50px 20px;color:var(--ink2);font-size:14px;display:flex;flex-direction:column;align-items:center;gap:10px;}
         .gallery-upload-link{font-size:13px;font-weight:700;color:var(--acc);text-decoration:none;}
         .gallery-cta-btn{display:inline-flex;align-items:center;padding:10px 20px;background:var(--bg2);border:1px solid var(--bd);border-radius:100px;font-size:12px;font-weight:700;color:var(--ink);text-decoration:none;transition:all .2s;white-space:nowrap;align-self:flex-start;}
         .gallery-cta-btn:hover{border-color:var(--acc);transform:translateY(-2px);}
-        .gallery-item-featured{grid-column:span 1;border:2px solid var(--acc);}
+        .gallery-item-featured{border:2px solid var(--acc);}
         .gallery-badge{font-size:9px;font-weight:800;background:var(--acc);color:#000;padding:2px 7px;border-radius:100px;display:inline-block;margin-bottom:3px;}
+        .gallery-dots{display:flex;justify-content:center;gap:6px;margin-top:14px;flex-wrap:wrap;}
+        .gallery-dot{width:6px;height:6px;border-radius:100px;background:var(--bd);cursor:pointer;transition:all .3s;border:1px solid var(--bd);}
+        .gallery-dot.active{width:18px;background:var(--acc);border-color:var(--acc);}
 
         /* ── COMMENT REPLIES ── */
         .reply-item{display:flex;align-items:flex-start;gap:7px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd);}
@@ -1258,12 +1363,12 @@ export default function Home() {
         .rw.dark .gh-chart-wrap img{filter:invert(1) hue-rotate(180deg) brightness(0.85);}
 
         /* ── AI CHAT PANEL ── */
-        .ai-panel{position:fixed;bottom:100px;right:28px;z-index:300;width:340px;background:var(--bg2);border:1px solid var(--bd);border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;animation:up 0.25s ease;}
+        .ai-panel{position:fixed;bottom:100px;right:28px;z-index:300;width:420px;background:var(--bg2);border:1px solid var(--bd);border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;animation:up 0.25s ease;}
         .ai-panel-head{padding:14px 18px;background:var(--bg);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;}
         .ai-panel-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);animation:blink 2s ease infinite;}
         .ai-panel-title{font-size:13px;font-weight:800;color:var(--ink);flex:1;}
         .ai-panel-close{background:transparent;border:none;color:var(--ink2);font-size:16px;cursor:pointer;padding:2px 6px;border-radius:6px;line-height:1;}
-        .ai-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;max-height:320px;min-height:160px;}
+        .ai-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:420px;min-height:200px;}
         .ai-msg{max-width:85%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5;}
         .ai-msg.user{background:var(--acc);color:#0d0d0d;align-self:flex-end;border-bottom-right-radius:4px;font-weight:600;}
         .ai-msg.assistant{background:var(--bg);border:1px solid var(--bd);color:var(--ink);align-self:flex-start;border-bottom-left-radius:4px;}
@@ -1280,7 +1385,20 @@ export default function Home() {
         @keyframes up{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
         @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
         @keyframes zoom{from{transform:scale(0.93);opacity:0;}to{transform:scale(1);opacity:1;}}
-
+        @keyframes slideRight{from{opacity:0;transform:translateX(-24px);}to{opacity:1;transform:translateX(0);}}
+        @keyframes popIn{from{opacity:0;transform:scale(0.85);}to{opacity:1;transform:scale(1);}}
+        @keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+        /* Subtle glow pulse on accent elements */
+        @keyframes glowPulse{0%,100%{box-shadow:0 0 0 0 var(--acc-bg);}50%{box-shadow:0 0 0 8px transparent;}}
+        /* Sheen sweep on cards */
+        @keyframes sheenMove{0%{left:-100%;}100%{left:200%;}}
+        .cert-card:hover::after,.proj-card:hover::after,.goal-card:hover::after,.skill-card:hover::after{
+          content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+          background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.06) 50%,transparent 60%);
+          animation:sheenMove 0.6s ease forwards;pointer-events:none;
+        }
+        .cert-card,.proj-card,.goal-card,.skill-card{position:relative;overflow:hidden;}
+        
         /* ── RESPONSIVE: TABLET ── */
         @media(max-width:900px){
           .wrap,.nav-in{padding-left:28px;padding-right:28px;}
@@ -1308,9 +1426,7 @@ export default function Home() {
         @media(max-width:600px){
           .wrap,.nav-in{padding-left:20px;padding-right:20px;}
           .nav-right{gap:6px;}
-          /* Hide desktop nav-right items on mobile — show in drawer instead */
           .btn-theme,.btn-admin{display:none;}
-          /* Hide desktop AI btn on mobile */
           .ai-btn-desktop{display:none;}
 
           .hero{padding-top:80px;padding-bottom:48px;gap:28px;}
@@ -1343,23 +1459,28 @@ export default function Home() {
           .goals-grid{grid-template-columns:1fr;gap:12px;}
           .goal-card{padding:20px;}
 
-          /* Mobile carousel for projects, certs, gallery */
           .proj-grid{display:flex;overflow-x:auto;gap:14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:16px;scrollbar-width:none;}
           .proj-grid::-webkit-scrollbar{display:none;}
           .proj-grid .proj-card{min-width:82vw;max-width:82vw;scroll-snap-align:start;flex-shrink:0;}
-          .cert-grid{display:flex;overflow-x:auto;gap:14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:16px;scrollbar-width:none;}
-          .cert-grid::-webkit-scrollbar{display:none;}
-          .cert-grid .cert-card{min-width:78vw;max-width:78vw;scroll-snap-align:start;flex-shrink:0;}
-          .gallery-grid{display:flex;overflow-x:auto;gap:10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:12px;scrollbar-width:none;}
-          .gallery-grid::-webkit-scrollbar{display:none;}
-          .gallery-grid .gallery-item{min-width:72vw;max-width:72vw;scroll-snap-align:start;flex-shrink:0;}
-          /* Scroll dots indicators */
+
+          /* CSS Mobile untuk Certificate Slider */
+          .cert-grid-wrap{overflow:visible;width:100%;}
+          .cert-grid{display:flex!important;overflow:visible!important;gap:0!important;padding-bottom:8px!important;transition:transform 0.5s cubic-bezier(.4,0,.2,1);}
+          .cert-page{min-width:100%!important;width:100%!important;max-width:100%!important;display:flex!important;flex-direction:column!important;gap:16px!important;flex-shrink:0;box-sizing:border-box;padding:0 4px;}
+          .cert-page .cert-card{width:100%;border-radius:16px;overflow:hidden;background:var(--bg2);border:1px solid var(--bd);}
+          .cert-img{aspect-ratio:16/10!important;width:100%!important;background:var(--bg);position:relative;}
+          .cert-img img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:top center!important;display:block!important;}
+          .cert-info{padding:12px 14px!important;}
+          .cert-info-t p{font-size:14px!important;}
+          .cert-info-t span{font-size:12px!important;}
+          
+          .gallery-grid .gallery-item{min-width:78vw;max-width:78vw;scroll-snap-align:start;flex-shrink:0;}
           .mobile-scroll-hint{display:flex!important;justify-content:center;gap:6px;margin-top:14px;align-items:center;}
           .mobile-scroll-hint span{width:6px;height:6px;border-radius:50%;background:var(--bd);transition:background 0.3s ease,width 0.3s ease;display:inline-block;}
           .mobile-scroll-hint span.active{background:var(--acc);width:20px;border-radius:4px;}
 
           .contact-grid{gap:32px;}
-          .comments-list{max-height:320px;}
+          .comments-list{max-height:320px;overflow-y:scroll;scrollbar-gutter:stable;}
 
           .modal-overlay{padding:12px;}
           .modal-box{border-radius:16px;}
@@ -1547,7 +1668,6 @@ export default function Home() {
         <div className="social-strip" data-reveal>
           <div className="social-strip-inner">
             <div className="social-track" ref={socialTrackRef}>
-              {/* Double the socials for seamless drag illusion */}
               {[...socials, ...socials].map((s, i) => (
                 <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="social-btn">
                   <span className="social-icon">{s.icon}</span>
@@ -1747,12 +1867,28 @@ export default function Home() {
             <div><p className="eyebrow">{tx.certEyebrow}</p><h2 className="sec-title">{tx.certTitle}</h2></div>
             <span className="sec-num">0{certificates.length}</span>
           </div>
-          <div className="cert-grid" ref={certGridRef}>
-            {certificates.length === 0 ? (
-              <div className="cert-empty">{tx.certEmpty}</div>
-            ) : certificates.map((cert,i)=>(
-              <div key={cert.id} className="cert-card mag" onClick={()=>setSelectedCert(cert)} data-reveal data-delay={String((i%3)+1)}>
-                <div className="cert-img"><img src={cert.image_url} alt="Sertifikat"/></div>
+          {certificates.length === 0 ? (
+            <div className="cert-empty" data-reveal>{tx.certEmpty}</div>
+          ) : (() => {
+            const pageSize = isMobile ? 1 : 4;
+            const pages = [];
+            for (let i = 0; i < certificates.length; i += pageSize) {
+              pages.push(certificates.slice(i, i + pageSize));
+            }
+            const totalPages = pages.length;
+            // Reset certPage jika melebihi totalPages (misal switch mobile<->desktop)
+            const safePage = Math.min(certPage, totalPages - 1);
+
+            const renderCard = (cert) => (
+              <div key={cert.id} className="cert-card mag" onClick={()=>setSelectedCert(cert)}>
+                <div className="cert-img">
+                  <img
+                    src={cert.image_url}
+                    alt={cert.title || 'Sertifikat'}
+                    loading="eager"
+                    onError={e => { e.currentTarget.style.opacity='0.3'; }}
+                  />
+                </div>
                 <div className="cert-info">
                   <div className="cert-info-t">
                     <p>{cert.title || tx.certDefault}</p>
@@ -1761,11 +1897,54 @@ export default function Home() {
                   <div className="cert-arr">↗</div>
                 </div>
               </div>
-            ))}
-          </div>
-          <div className="mobile-scroll-hint">
-            {certificates.length > 0 && certificates.map((_,i)=><span key={i} className={i===certActiveIdx?'active':''}/>)}
-          </div>
+            );
+
+            return (
+              <>
+                <div className="cert-more-label" data-reveal>
+                  <span>{isID ? `Menampilkan ${pages[safePage]?.length || 0} dari total ${certificates.length} sertifikat` : `Showing ${pages[safePage]?.length || 0} of ${certificates.length} certificates`}</span>
+                  <div className="cert-nav-btns">
+                    <button
+                      className="cert-nav-btn"
+                      onClick={() => setCertPage(p => Math.max(0, p - 1))}
+                      disabled={safePage === 0}
+                    >‹</button>
+                    <button
+                      className="cert-nav-btn"
+                      onClick={() => setCertPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={safePage === totalPages - 1}
+                    >›</button>
+                  </div>
+                </div>
+
+                <div className="cert-grid-wrap" data-reveal>
+                  <div
+                    className="cert-grid"
+                    ref={certGridRef}
+                    style={{ transform: `translateX(-${safePage * 100}%)` }}
+                  >
+                    {pages.map((group, pi) => (
+                      <div key={pi} className="cert-page">
+                        {group.map(renderCard)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="cert-page-dots">
+                    {Array.from({length: totalPages}).map((_,pi)=>(
+                      <span
+                        key={pi}
+                        className={`cert-page-dot${pi===safePage?' active':''}`}
+                        onClick={()=>setCertPage(pi)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </section>
 
         {/* GALLERY (Momen & Kenangan) */}
@@ -1777,36 +1956,50 @@ export default function Home() {
             </div>
             <a href="/submit-photo" target="_blank" className="gallery-cta-btn">{tx.galleryCta}</a>
           </div>
-          <div className="gallery-grid" data-reveal ref={galleryGridRef}>
-            {profileImage && (
-              <div className="gallery-item gallery-item-featured" onClick={()=>setSelectedPhoto({image_url:profileImage, sender_name:'Aura Auvarose', caption:'', badge:'Admin'})}>
-                <img src={profileImage} alt="Aura Auvarose"/>
-                <div className="gallery-overlay">
-                  <div className="gallery-badge">📌 Admin</div>
-                  <div className="gallery-name">Aura Auvarose</div>
+          <div className="gallery-slider-wrap" data-reveal>
+            <div className="gallery-grid" ref={galleryGridRef}>
+              {profileImage && (
+                <div className="gallery-item gallery-item-featured" onClick={()=>setSelectedPhoto({image_url:profileImage, sender_name:'Aura Auvarose', caption:'', badge:'Admin'})}>
+                  <img src={profileImage} alt="Aura Auvarose"/>
+                  <div className="gallery-overlay">
+                    <div className="gallery-badge">📌 Admin</div>
+                    <div className="gallery-name">Aura Auvarose</div>
+                  </div>
                 </div>
-              </div>
-            )}
-            {communityPhotos.map(p=>(
-              <div key={p.id} className="gallery-item" onClick={()=>setSelectedPhoto(p)}>
-                <img src={p.image_url} alt={p.sender_name}/>
-                <div className="gallery-overlay">
-                  <div className="gallery-name">{p.sender_name}</div>
-                  {p.caption && <div className="gallery-caption">{p.caption}</div>}
+              )}
+              {communityPhotos.map(p=>(
+                <div key={p.id} className="gallery-item" onClick={()=>setSelectedPhoto(p)}>
+                  <img src={p.image_url} alt={p.sender_name}/>
+                  <div className="gallery-overlay">
+                    <div className="gallery-name">{p.sender_name}</div>
+                    {p.caption && <div className="gallery-caption">{p.caption}</div>}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {!profileImage && communityPhotos.length === 0 && (
-              <div className="gallery-empty">
-                <span style={{fontSize:'40px'}}>📸</span>
-                <p>{tx.galleryEmpty}</p>
-                <a href="/submit-photo" target="_blank" className="gallery-upload-link">{tx.galleryUpload}</a>
-              </div>
-            )}
+              ))}
+              {!profileImage && communityPhotos.length === 0 && (
+                <div className="gallery-empty">
+                  <span style={{fontSize:'40px'}}>📸</span>
+                  <p>{tx.galleryEmpty}</p>
+                  <a href="/submit-photo" target="_blank" className="gallery-upload-link">{tx.galleryUpload}</a>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="mobile-scroll-hint">
+          <div className="gallery-dots">
             {(communityPhotos.length + (profileImage ? 1 : 0)) > 0 &&
-              Array.from({length: communityPhotos.length + (profileImage ? 1 : 0)}).map((_,i)=><span key={i} className={i===galleryActiveIdx?'active':''}/>)}
+              Array.from({length: communityPhotos.length + (profileImage ? 1 : 0)}).map((_,i)=>(
+                <span
+                  key={i}
+                  className={`gallery-dot${i===galleryActiveIdx?' active':''}`}
+                  onClick={()=>{
+                    if (!galleryGridRef.current) return;
+                    const total = communityPhotos.length + (profileImage ? 1 : 0);
+                    const w = galleryGridRef.current.scrollWidth / total;
+                    galleryGridRef.current.scrollTo({ left: w * i, behavior: 'smooth' });
+                    setGalleryActiveIdx(i);
+                  }}
+                />
+              ))}
           </div>
         </section>
 
@@ -1868,7 +2061,6 @@ export default function Home() {
 
         {/* ── LIKE BUTTON (centered, merged, with love particles) ── */}
         <div className="like-section" data-reveal>
-          {/* Love particles background */}
           {loveParticles.map(p => (
             <span
               key={p.id}
@@ -2003,7 +2195,6 @@ export default function Home() {
             <span style={{fontSize:'14px'}}>{lang==='id'?'🇮🇩':'🇬🇧'}</span>
             <span>{lang==='id'?'ID':'EN'}</span>
           </button>
-          {/* AI floating button with Gemini logo */}
           <button className="float-ai-btn" onClick={() => setAiOpen(!aiOpen)} title="AI Aura (Gemini)">
             <GeminiLogo size={22} />
           </button>
