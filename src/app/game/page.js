@@ -1,6 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FadeIn, ScaleIn, BounceIn } from '@/components/animations/ScrollReveal';
+import { FancyLoader, PulseLoader } from '@/components/loading/FancyLoader';
+import { PageTransition } from '@/components/animations/PageTransition';
 
 // ─── TETRIS CONSTANTS ───────────────────────────────────────────
 const BOARD_W = 10;
@@ -81,11 +86,23 @@ function TetrisGame() {
   });
   const rafRef = useRef(null);
   const [display, setDisplay] = useState({ score: 0, lines: 0, level: 1, gameOver: false, running: false });
-  const [highScore, setHighScore] = useState(0);
+  const [highScore, setHighScore] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return parseInt(localStorage.getItem('tetris_hs') || '0');
+    }
+    return 0;
+  });
 
-  useEffect(() => {
-    const hs = parseInt(localStorage.getItem('tetris_hs') || '0');
-    setHighScore(hs);
+  // Draw cell helper - must be defined before drawBoard
+  const drawCell = useCallback((ctx, x, y, color, size = CELL) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fillRect(x + 1, y + 1, size - 2, 3);
+    ctx.fillRect(x + 1, y + 1, 3, size - 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.fillRect(x + 1, y + size - 4, size - 2, 3);
+    ctx.fillRect(x + size - 4, y + 1, 3, size - 2);
   }, []);
 
   const drawBoard = useCallback(() => {
@@ -174,18 +191,10 @@ function TetrisGame() {
         });
       }
     }
-  }, []);
+  }, [drawCell]);
 
-  function drawCell(ctx, x, y, color, size = CELL) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    ctx.fillRect(x + 1, y + 1, size - 2, 3);
-    ctx.fillRect(x + 1, y + 1, 3, size - 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.2)';
-    ctx.fillRect(x + 1, y + size - 4, size - 2, 3);
-    ctx.fillRect(x + size - 4, y + 1, 3, size - 2);
-  }
+  // Use ref for gameLoop to avoid circular dependency
+  const gameLoopRef = useRef(null);
 
   const gameLoop = useCallback((ts) => {
     const st = stateRef.current;
@@ -225,8 +234,13 @@ function TetrisGame() {
       }
     }
     drawBoard();
-    rafRef.current = requestAnimationFrame(gameLoop);
+    rafRef.current = requestAnimationFrame(gameLoopRef.current);
   }, [drawBoard, highScore]);
+
+  // Store gameLoop in ref to allow self-reference
+  useEffect(() => {
+    gameLoopRef.current = gameLoop;
+  }, [gameLoop]);
 
   const startGame = useCallback(() => {
     const st = stateRef.current;
@@ -350,8 +364,89 @@ function TetrisGame() {
   );
 }
 
+// ─── GAME MENU COMPONENT ────────────────────────────────────────
+function GameMenu({ onSelectGame }) {
+  const games = [
+    {
+      id: 'tetris',
+      name: 'Tetris',
+      icon: '🧩',
+      desc: 'Susun blok dan raih skor tinggi!',
+      color: '#d4eb00',
+      gradient: 'linear-gradient(135deg, #d4eb00 0%, #a8c700 100%)'
+    },
+    {
+      id: 'snake',
+      name: 'Snake',
+      icon: '🐍',
+      desc: 'Makan makanan dan jangan tabrak dinding!',
+      color: '#00ff88',
+      gradient: 'linear-gradient(135deg, #00ff88 0%, #00cc6a 100%)'
+    },
+    {
+      id: 'memory',
+      name: 'Memory',
+      icon: '🧠',
+      desc: 'Temukan pasangan kartu yang cocok!',
+      color: '#ff6b6b',
+      gradient: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%)'
+    }
+  ];
+
+  return (
+    <div className="game-menu">
+      <h2 className="game-menu-title">Pilih Game</h2>
+      <div className="game-menu-grid">
+        {games.map((game, index) => (
+          <motion.div
+            key={game.id}
+            className="game-card"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.4 }}
+            whileHover={{ scale: 1.03, y: -5 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => onSelectGame(game.id)}
+            style={{ '--game-color': game.color }}
+          >
+            <div className="game-card-icon" style={{ background: game.gradient }}>
+              {game.icon}
+            </div>
+            <div className="game-card-content">
+              <h3 className="game-card-name">{game.name}</h3>
+              <p className="game-card-desc">{game.desc}</p>
+            </div>
+            <div className="game-card-arrow">→</div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN PAGE ──────────────────────────────────────────────────
 export default function GamePage() {
+  const [selectedGame, setSelectedGame] = useState('menu');
+
+  const renderGame = () => {
+    switch (selectedGame) {
+      case 'tetris':
+        return <TetrisGame />;
+      case 'snake':
+      case 'memory':
+        return null; // These are on separate pages
+      default:
+        return <GameMenu onSelectGame={setSelectedGame} />;
+    }
+  };
+
+  const gameTitles = {
+    menu: { title: 'Game Arcade', sub: 'Pilih game favoritmu dan mulai bermain!' },
+    tetris: { title: '🧩 Tetris', sub: 'Susun blok dan raih skor tinggi!' },
+    snake: { title: '🐍 Snake', sub: 'Makan makanan dan jangan tabrak dinding!' },
+    memory: { title: '🧠 Memory', sub: 'Temukan pasangan kartu yang cocok!' }
+  };
+
   return (
     <>
       <style>{`
@@ -390,6 +485,51 @@ export default function GamePage() {
         .game-title{font-size:clamp(28px,5vw,48px);font-weight:900;margin:0 0 8px;letter-spacing:-0.03em;}
         .game-title em{font-style:normal;color:#d4eb00;}
         .game-sub{font-size:13px;color:rgba(240,239,232,0.4);margin:0;}
+
+        /* ── GAME MENU ── */
+        .game-menu{width:100%;max-width:800px;}
+        .game-menu-title{
+          font-size:24px;font-weight:800;text-align:center;margin:0 0 32px;
+          color:#f0efe8;
+        }
+        .game-menu-grid{
+          display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+          gap:20px;padding:0 20px;
+        }
+        .game-card{
+          background:rgba(255,255,255,0.04);
+          border:1px solid rgba(255,255,255,0.08);
+          border-radius:20px;padding:24px;
+          cursor:pointer;transition:all 0.3s ease;
+          display:flex;flex-direction:column;align-items:center;text-align:center;
+          gap:16px;position:relative;overflow:hidden;
+        }
+        .game-card::before{
+          content:'';position:absolute;inset:0;
+          background:linear-gradient(135deg,var(--game-color) 0%,transparent 60%);
+          opacity:0;transition:opacity 0.3s ease;
+        }
+        .game-card:hover::before{opacity:0.1;}
+        .game-card:hover{
+          border-color:var(--game-color);
+          box-shadow:0 0 30px rgba(0,0,0,0.3),0 0 60px var(--game-color)20;
+        }
+        .game-card-icon{
+          width:72px;height:72px;border-radius:20px;
+          display:flex;align-items:center;justify-content:center;
+          font-size:36px;position:relative;z-index:1;
+          box-shadow:0 8px 24px rgba(0,0,0,0.3);
+        }
+        .game-card-content{position:relative;z-index:1;}
+        .game-card-name{font-size:20px;font-weight:800;margin:0 0 8px;color:#f0efe8;}
+        .game-card-desc{font-size:13px;color:rgba(240,239,232,0.5);margin:0;line-height:1.5;}
+        .game-card-arrow{
+          position:absolute;right:20px;top:50%;transform:translateY(-50%);
+          font-size:20px;color:rgba(240,239,232,0.3);transition:all 0.3s ease;
+        }
+        .game-card:hover .game-card-arrow{
+          color:var(--game-color);transform:translateY(-50%) translateX(4px);
+        }
 
         /* ── GAME ── */
         .game-wrap{
@@ -454,27 +594,93 @@ export default function GamePage() {
           .game-panel{flex-direction:row;flex-wrap:wrap;min-width:unset;width:100%;max-width:360px;}
           .game-stat-block{flex:1;min-width:60px;}
           .mobile-controls{display:flex;}
+          .game-menu-grid{grid-template-columns:1fr;padding:0 16px;}
+          .game-card-arrow{display:none;}
         }
       `}</style>
 
       <div className="game-page">
         <nav className="game-nav">
-          <a href="/" className="game-nav-logo">aura<em>a</em>uvarose</a>
-          <a href="/" className="game-nav-back">← Kembali</a>
+          <Link href="/" className="game-nav-logo">aura<em>a</em>uvarose</Link>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {selectedGame !== 'menu' && (
+              <button 
+                className="game-nav-back" 
+                onClick={() => setSelectedGame('menu')}
+                style={{ background: 'transparent', cursor: 'pointer' }}
+              >
+                ← Menu
+              </button>
+            )}
+            <Link href="/" className="game-nav-back">← Kembali</Link>
+          </div>
         </nav>
 
         <main className="game-main">
           <div className="game-header">
-            <h1 className="game-title">🎮 <em>Tetris</em></h1>
-            <p className="game-sub">Gunakan keyboard atau swipe untuk bermain</p>
+            <h1 className="game-title">
+              {selectedGame === 'menu' ? '🎮 ' : ''}
+              <em>{gameTitles[selectedGame].title.replace(/^\S+\s/, '')}</em>
+            </h1>
+            <p className="game-sub">{gameTitles[selectedGame].sub}</p>
           </div>
 
-          <TetrisGame />
+          {selectedGame === 'menu' && (
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '32px' }}>
+              <Link href="/game/snake">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    padding: '14px 28px',
+                    background: 'linear-gradient(135deg, #00ff88 0%, #00cc6a 100%)',
+                    border: 'none',
+                    borderRadius: '14px',
+                    color: '#0a0a0f',
+                    fontSize: '15px',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    boxShadow: '0 8px 24px rgba(0,255,136,0.3)'
+                  }}
+                >
+                  🐍 Mainkan Snake
+                </motion.button>
+              </Link>
+              <Link href="/game/memory">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    padding: '14px 28px',
+                    background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%)',
+                    border: 'none',
+                    borderRadius: '14px',
+                    color: '#fff',
+                    fontSize: '15px',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    boxShadow: '0 8px 24px rgba(255,107,107,0.3)'
+                  }}
+                >
+                  🧠 Mainkan Memory
+                </motion.button>
+              </Link>
+            </div>
+          )}
 
-          <div className="game-tips">
-            <strong>Desktop:</strong> ← → bergerak &nbsp;·&nbsp; ↑ rotate &nbsp;·&nbsp; ↓ turun &nbsp;·&nbsp; Space drop<br/>
-            <strong>Mobile:</strong> Swipe kiri/kanan bergerak &nbsp;·&nbsp; Swipe atas rotate &nbsp;·&nbsp; Swipe bawah drop &nbsp;·&nbsp; Tap rotate
-          </div>
+          {selectedGame === 'tetris' ? (
+            <>
+              <TetrisGame />
+              <div className="game-tips">
+                <strong>Desktop:</strong> ← → bergerak &nbsp;·&nbsp; ↑ rotate &nbsp;·&nbsp; ↓ turun &nbsp;·&nbsp; Space drop<br/>
+                <strong>Mobile:</strong> Swipe kiri/kanan bergerak &nbsp;·&nbsp; Swipe atas rotate &nbsp;·&nbsp; Swipe bawah drop &nbsp;·&nbsp; Tap rotate
+              </div>
+            </>
+          ) : (
+            renderGame()
+          )}
         </main>
       </div>
     </>

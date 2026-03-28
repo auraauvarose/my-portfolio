@@ -1,7 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FadeIn,
+  ScaleIn,
+  SlideIn,
+  StaggerContainer,
+  StaggerItem,
+  ScrollReveal,
+  FloatingElement,
+  BounceIn,
+} from '@/components/animations/ScrollReveal';
 
 // ── Gemini Logo SVG Component ──
 function GeminiLogo({ size = 14 }) {
@@ -27,6 +39,7 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitDone, setSubmitDone] = useState(false);
   const [pageReady, setPageReady] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [ripple, setRipple] = useState(null);
   const [profileImage, setProfileImage] = useState('');
   const [aiOpen, setAiOpen] = useState(false);
@@ -420,6 +433,148 @@ export default function Home() {
         bgAnimRef.current = requestAnimationFrame(draw);
       };
       draw();
+    } else if (bgAnimation === 'waves') {
+      // 🌊 Waves animation
+      let t = 0;
+      const draw = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        t += 0.01;
+        for (let i = 0; i < 5; i++) {
+          ctx.beginPath();
+          ctx.moveTo(0, canvas.height / 2);
+          for (let x = 0; x < canvas.width; x += 5) {
+            const y = Math.sin(x * 0.01 + t + i * 0.5) * 50 + canvas.height / 2 + i * 30;
+            ctx.lineTo(x, y);
+          }
+          ctx.strokeStyle = `rgba(${r},${g},${b},${0.1 - i * 0.015})`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+        bgAnimRef.current = requestAnimationFrame(draw);
+      };
+      draw();
+    } else if (bgAnimation === 'aurora') {
+      // 🌌 Aurora animation
+      let t = 0;
+      const draw = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        t += 0.005;
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, `rgba(${r},${g},${b},0)`);
+        gradient.addColorStop(0.5, `rgba(${r},${g},${b},${0.1 + Math.sin(t) * 0.05})`);
+        gradient.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Aurora waves
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath();
+          ctx.moveTo(0, canvas.height);
+          for (let x = 0; x <= canvas.width; x += 10) {
+            const y = canvas.height - 100 - Math.sin(x * 0.003 + t + i) * 80 - i * 50;
+            ctx.lineTo(x, y);
+          }
+          ctx.lineTo(canvas.width, canvas.height);
+          ctx.closePath();
+          const grad = ctx.createLinearGradient(0, canvas.height - 200, 0, canvas.height);
+          grad.addColorStop(0, `rgba(${r},${g},${b},0)`);
+          grad.addColorStop(0.5, `rgba(${r},${g},${b},${0.15 - i * 0.04})`);
+          grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+        bgAnimRef.current = requestAnimationFrame(draw);
+      };
+      draw();
+    } else if (bgAnimation === 'grid') {
+      // ⊞ Moving grid animation
+      let offset = 0;
+      const draw = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        offset = (offset + 0.5) % 50;
+        ctx.strokeStyle = `rgba(${r},${g},${b},0.08)`;
+        ctx.lineWidth = 1;
+        // Vertical lines
+        for (let x = offset; x < canvas.width; x += 50) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+          ctx.stroke();
+        }
+        // Horizontal lines
+        for (let y = offset; y < canvas.height; y += 50) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+        bgAnimRef.current = requestAnimationFrame(draw);
+      };
+      draw();
+    } else if (bgAnimation === 'rain') {
+      // 🌧️ Rain animation
+      const drops = Array.from({ length: 100 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        speed: Math.random() * 5 + 10,
+        length: Math.random() * 20 + 10,
+      }));
+      const draw = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+        ctx.lineWidth = 1;
+        drops.forEach(drop => {
+          ctx.beginPath();
+          ctx.moveTo(drop.x, drop.y);
+          ctx.lineTo(drop.x, drop.y + drop.length);
+          ctx.stroke();
+          drop.y += drop.speed;
+          if (drop.y > canvas.height) {
+            drop.y = -drop.length;
+            drop.x = Math.random() * canvas.width;
+          }
+        });
+        bgAnimRef.current = requestAnimationFrame(draw);
+      };
+      draw();
+    } else if (bgAnimation === 'fireflies') {
+      // ✨ Fireflies animation
+      const fireflies = Array.from({ length: 30 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
+        size: Math.random() * 3 + 2,
+        alpha: Math.random(),
+        speed: Math.random() * 0.02 + 0.01,
+      }));
+      let t = 0;
+      const draw = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        t += 0.016;
+        fireflies.forEach(f => {
+          f.x += f.vx;
+          f.y += f.vy;
+          if (f.x < 0 || f.x > canvas.width) f.vx *= -1;
+          if (f.y < 0 || f.y > canvas.height) f.vy *= -1;
+          const alpha = (Math.sin(t * f.speed * 30) + 1) / 2 * 0.8 + 0.2;
+          // Glow effect
+          const gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.size * 3);
+          gradient.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+          gradient.addColorStop(0.5, `rgba(${r},${g},${b},${alpha * 0.3})`);
+          gradient.addColorStop(1, 'transparent');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.size * 3, 0, Math.PI * 2);
+          ctx.fill();
+          // Core
+          ctx.fillStyle = `rgba(${r},${g},${b},1)`;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.size * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        bgAnimRef.current = requestAnimationFrame(draw);
+      };
+      draw();
     }
 
     return () => {
@@ -634,13 +789,18 @@ export default function Home() {
           const ago  = mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins/60)}h ago` : `${Math.round(mins/1440)}d ago`;
           setGhStatus({ detail: repo, since: ago, msg: msg.split('\n')[0].slice(0,60), online: mins < 480 });
         }).catch(()=>{});
-      setTimeout(() => setPageReady(true), 300);
+      setTimeout(() => setPageReady(true), 2000);
     };
     init();
     return () => clearInterval(interval);
-  }, []);
+   }, []);
 
-  const submitComment = async (e) => {
+   // Set mounted to true immediately for createPortal
+   useEffect(() => {
+     setMounted(true);
+   }, []);
+
+   const submitComment = async (e) => {
     e.preventDefault();
     if (!nameInput || !messageInput) return;
     setIsSubmitting(true);
@@ -877,8 +1037,9 @@ export default function Home() {
         html::-webkit-scrollbar-thumb{background:rgba(100,100,100,0.4);border-radius:4px;}
         html::-webkit-scrollbar-thumb:hover{background:rgba(150,150,150,0.6);}
         body{margin:0;padding:0;width:100%;overflow-x:hidden;background:transparent;}
-        body{cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="cyan" stroke="white" stroke-width="1.5"><path d="M3 3l7 17 2.5-7.5L20 10z"/></svg>'),auto;}
-        a,button{cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="magenta" stroke="white" stroke-width="1.5"><path d="M3 3l7 17 2.5-7.5L20 10z"/></svg>'),pointer;}
+        /* Modern Custom Cursor - Elegant Dot Style */
+        body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23d4eb00' stroke='%230d0d0d' stroke-width='1.5'/%3E%3Ccircle cx='8' cy='8' r='2' fill='%230d0d0d'/%3E%3C/svg%3E") 8 8,auto;}
+        a,button,[role="button"],input,textarea,select,label[for]{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%23d4eb00' stroke-width='2'/%3E%3Ccircle cx='10' cy='10' r='3' fill='%23d4eb00'/%3E%3C/svg%3E") 10 10,pointer;}
 
         /* ── BG CANVAS ── */
         .bg-canvas{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.7;}
@@ -896,9 +1057,11 @@ export default function Home() {
         .loader-bar{height:100%;width:0%;background:var(--loader-acc,#d4eb00);border-radius:2px;animation:loadProgress 1.2s cubic-bezier(.4,0,.2,1) forwards;}
         @keyframes loadProgress{0%{width:0%;}60%{width:75%;}100%{width:100%;}}
         .loader-text{font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(240,239,232,0.4);}
+        .loader-spinner{width:40px;height:40px;border:3px solid rgba(212,235,0,0.2);border-top-color:var(--loader-acc,#d4eb00);border-radius:50%;animation:spin 1s linear infinite;}
+        @keyframes spin{to{transform:rotate(360deg);}}
 
         /* ── THEME VARS ── */
-        .rw{--acc:#d4eb00;--acc-bg:rgba(212,235,0,0.12);--ink:#1a1a1a;--ink2:#555555;--ink3:#999999;--bg:#ffffff;--bg2:#f4f4f0;--bd:rgba(0,0,0,0.09);--shadow:rgba(0,0,0,0.07);--font-heading:'Fraunces',serif;--font-body:'Plus Jakarta Sans',sans-serif;font-family:var(--font-body);background:var(--bg);color:var(--ink);min-height:100vh;width:100%;transition:background 0.5s ease,color 0.5s ease;position:relative;overflow-x:hidden;}
+        .rw{--acc:#d4eb00;--acc-bg:rgba(212,235,0,0.12);--ink:#1a1a1a;--ink2:#555555;--ink3:#999999;--bg:#ffffff;--bg2:#f4f4f0;--bd:rgba(0,0,0,0.09);--shadow:rgba(0,0,0,0.07);--font-heading:'Fraunces',serif;--font-body:'Plus Jakarta Sans',sans-serif;font-family:var(--font-body);background:var(--bg);color:var(--ink);min-height:100vh;width:100%;transition:background 0.5s ease,color 0.5s ease;position:relative;overflow-x:clip;}
         .rw.dark{--ink:#f0efe8;--ink2:#909088;--ink3:#555550;--bg:#111110;--bg2:#1c1c1a;--bd:rgba(255,255,255,0.07);--shadow:rgba(0,0,0,0.3);}
         .rw *{transition-property:background-color,border-color,color,box-shadow;transition-duration:0.5s;transition-timing-function:ease;}
         .hero-photo-wrap,.proj-card,.cert-card,.skill-card,.gh-repo-card{transform:translateZ(0);}
@@ -1235,7 +1398,7 @@ export default function Home() {
         .footer-made{font-size:12px;font-weight:500;color:var(--ink3);}
 
         /* ── FLOAT (LANG + AI + MUSIC) ── */
-        .float-group{position:fixed;bottom:28px;right:28px;z-index:200;display:flex;flex-direction:column;align-items:center;gap:8px;}
+        .float-group{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;align-items:center;gap:8px;}
         .lang-btn{width:54px;height:34px;border-radius:100px;background:var(--bg2);border:1.5px solid var(--bd);color:var(--ink);font-family:inherit;font-size:12px;font-weight:800;letter-spacing:0.04em;display:flex;align-items:center;justify-content:center;gap:4px;box-shadow:0 4px 16px var(--shadow);transition:all 0.25s;}
         .lang-btn:hover{transform:translateY(-2px);border-color:var(--acc);box-shadow:0 8px 24px var(--shadow);}
         .float-ai-btn{width:54px;height:54px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(155,114,207,0.35);transition:all 0.25s;background:linear-gradient(135deg,#4285f4,#9b72cf,#d76f7a,#e8a95b);color:#fff;font-size:14px;}
@@ -1363,7 +1526,7 @@ export default function Home() {
         .rw.dark .gh-chart-wrap img{filter:invert(1) hue-rotate(180deg) brightness(0.85);}
 
         /* ── AI CHAT PANEL ── */
-        .ai-panel{position:fixed;bottom:100px;right:28px;z-index:300;width:420px;background:var(--bg2);border:1px solid var(--bd);border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;animation:up 0.25s ease;}
+        .ai-panel{position:fixed;bottom:100px;right:100px;z-index:300;width:420px;background:var(--bg2);border:1px solid var(--bd);border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;animation:up 0.25s ease;}
         .ai-panel-head{padding:14px 18px;background:var(--bg);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;}
         .ai-panel-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);animation:blink 2s ease infinite;}
         .ai-panel-title{font-size:13px;font-weight:800;color:var(--ink);flex:1;}
@@ -1378,7 +1541,7 @@ export default function Home() {
         .ai-input:focus{border-color:var(--acc);}
         .ai-send{padding:9px 14px;background:var(--acc);color:#0d0d0d;border:none;border-radius:10px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0;}
         .ai-send:disabled{opacity:0.5;}
-        @media(max-width:600px){.ai-panel{right:12px;left:12px;width:auto;bottom:90px;}}
+        @media(max-width:600px){.ai-panel{right:12px;left:12px;width:auto;bottom:145px;}}
 
         /* ── ANIMATIONS ── */
         @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
@@ -1404,7 +1567,8 @@ export default function Home() {
           .wrap,.nav-in{padding-left:28px;padding-right:28px;}
           .nav-links{display:none;}
           .hero{grid-template-columns:1fr;padding-top:90px;padding-bottom:56px;gap:36px;}
-          .hero-photo-wrap{height:240px;order:-1;width:100%;}
+          .hero>*:last-child{order:-1;}
+          .hero-photo-wrap{height:240px;width:100%;}
           .hero-p{max-width:100%;}
           .stats{grid-template-columns:1fr 1fr;}
           .stat:nth-child(2){border-right:none;}
@@ -1489,6 +1653,7 @@ export default function Home() {
           .modal-note-title{font-size:16px;}
 
           .float-group{bottom:18px;right:16px;gap:7px;}
+          .lang-btn{display:none;}
           .lang-btn{width:48px;height:30px;font-size:11px;}
           .float-ai-btn{width:48px;height:48px;font-size:13px;}
           .music-btn{width:48px;height:48px;font-size:16px;}
@@ -1534,11 +1699,37 @@ export default function Home() {
         )}
 
         {/* LOADING SCREEN */}
-        <div className={`page-loader${pageReady ? ' done' : ''}`} style={{'--loader-acc': themeColor}}>
-          <div className="loader-logo">aura<em>au</em>varose</div>
-          <div className="loader-bar-wrap"><div className="loader-bar" /></div>
-          <div className="loader-text">{isID ? 'Memuat...' : 'Loading...'}</div>
-        </div>
+        {!pageReady && (
+          <div
+            style={{
+              position:'fixed',inset:0,zIndex:99999,
+              background:'#06090f',
+              display:'flex',flexDirection:'column',
+              alignItems:'center',justifyContent:'center',
+              gap:'28px',
+            }}
+          >
+            <div style={{position:'relative',width:'80px',height:'80px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <div style={{position:'absolute',width:'80px',height:'80px',borderRadius:'50%',border:'2px solid transparent',borderTopColor:'#6366f1',borderRightColor:'rgba(99,102,241,0.2)',boxSizing:'border-box',animation:'spin 1.2s linear infinite'}}/>
+              <div style={{position:'absolute',width:'56px',height:'56px',borderRadius:'50%',border:'2px solid transparent',borderTopColor:'rgba(99,102,241,0.5)',borderLeftColor:'rgba(99,102,241,0.15)',boxSizing:'border-box',animation:'spin 0.9s linear infinite reverse'}}/>
+              <div style={{position:'absolute',width:'32px',height:'32px',borderRadius:'50%',border:'2px solid transparent',borderTopColor:'#6366f1',boxSizing:'border-box',animation:'spin 1.5s linear infinite'}}/>
+              <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#6366f1',boxShadow:'0 0 16px #6366f1'}}/>
+            </div>
+            <div style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:'18px',fontWeight:'800',color:'rgba(240,239,232,0.85)',letterSpacing:'0.2em'}}>
+              aura<em style={{fontStyle:'normal',color:'#6366f1'}}>au</em>varose
+            </div>
+            <div style={{width:'180px',height:'2px',background:'rgba(255,255,255,0.07)',borderRadius:'2px',overflow:'hidden'}}>
+              <div style={{height:'100%',background:'#6366f1',borderRadius:'2px',animation:'loadBar 2s ease forwards'}}/>
+            </div>
+            <div style={{fontSize:'10px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:'rgba(240,239,232,0.28)'}}>
+              Memuat portofolio...
+            </div>
+            <style>{`
+              @keyframes spin { to { transform: rotate(360deg); } }
+              @keyframes loadBar { from { width: 0%; } to { width: 100%; } }
+            `}</style>
+          </div>
+        )}
 
         {/* UPDATE BANNER */}
         {updateMsg && (
@@ -1626,26 +1817,50 @@ export default function Home() {
 
         {/* HERO */}
         <section className="wrap hero">
-          <div data-reveal>
-            <div className="hero-tag"><span className="hero-dot" />{tx.heroBadge}</div>
-            <h1 className="hero-h1">
-              <span className="hero-line-1">{tx.heroGreet}</span>
-              <span className="hero-line-2">Aura <em className="hero-loop-name">{loopName}<span className="hero-cursor">|</span></em></span>
-            </h1>
-            <p className="hero-p">
-              {typedDesc}<span className={`type-cursor${typingDone?' done':''}`}>|</span>
-            </p>
-            <div className="hero-btns">
-              <a href="#contact" className="btn-dark">{tx.heroBtn}</a>
-              <div className="btn-acc">🕐 {time || '00:00:00'}</div>
+          <FadeIn direction="up" delay={0.2}>
+            <div>
+              <div className="hero-tag"><span className="hero-dot" />{tx.heroBadge}</div>
+              <h1 className="hero-h1">
+                <span className="hero-line-1">{tx.heroGreet}</span>
+                <span className="hero-line-2">Aura <em className="hero-loop-name">{loopName}<span className="hero-cursor">|</span></em></span>
+              </h1>
+              <p className="hero-p">
+                {typedDesc}<span className={`type-cursor${typingDone?' done':''}`}>|</span>
+              </p>
+              <div className="hero-btns">
+                <motion.a
+                  href="#contact"
+                  className="btn-dark"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {tx.heroBtn}
+                </motion.a>
+                <motion.div
+                  className="btn-acc"
+                  animate={{ scale: [1, 1.02, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  🕐 {time || '00:00:00'}
+                </motion.div>
+              </div>
             </div>
-          </div>
-          <div className="hero-photo-wrap" data-reveal data-delay="2">
-            <div className="hero-photo-bg" />
-            <div className="hero-photo">
-              <img src={profileImage || "https://api.dicebear.com/7.x/notionists/svg?seed=Aura&backgroundColor=c7d2fe"} alt="Aura" />
-            </div>
-          </div>
+          </FadeIn>
+          <FadeIn direction="left" delay={0.4}>
+            <FloatingElement amplitude={8} duration={4}>
+              <div className="hero-photo-wrap">
+                <div className="hero-photo-bg" />
+                <div className="hero-photo">
+                  <motion.img
+                    src={profileImage || "https://api.dicebear.com/7.x/notionists/svg?seed=Aura&backgroundColor=c7d2fe"}
+                    alt="Aura"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+              </div>
+            </FloatingElement>
+          </FadeIn>
         </section>
 
         {/* STATS */}

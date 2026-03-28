@@ -78,6 +78,12 @@ export default function AdminPage() {
     { id: 'honey',   name: 'Honey Tan',  color: '#E3C586', desc: 'Warm · Premium' },
     { id: 'periwinkle', name: 'Periwinkle', color: '#DBD5F2', desc: 'Dreamy · Soft' },
     { id: 'muted_violet', name: 'Muted Violet', color: '#544470', desc: 'Deep · Mystis' },
+    // 5 TEMA BARU
+    { id: 'coral',   name: 'Coral Reef', color: '#FF7F7F', desc: 'Ocean · Fresh' },
+    { id: 'mint',    name: 'Mint Green', color: '#98FF98', desc: 'Cool · Refreshing' },
+    { id: 'lavender', name: 'Lavender',  color: '#E6E6FA', desc: 'Calm · Elegant' },
+    { id: 'teal',    name: 'Teal Ocean', color: '#008080', desc: 'Deep · Mysterious' },
+    { id: 'magenta', name: 'Magenta',    color: '#FF00FF', desc: 'Bold · Vibrant' },
   ];
 
   const BG_THEMES = [
@@ -110,6 +116,10 @@ export default function AdminPage() {
     { id: 'wildcat',   name: 'Geometric',    heading: 'Teko',               body: 'Nunito',            desc: 'Condensed · Geometric (Wildcat-style)' },
     { id: 'sugarpie',  name: 'Cursive',      heading: 'Pacifico',           body: 'Plus Jakarta Sans', desc: 'Playful · Script (Sugar Pie-style)' },
     { id: 'tan',       name: 'Editorial+',   heading: 'Libre Caslon Display', body: 'Libre Caslon Text', desc: 'Wide · Editorial (Tan Headline-style)' },
+    // FONT BARU
+    { id: 'monospace', name: 'Code Style',   heading: 'JetBrains Mono',     body: 'Fira Code',         desc: 'Developer · Coding vibes' },
+    { id: 'retro',     name: 'Retro 80s',    heading: 'Press Start 2P',     body: 'VT323',             desc: 'Gaming · Pixel art' },
+    { id: 'luxury',    name: 'Luxury',       heading: 'Cinzel',             body: 'Crimson Text',      desc: 'Royal · Premium' },
   ];
 
   const DEFAULT_MUSIC = 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3';
@@ -790,12 +800,18 @@ export default function AdminPage() {
                   <span style={{fontSize:'12px',color:'var(--ink2)'}}>Pilih animasi yang tampil di latar belakang website</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
-                  {[
+                  {                  [
                     { val: 'none',      label: '⬛ Tidak Ada',  desc: 'Tanpa animasi' },
                     { val: 'particles', label: '✦ Particles',   desc: 'Titik-titik bergerak' },
                     { val: 'bubbles',   label: '🫧 Bubbles',    desc: 'Gelembung naik' },
                     { val: 'stars',     label: '⭐ Stars',       desc: 'Bintang berkedip' },
                     { val: 'matrix',    label: '💻 Matrix',     desc: 'Hujan kode' },
+                    // 5 ANIMASI BARU
+                    { val: 'waves',     label: '🌊 Waves',      desc: 'Gelombang mengalir' },
+                    { val: 'aurora',    label: '🌌 Aurora',     desc: 'Cahaya utara' },
+                    { val: 'grid',      label: '⊞ Grid',        desc: 'Grid bergerak' },
+                    { val: 'rain',      label: '🌧️ Rain',       desc: 'Hujan turun' },
+                    { val: 'fireflies', label: '✨ Fireflies',  desc: 'Kunang-kunang' },
                   ].map(opt => (
                     <button
                       key={opt.val}

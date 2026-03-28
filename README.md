@@ -26,3 +26,6 @@ Website portofolio pribadi yang interaktif, responsif, dan dinamis. Dibangun unt
 2. **Run program**
    ```bash 
    npm run dev 
+
+3. **Stop program dan restart .next**
+   
