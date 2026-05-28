@@ -1,63 +1,105 @@
-# 🚀 Personal Portfolio & Digital Garden
+# <p align="center"><img src="https://api.dicebear.com/7.x/bottts/svg?seed=Aura" width="70" /><br/>🔮 auraauvarose.dev — Digital Garden & Portfolio</p>
 
-![GitHub stars](https://img.shields.io/github/stars/[username-kamu]/[nama-repo]?style=social)
-![Next.js Version](https://img.shields.io/badge/Next.js-14.x-black?logo=next.js)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38B2AC?logo=tailwind-css)
-![License](https://img.shields.io/badge/License-MIT-green)
+<p align="center">
+  <a href="https://github.com/auraauvarose/my-portfolio"><img src="https://img.shields.io/github/stars/auraauvarose/my-portfolio?style=for-the-badge&color=d4eb00&labelColor=1a1a1a&logo=github" alt="GitHub Stars" /></a>
+  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16.1.6-black?style=for-the-badge&logo=next.js&logoColor=white&labelColor=1a1a1a" alt="Next.js 16" /></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19.2.3-blue?style=for-the-badge&logo=react&logoColor=61DAFB&labelColor=1a1a1a" alt="React 19" /></a>
+  <a href="https://supabase.com/"><img src="https://img.shields.io/badge/Supabase-Database-emerald?style=for-the-badge&logo=supabase&logoColor=3ECF8E&labelColor=1a1a1a" alt="Supabase" /></a>
+  <a href="https://deepmind.google/technologies/gemini/"><img src="https://img.shields.io/badge/Gemini_AI-Chatbot-purple?style=for-the-badge&logo=google-gemini&logoColor=8E75C8&labelColor=1a1a1a" alt="Gemini AI" /></a>
+</p>
 
-Selamat datang di repository portofolio saya. Proyek ini dibangun menggunakan **Next.js (App Router)** sebagai pusat informasi mengenai perjalanan saya di dunia Informatika, proyek yang saya kerjakan, dan tulisan teknis mengenai teknologi.
-
----
-
-## 📖 Filosofi Proyek
-Di era di mana AI bisa menulis kode dalam hitungan detik, saya percaya bahwa nilai seorang Engineer terletak pada **pemahaman fundamental** dan **kemampuan dokumentasi**. Portofolio ini adalah bukti nyata bahwa saya tidak hanya mengonsumsi teknologi, tetapi juga membangun dan memahaminya dari akar.
-
-> "AI mungkin bisa menggantikan kode yang repetitif, tapi tidak bisa menggantikan visi dan narasi di balik sebuah solusi."
+<p align="center">
+  <img src="https://readme-typing-svg.demolab.com?font=Space+Grotesk&size=20&duration=3000&pause=1000&color=d4eb00&center=true&vCenter=true&width=450&lines=🐧+Informatics+Student;🚀+Fedora+Linux+Enthusiast;💻+Creative+Full-Stack+Developer;🔮+Interactive+Digital+Garden" alt="Typing SVG" />
+</p>
 
 ---
 
-## 🛠️ Arsitektur Teknologi (Tech Stack)
+## 📖 Tentang Proyek (About The Project)
 
-Saya memilih teknologi yang modern dan memiliki performa tinggi untuk memastikan pengalaman pengguna yang mulus:
+Selamat datang di repository portofolio digital saya. Proyek ini bukan sekadar portofolio biasa, melainkan sebuah **Interactive Digital Garden & Tech HUD** yang dirancang khusus untuk memadukan estetika pemrograman tingkat tinggi dengan fitur dinamis real-time. 
 
-| Komponen | Teknologi | Alasan Pemilihan |
-| :--- | :--- | :--- |
-| **Framework** | [Next.js 14+](https://nextjs.org/) | Mendukung *Server Components* (RSC) untuk performa rendering yang sangat cepat. |
-| **Styling** | [Tailwind CSS](https://tailwindcss.com/) | Memungkinkan pengembangan UI yang cepat dengan sistem *utility-first* yang konsisten. |
-| **Language** | [TypeScript](https://www.typescriptlang.org/) | Memberikan keamanan tipe (*type-safety*) untuk meminimalisir bug saat runtime. |
-| **Animations** | [Framer Motion](https://www.framer.com/motion/) | Memberikan interaksi UI yang hidup dan elegan. |
-| **Icons** | [Lucide React](https://lucide.dev/) | Library ikon yang ringan dan mudah dikustomisasi. |
-| **Deployment** | [Vercel](https://vercel.com/) | Integrasi CI/CD otomatis setiap kali saya melakukan `git push`. |
+Dibangun dengan standar **Next.js 16 (Turbopack)**, **React 19**, dan **Supabase Database**, proyek ini memadukan animasi interaktif, integrasi kecerdasan buatan (Google Gemini AI), sistem log pengunjung terperinci, papan aspirasi komunitas, serta arsitektur yang super responsif pada perangkat mobile.
 
 ---
 
-## ✨ Fitur Unggulan
+## 🛠️ Arsitektur Teknologi & Fitur (Tech Stack & Premium Features)
 
-1. **Next.js App Router & Server Actions:** Implementasi standar terbaru Next.js untuk optimasi rute dan pengiriman data.
-2. **Dynamic SEO & Meta Tags:** Setiap halaman memiliki meta data yang unik agar mudah ditemukan di mesin pencari (Google/Bing).
-3. **Responsive Glassmorphism UI:** Desain modern yang menyesuaikan dengan segala ukuran layar (Mobile, Tablet, Desktop).
-4. **Light & Dark Mode Switcher:** Kenyamanan visual pengguna menggunakan `next-themes`.
-5. **Project Showcase:** Galeri proyek interaktif dengan detail teknologi dan link demo langsung.
+### 🌟 Fitur Utama (Core Highlights)
+* **🤖 Gemini AI Integration (Aura AI):** Chatbot AI personal yang disematkan langsung di halaman utama untuk menjawab pertanyaan pengunjung seputar keahlian, riwayat belajar, dan proyek saya.
+* **📊 Developer HUD (VS Code & GitHub Status):** Panel real-time yang memadukan status Discord/VS Code (apakah sedang online dan sedang mengedit file apa) serta grafik kontribusi GitHub secara side-by-side dalam desain ala IDE editor.
+* **📸 Community Photo Gallery:** Slider galeri momen dan kenangan interaktif yang mendukung upload foto terverifikasi secara langsung oleh komunitas pengunjung.
+* **💬 Real-time Aspirations Board (Comments Feed):** Forum komentar terintegrasi Supabase lengkap dengan fitur balasan (*threaded replies*) dan avatar gradien warna konsisten yang dibuat otomatis berdasarkan nama pengunjung.
+* **❤️ Optimistic Like System:** Tombol suka interaktif yang mendukung toggle Like & Unlike secara instan dengan efek partikel **Heart Emoji Fireworks Explosion** yang meledak radial 360 derajat.
+* **🎨 20+ Premium Theme & Animation Backgrounds:** Pilihan kustomisasi visual dari minimalist, cyber-dark, warm-glass, hingga aurora dengan default animasi constellation yang mengikuti kursor mouse (magnetic connection).
+
+### 🖥️ Spesifikasi Teknis (Tech Stack Specs)
+* **Framework:** Next.js 16.1.6 (Turbopack App Router)
+* **Library Utama:** React 19.2.3, Framer Motion, AOS
+* **Database & BaaS:** Supabase (PostgreSQL, Realtime, Storage)
+* **Styling:** Premium Vanilla CSS (Custom properties, Glassmorphic reflections, 3D rotations)
+* **Kecerdasan Buatan:** Google Gemini API
 
 ---
 
-## 📂 Struktur Folder (Project Architecture)
-
-Saya mengikuti standar industri untuk menjaga keterbacaan kode (*clean code*):
+## 📂 Struktur Proyek (Directory Structure)
 
 ```text
 .
-├── app/                # Next.js App Router (Layouts, Pages, Routes)
-│   ├── about/          # Informasi pribadi & profil
-│   ├── projects/       # Detail dan list proyek
-│   ├── globals.css     # Tailwind & Global Styles
-│   └── page.tsx        # Homepage (Hero Section)
-├── components/         # UI Reusable Components
-│   ├── ui/             # Komponen dasar (Button, Card, Input)
-│   ├── Navbar.tsx      # Komponen Navigasi
-│   └── Footer.tsx      # Komponen Footer
-├── public/             # Assets (Images, Icons, PDF CV)
-├── lib/                # Helper functions & Utility classes
-├── types/              # TypeScript interfaces/types
-├── next.config.mjs     # Konfigurasi Next.js
-└── tailwind.config.ts  # Konfigurasi tema Tailwind
+├── src/
+│   ├── app/                    # Next.js App Router (Layouts, Pages, Routes)
+│   │   ├── admin/              # Panel Administrasi (Manajemen Tema, Konten, Validasi Foto)
+│   │   ├── api/                # Endpoint Backend (Gemini AI integration)
+│   │   ├── certificates/       # Halaman Koleksi Sertifikat Akademis Lengkap
+│   │   ├── gallery/            # Halaman Galeri Foto Kenangan Komunitas
+│   │   ├── game/               # Mini Game Interaktif
+│   │   ├── projects/           # Halaman Detail Proyek Full-Scale
+│   │   ├── globals.css         # Reset CSS, Design Tokens & Core Variables
+│   │   ├── layout.js           # Metadata Global & Root Layout
+│   │   └── page.js             # Halaman Utama (Interactive Landings HUD)
+│   ├── components/             # Reusable UI Components
+│   │   ├── animations/         # BackgroundCanvas (constellations, meteor, dna, vortex)
+│   │   └── loading/            # Glowing Orb Loader Screens
+│   ├── context/                # React Context for State Management
+│   └── lib/                    # Supabase Client & API Helper functions
+```
+
+---
+
+## ⚙️ Cara Menjalankan Proyek (Local Installation)
+
+Pastikan Anda telah menginstal [Node.js](https://nodejs.org/) (versi 18+) di mesin Anda.
+
+1. **Clone repository ini:**
+   ```bash
+   git clone https://github.com/auraauvarose/my-portfolio.git
+   cd my-portfolio
+   ```
+
+2. **Instal seluruh dependensi:**
+   ```bash
+   npm install
+   ```
+
+3. **Konfigurasi Environment Variables:**
+   Buat file `.env.local` di folder root dan isi dengan kredensial Supabase serta Gemini API Anda (lihat `.env.local.example`):
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   GEMINI_API_KEY=your_google_gemini_api_key
+   ```
+
+4. **Jalankan server lokal dalam mode development:**
+   ```bash
+   npm run dev
+   ```
+   Buka [http://localhost:3000](http://localhost:3000) di browser Anda untuk melihat hasilnya!
+
+---
+
+## 💻 Kontribusi & Lisensi
+
+Proyek ini bersifat open-source dan dilisensikan di bawah **MIT License**. Jangan ragu untuk melakukan fork, mengajukan pull requests, atau memberikan kontribusi terbaik Anda demi kemajuan ekosistem developer!
+
+<p align="center">
+  Made with 🐧 Fedora Linux, ⚡ Next.js 16, and ❤️ by <strong>Aura Auvarose</strong>
+</p>

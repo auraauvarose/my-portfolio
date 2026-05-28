@@ -14,6 +14,7 @@ import {
   FloatingElement,
   BounceIn,
 } from '@/components/animations/ScrollReveal';
+import BackgroundCanvas from '@/components/animations/BackgroundCanvas';
 
 // ── Gemini Logo SVG Component ──
 function GeminiLogo({ size = 14 }) {
@@ -80,10 +81,13 @@ export default function Home() {
 
   // ── NEW STATES ──
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [bgAnimation, setBgAnimation] = useState('none');
+  const [bgAnimation, setBgAnimation] = useState('constellation');
   const [loveParticles, setLoveParticles] = useState([]);
   const [defaultThemeMode, setDefaultThemeMode] = useState('dark');
   const [isMobile, setIsMobile] = useState(false);
+  const [activeSkill, setActiveSkill] = useState(null);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [loadText, setLoadText] = useState('Inisialisasi Portofolio...');
 
   const audioRef = useRef(null);
   const themeBtnRef = useRef(null);
@@ -118,6 +122,11 @@ export default function Home() {
     pumpkin_charcoal:   { darkBg:'#233D4C', darkBg2:'#1a2e39', lightBg:'#FFF0E6',  lightBg2:'#ffe0cc' },
     honey_black:        { darkBg:'#171717', darkBg2:'#202020', lightBg:'#E3C586',  lightBg2:'#d4b06a' },
     periwinkle_violet:  { darkBg:'#544470', darkBg2:'#3e3354', lightBg:'#DBD5F2',  lightBg2:'#ccc4eb' },
+    cyberpunk:          { darkBg:'#0b0914', darkBg2:'#151226', lightBg:'#fff0fa',  lightBg2:'#ffe3f4' },
+    nordic:             { darkBg:'#0b1016', darkBg2:'#141b25', lightBg:'#f0f5fa',  lightBg2:'#e1ecf5' },
+    matcha:             { darkBg:'#0e150f', darkBg2:'#18231a', lightBg:'#f4f8f4',  lightBg2:'#e5efe5' },
+    dracula:            { darkBg:'#13141f', darkBg2:'#1a1c2c', lightBg:'#f2f3f9',  lightBg2:'#e2e5f3' },
+    sakura:             { darkBg:'#1a0f14', darkBg2:'#28161f', lightBg:'#fff3f6',  lightBg2:'#ffe3eb' },
   };
   const FONTS = {
     fraunces:  { heading:"'Fraunces',serif",           body:"'Plus Jakarta Sans',sans-serif" },
@@ -129,6 +138,14 @@ export default function Home() {
     wildcat:   { heading:"'Teko',sans-serif",                  body:"'Nunito',sans-serif" },
     sugarpie:  { heading:"'Pacifico',cursive",                 body:"'Plus Jakarta Sans',sans-serif" },
     tan:       { heading:"'Libre Caslon Display',serif",       body:"'Libre Caslon Text',serif" },
+    // font untuk hal lain semisal error
+
+
+
+
+
+
+
   };
   const curBg   = BG_THEMES[bgTheme]   || BG_THEMES.default;
   const curFont = FONTS[fontChoice]     || FONTS.fraunces;
@@ -173,6 +190,20 @@ export default function Home() {
   };
 
   useEffect(() => { aiEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages]);
+
+  useEffect(() => {
+    if (!pageReady) {
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    };
+  }, [pageReady]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -299,290 +330,7 @@ export default function Home() {
     };
   });
 
-  useEffect(() => {
-    const canvas = bgCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
 
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    if (bgAnimRef.current) {
-      cancelAnimationFrame(bgAnimRef.current);
-      bgAnimRef.current = null;
-    }
-
-    if (bgAnimation === 'none') {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      window.removeEventListener('resize', resize);
-      return;
-    }
-
-    const [r, g, b] = accRgb;
-    let particles = [];
-
-    if (bgAnimation === 'particles') {
-      particles = Array.from({ length: 60 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 3 + 1,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        a: Math.random() * 0.5 + 0.1,
-      }));
-      const draw = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => {
-          p.x += p.vx; p.y += p.vy;
-          if (p.x < 0) p.x = canvas.width;
-          if (p.x > canvas.width) p.x = 0;
-          if (p.y < 0) p.y = canvas.height;
-          if (p.y > canvas.height) p.y = 0;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${r},${g},${b},${p.a})`;
-          ctx.fill();
-        });
-        for (let i = 0; i < particles.length; i++) {
-          for (let j = i + 1; j < particles.length; j++) {
-            const dx = particles[i].x - particles[j].x;
-            const dy = particles[i].y - particles[j].y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 120) {
-              ctx.beginPath();
-              ctx.moveTo(particles[i].x, particles[i].y);
-              ctx.lineTo(particles[j].x, particles[j].y);
-              ctx.strokeStyle = `rgba(${r},${g},${b},${0.06 * (1 - dist / 120)})`;
-              ctx.lineWidth = 0.5;
-              ctx.stroke();
-            }
-          }
-        }
-        bgAnimRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    } else if (bgAnimation === 'bubbles') {
-      particles = Array.from({ length: 20 }, () => ({
-        x: Math.random() * canvas.width,
-        y: canvas.height + Math.random() * 200,
-        r: Math.random() * 30 + 10,
-        vy: -(Math.random() * 0.4 + 0.1),
-        a: Math.random() * 0.12 + 0.04,
-      }));
-      const draw = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => {
-          p.y += p.vy;
-          if (p.y + p.r < 0) { p.y = canvas.height + p.r; p.x = Math.random() * canvas.width; }
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(${r},${g},${b},${p.a})`;
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-          const grd = ctx.createRadialGradient(p.x - p.r * 0.3, p.y - p.r * 0.3, 0, p.x, p.y, p.r);
-          grd.addColorStop(0, `rgba(${r},${g},${b},${p.a * 0.5})`);
-          grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
-          ctx.fillStyle = grd;
-          ctx.fill();
-        });
-        bgAnimRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    } else if (bgAnimation === 'stars') {
-      particles = Array.from({ length: 120 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 1.5 + 0.3,
-        a: Math.random(),
-        speed: Math.random() * 0.02 + 0.005,
-        phase: Math.random() * Math.PI * 2,
-      }));
-      let t = 0;
-      const draw = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        t += 0.016;
-        particles.forEach(p => {
-          const alpha = (Math.sin(t * p.speed * 30 + p.phase) + 1) / 2 * 0.7 + 0.1;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-          ctx.fill();
-        });
-        bgAnimRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    } else if (bgAnimation === 'matrix') {
-      const cols = Math.floor(canvas.width / 16);
-      const drops = Array(cols).fill(1);
-      const chars = '01アイウエオカキクケコサシスセソタチツテト'.split('');
-      const draw = () => {
-        ctx.fillStyle = d ? 'rgba(17,17,16,0.05)' : 'rgba(255,255,255,0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = `rgba(${r},${g},${b},0.5)`;
-        ctx.font = '14px monospace';
-        drops.forEach((y, i) => {
-          const char = chars[Math.floor(Math.random() * chars.length)];
-          ctx.fillText(char, i * 16, y * 16);
-          if (y * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
-          drops[i]++;
-        });
-        bgAnimRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    } else if (bgAnimation === 'waves') {
-      // 🌊 Waves animation
-      let t = 0;
-      const draw = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        t += 0.01;
-        for (let i = 0; i < 5; i++) {
-          ctx.beginPath();
-          ctx.moveTo(0, canvas.height / 2);
-          for (let x = 0; x < canvas.width; x += 5) {
-            const y = Math.sin(x * 0.01 + t + i * 0.5) * 50 + canvas.height / 2 + i * 30;
-            ctx.lineTo(x, y);
-          }
-          ctx.strokeStyle = `rgba(${r},${g},${b},${0.1 - i * 0.015})`;
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        }
-        bgAnimRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    } else if (bgAnimation === 'aurora') {
-      // 🌌 Aurora animation
-      let t = 0;
-      const draw = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        t += 0.005;
-        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-        gradient.addColorStop(0, `rgba(${r},${g},${b},0)`);
-        gradient.addColorStop(0.5, `rgba(${r},${g},${b},${0.1 + Math.sin(t) * 0.05})`);
-        gradient.addColorStop(1, `rgba(${r},${g},${b},0)`);
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        // Aurora waves
-        for (let i = 0; i < 3; i++) {
-          ctx.beginPath();
-          ctx.moveTo(0, canvas.height);
-          for (let x = 0; x <= canvas.width; x += 10) {
-            const y = canvas.height - 100 - Math.sin(x * 0.003 + t + i) * 80 - i * 50;
-            ctx.lineTo(x, y);
-          }
-          ctx.lineTo(canvas.width, canvas.height);
-          ctx.closePath();
-          const grad = ctx.createLinearGradient(0, canvas.height - 200, 0, canvas.height);
-          grad.addColorStop(0, `rgba(${r},${g},${b},0)`);
-          grad.addColorStop(0.5, `rgba(${r},${g},${b},${0.15 - i * 0.04})`);
-          grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-          ctx.fillStyle = grad;
-          ctx.fill();
-        }
-        bgAnimRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    } else if (bgAnimation === 'grid') {
-      // ⊞ Moving grid animation
-      let offset = 0;
-      const draw = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        offset = (offset + 0.5) % 50;
-        ctx.strokeStyle = `rgba(${r},${g},${b},0.08)`;
-        ctx.lineWidth = 1;
-        // Vertical lines
-        for (let x = offset; x < canvas.width; x += 50) {
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, canvas.height);
-          ctx.stroke();
-        }
-        // Horizontal lines
-        for (let y = offset; y < canvas.height; y += 50) {
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(canvas.width, y);
-          ctx.stroke();
-        }
-        bgAnimRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    } else if (bgAnimation === 'rain') {
-      // 🌧️ Rain animation
-      const drops = Array.from({ length: 100 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        speed: Math.random() * 5 + 10,
-        length: Math.random() * 20 + 10,
-      }));
-      const draw = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
-        ctx.lineWidth = 1;
-        drops.forEach(drop => {
-          ctx.beginPath();
-          ctx.moveTo(drop.x, drop.y);
-          ctx.lineTo(drop.x, drop.y + drop.length);
-          ctx.stroke();
-          drop.y += drop.speed;
-          if (drop.y > canvas.height) {
-            drop.y = -drop.length;
-            drop.x = Math.random() * canvas.width;
-          }
-        });
-        bgAnimRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    } else if (bgAnimation === 'fireflies') {
-      // ✨ Fireflies animation
-      const fireflies = Array.from({ length: 30 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: (Math.random() - 0.5) * 0.8,
-        size: Math.random() * 3 + 2,
-        alpha: Math.random(),
-        speed: Math.random() * 0.02 + 0.01,
-      }));
-      let t = 0;
-      const draw = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        t += 0.016;
-        fireflies.forEach(f => {
-          f.x += f.vx;
-          f.y += f.vy;
-          if (f.x < 0 || f.x > canvas.width) f.vx *= -1;
-          if (f.y < 0 || f.y > canvas.height) f.vy *= -1;
-          const alpha = (Math.sin(t * f.speed * 30) + 1) / 2 * 0.8 + 0.2;
-          // Glow effect
-          const gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.size * 3);
-          gradient.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
-          gradient.addColorStop(0.5, `rgba(${r},${g},${b},${alpha * 0.3})`);
-          gradient.addColorStop(1, 'transparent');
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.arc(f.x, f.y, f.size * 3, 0, Math.PI * 2);
-          ctx.fill();
-          // Core
-          ctx.fillStyle = `rgba(${r},${g},${b},1)`;
-          ctx.beginPath();
-          ctx.arc(f.x, f.y, f.size * 0.5, 0, Math.PI * 2);
-          ctx.fill();
-        });
-        bgAnimRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    }
-
-    return () => {
-      if (bgAnimRef.current) cancelAnimationFrame(bgAnimRef.current);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      window.removeEventListener('resize', resize);
-    };
-  }, [bgAnimation, themeColor, isDark]);
 
   useEffect(() => {
     const el = galleryGridRef.current;
@@ -744,6 +492,7 @@ export default function Home() {
         if (row.key === 'bg_animation'    && row.value) setBgAnimation(row.value);
       });
     };
+    let loadTimer;
     const init = async () => {
       await Promise.all([loadCerts(), loadProjects(), loadViews(), loadComments(), loadSettings()]);
       logVisitor();
@@ -789,10 +538,37 @@ export default function Home() {
           const ago  = mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins/60)}h ago` : `${Math.round(mins/1440)}d ago`;
           setGhStatus({ detail: repo, since: ago, msg: msg.split('\n')[0].slice(0,60), online: mins < 480 });
         }).catch(()=>{});
-      setTimeout(() => setPageReady(true), 2000);
+
+      // A premium progress simulation
+      const start = Date.now();
+      const duration = 2200; // 2.2 seconds
+      const steps = [
+        { limit: 20, text: isID ? 'Menghubungkan database...' : 'Connecting database...' },
+        { limit: 45, text: isID ? 'Memuat proyek & sertifikat...' : 'Loading projects & certs...' },
+        { limit: 70, text: isID ? 'Mengoptimalkan aset grafis...' : 'Optimizing visual assets...' },
+        { limit: 90, text: isID ? 'Menyinkronkan status GitHub...' : 'Syncing GitHub status...' },
+        { limit: 100, text: isID ? 'Selesai! Membuka gerbang...' : 'Almost ready! Unlocking...' }
+      ];
+
+      loadTimer = setInterval(() => {
+        const elapsed = Date.now() - start;
+        const pct = Math.min(Math.round((elapsed / duration) * 100), 100);
+        setLoadProgress(pct);
+
+        const step = steps.find(s => pct <= s.limit) || steps[steps.length - 1];
+        setLoadText(step.text);
+
+        if (pct >= 100) {
+          clearInterval(loadTimer);
+          setTimeout(() => setPageReady(true), 150);
+        }
+      }, 30);
     };
     init();
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (loadTimer) clearInterval(loadTimer);
+    };
    }, []);
 
    // Set mounted to true immediately for createPortal
@@ -819,29 +595,56 @@ export default function Home() {
   };
 
   const handleLike = async () => {
-    if (liked || !likeId) return;
-    setLiked(true);
-    setLikeAnim(true);
-    setTimeout(() => setLikeAnim(false), 800);
+    if (!likeId) return;
 
-    const newParticles = Array.from({ length: 20 }, (_, i) => ({
-      id: Date.now() + i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 22 + 14,
-      dur: Math.random() * 1.5 + 1.5,
-      delay: Math.random() * 0.8,
-      emoji: ['❤️','💕','💖','💗','💓'][Math.floor(Math.random()*5)],
-    }));
-    setLoveParticles(newParticles);
-    setTimeout(() => setLoveParticles([]), 4000);
+    if (liked) {
+      // Optimistic unlike update
+      setLiked(false);
+      setLikeCount(prev => Math.max(0, prev - 1));
 
-    const { error } = await supabase.from('likes').insert([{ device_id: likeId }]);
-    if (!error) {
-      const { count } = await supabase.from('likes').select('count', { count:'exact', head:true });
-      setLikeCount(count||0);
+      const { error } = await supabase.from('likes').delete().eq('device_id', likeId);
+      if (error) {
+        // Rollback on Supabase error
+        setLiked(true);
+        const { count } = await supabase.from('likes').select('count', { count:'exact', head:true });
+        setLikeCount(count || 0);
+      }
     } else {
+      // Optimistic like update
       setLiked(true);
+      setLikeAnim(true);
+      setTimeout(() => setLikeAnim(false), 800);
+
+      // Fireworks emoji explosion math
+      const newParticles = Array.from({ length: 45 }, (_, i) => {
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * 150 + 60;
+        const tx = Math.cos(angle) * velocity;
+        const ty = Math.sin(angle) * velocity - 60;
+        return {
+          id: Date.now() + i,
+          size: Math.random() * 24 + 14,
+          dur: Math.random() * 1.5 + 1.0,
+          delay: Math.random() * 0.25,
+          emoji: ['❤️','💕','💖','💗','💓','✨','🎉','🥳','⭐','💘','💝'][Math.floor(Math.random() * 11)],
+          tx: `${tx}px`,
+          ty: `${ty}px`,
+          rot: `${Math.random() * 360 - 180}deg`,
+          scale: Math.random() * 0.8 + 0.8,
+        };
+      });
+      setLoveParticles(newParticles);
+      setTimeout(() => setLoveParticles([]), 4000);
+
+      setLikeCount(prev => prev + 1);
+
+      const { error } = await supabase.from('likes').insert([{ device_id: likeId }]);
+      if (error) {
+        // Rollback on Supabase error
+        setLiked(false);
+        const { count } = await supabase.from('likes').select('count', { count:'exact', head:true });
+        setLikeCount(count || 0);
+      }
     }
   };
 
@@ -990,17 +793,158 @@ export default function Home() {
   ];
 
   const skills = [
-    { name: 'Node.js', cat: 'Back-End', level: 45 },
-    { name: 'Express.js', cat: 'Framework', level: 0 },
-    { name: 'JavaScript', cat: 'Language', level: 60 },
-    { name: 'Python', cat: 'Language', level: 70 },
-    { name: 'Docker', cat: 'DevOps', level: 0 },
-    { name: 'Next.js', cat: 'Front-End', level: 50 },
-    { name: 'Git', cat: 'Tools', level: 82 },
-    { name: 'C++', cat: 'Language', level: 55 },
-    { name : 'Linux', cat: 'OS', level: 65 },
-    { name: 'SQL', cat: 'Database', level: 30 },
-    { name: 'Next.js', cat: 'Framework', level: 50 },
+    {
+      name: 'Node.js',
+      cat: 'Back-End',
+      color: '#339933',
+      colorRgb: '51, 153, 51',
+      desc: {
+        id: 'Runtime JavaScript di sisi server yang cepat, dibangun di atas V8 Chrome.',
+        en: 'Fast, server-side JavaScript runtime built on Chrome\'s V8 engine.'
+      },
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L3 7.2v9.6L12 22l9-5.2V7.2L12 2zm-1 15.5l-4-2.3v-4.6l4 2.3v4.6zm1-6.4L8 8.8l4-2.3 4 2.3-4 2.3zm5 4.1l-4 2.3v-4.6l4-2.3v4.6z" />
+        </svg>
+      )
+    },
+    {
+      name: 'Express.js',
+      cat: 'Framework',
+      color: '#828282',
+      colorRgb: '130, 130, 130',
+      desc: {
+        id: 'Framework web minimalis dan fleksibel untuk Node.js untuk membangun API.',
+        en: 'Minimalist and flexible web framework for Node.js to build APIs.'
+      },
+      icon: (
+        <div className="express-logo-text" style={{ fontSize: '14px', fontWeight: '900', fontFamily: 'var(--font-heading), monospace', letterSpacing: '-0.5px' }}>EX</div>
+      )
+    },
+    {
+      name: 'JavaScript',
+      cat: 'Language',
+      color: '#f7df1e',
+      colorRgb: '247, 223, 30',
+      desc: {
+        id: 'Bahasa pemrograman web untuk interaktivitas dinamis client & server.',
+        en: 'Core web programming language for dynamic client & server interactivity.'
+      },
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <rect width="24" height="24" rx="4" fill="#f7df1e" />
+          <text x="13" y="19" fill="#000" fontSize="11" fontWeight="900" fontFamily="sans-serif">JS</text>
+        </svg>
+      )
+    },
+    {
+      name: 'Python',
+      cat: 'Language',
+      color: '#3776ab',
+      colorRgb: '55, 118, 171',
+      desc: {
+        id: 'Bahasa populer yang bersih, tangguh untuk automasi dan AI/data science.',
+        en: 'Clean and powerful language highly popular for automation and AI/data science.'
+      },
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2c-2.7 0-2.5 1.2-2.5 1.2h2.5v1.2H8.3c0 0-2.5-.2-2.5 2.5s0 2.5 2.5 2.5h1.2v-1.2c0 0 .1-1.2 1.2-1.2h2.5c2.7 0 2.5-1.2 2.5-1.2H13.2V4.8h3.7c0 0 2.5.2 2.5-2.5S16.9 0 14.4 0H12zm-3.7.9a.6.6 0 1 1 0 1.2.6.6 0 0 1 0-1.2zm6.2 17.3c2.7 0 2.5-1.2 2.5-1.2H14.5v-1.2h3.7c0 0 2.5.2 2.5-2.5s0-2.5-2.5-2.5H17v1.2c0 0-.1 1.2-1.2 1.2h-2.5c-2.7 0-2.5 1.2-2.5 1.2h2.5v1.2H9.6c0 0-2.5-.2-2.5 2.5s2.5 2.5 5 2.5h2.4zm1.2-.9a.6.6 0 1 1 0-1.2.6.6 0 0 1 0 1.2z" />
+        </svg>
+      )
+    },
+    {
+      name: 'Docker',
+      cat: 'DevOps',
+      color: '#2496ed',
+      colorRgb: '36, 150, 237',
+      desc: {
+        id: 'Platform kontainerisasi untuk deploy aplikasi secara konsisten.',
+        en: 'Containerization platform to package and deploy apps consistently.'
+      },
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13.983 11.078h2.119c.102 0 .186-.084.186-.186V9.172c0-.102-.084-.186-.186-.186h-2.119c-.102 0-.186.084-.186.186v1.72c0 .101.084.186.186.186zm-2.913 0h2.119c.102 0 .186-.084.186-.186V9.172c0-.102-.084-.186-.186-.186h-2.119c-.102 0-.186.084-.186.186v1.72c0 .101.084.186.186.186zm-2.913 0h2.119c.102 0 .186-.084.186-.186V9.172c0-.102-.084-.186-.186-.186H8.157c-.102 0-.186.084-.186.186v1.72c0 .101.084.186.186.186zm-2.913 0h2.119c.102 0 .186-.084.186-.186V9.172c0-.102-.084-.186-.186-.186H5.244c-.102 0-.186.084-.186.186v1.72c0 .101.084.186.186.186zm-2.913 0h2.119c.102 0 .186-.084.186-.186V9.172c0-.102-.084-.186-.186-.186H2.33c-.102 0-.186.084-.186.186v1.72c0 .101.084.186.186.186zm2.913-2.502h2.119c.102 0 .186-.084.186-.186V6.67c0-.102-.084-.186-.186-.186H5.244c-.102 0-.186.084-.186.186v1.72c0 .101.084.186.186.186zm2.913 0h2.119c.102 0 .186-.084.186-.186V6.67c0-.102-.084-.186-.186-.186H8.157c-.102 0-.186.084-.186.186v1.72c0 .101.084.186.186.186zm2.913 0h2.119c.102 0 .186-.084.186-.186V6.67c0-.102-.084-.186-.186-.186h-2.119c-.102 0-.186.084-.186.186v1.72c0 .101.084.186.186.186zm2.913-2.502h2.119c.102 0 .186-.084.186-.186V4.168c0-.102-.084-.186-.186-.186h-2.119c-.102 0-.186.084-.186.186v1.72c0 .101.084.186.186.186zM23.957 12.39c-.16-.08-.4-.144-.688-.176-.56-.064-1.2-.08-1.872-.08-.304 0-.624.016-.944.032v-1.12c0-.1-.08-.176-.176-.176h-2.112c-.1 0-.176.08-.176.176v2.176c-.032 0-.064-.016-.096-.016-.272-.032-.608-.048-.96-.048h-.048c-.08-.416-.288-.848-.656-1.2-.56-.544-1.376-.8-2.432-.8-1.024 0-1.84.272-2.432.8-.368.352-.576.784-.656 1.2h-.048c-.352 0-.688.016-.96.048-.032 0-.064.016-.096.016V8.914c0-.1-.08-.176-.176-.176H8.2c-.1 0-.176.08-.176.176v3.296C6.68 12.422 5.096 13.062 4.12 14.15c-.944 1.056-1.232 2.336-1.232 3.488 0 3.552 2.8 5.616 7.424 5.616 5.376 0 7.84-2.896 8.944-5.328.752.128 1.48.24 2.16.24.4 0 .768-.032 1.088-.08.768-.112 1.344-.448 1.552-1.008.208-.576.016-1.392-.096-4.688z" />
+        </svg>
+      )
+    },
+    {
+      name: 'Next.js',
+      cat: 'Framework',
+      color: '#ffffff',
+      colorRgb: '255, 255, 255',
+      desc: {
+        id: 'Framework React premium dengan render server, SSR, dan optimasi performa.',
+        en: 'Premium React framework featuring server-side rendering, SSR, and speed.'
+      },
+      icon: (
+        <svg viewBox="0 0 128 128" fill="currentColor">
+          <path d="M64 0C28.7 0 0 28.7 0 64s28.7 64 64 64 64-28.7 64-64S99.3 0 64 0zm37.5 95.8l-42.9-55.5V90H47.4V38h11.2l42.6 55V38h11.2v57.8h-.9z" />
+        </svg>
+      )
+    },
+    {
+      name: 'Git',
+      cat: 'Tools',
+      color: '#f05032',
+      colorRgb: '240, 80, 50',
+      desc: {
+        id: 'Sistem pengontrol versi standar industri untuk kolaborasi kode.',
+        en: 'Industry-standard version control system for code collaboration.'
+      },
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M23.3 10.9L13.1.7C12.7.3 12 .3 11.6.7L8.9 3.4l3.2 3.2c.8-.3 1.8-.1 2.4.6.6.6.8 1.5.6 2.3l3.2 3.2c.8-.2 1.7 0 2.3.6.8.8.8 2.1 0 2.9-.8.8-2.1.8-2.9 0-.6-.6-.8-1.5-.6-2.3l-3.2-3.2v4.7c.3.2.5.5.6.9.4.8.2 1.8-.4 2.4-.6.6-1.5.8-2.3.6L9.6 21.6c-.2.8-1 1.3-1.8 1.1-.8-.2-1.3-1-1.1-1.8.2-.8 1-1.3 1.8-1.1l2.8-2.8v-4.7c-.3-.2-.5-.5-.6-.9-.4-.8-.2-1.8.4-2.4.6-.6 1.5-.8 2.3-.6l3.2-3.2-2.7-2.7L.7 11.6c-.4.4-.4 1.1 0 1.5l10.2 10.2c.4.4 1.1.4 1.5 0l10.9-10.9c.4-.4.4-1.1 0-1.5z" />
+        </svg>
+      )
+    },
+    {
+      name: 'C++',
+      cat: 'Language',
+      color: '#00599c',
+      colorRgb: '0, 89, 156',
+      desc: {
+        id: 'Bahasa berkinerja tinggi, banyak digunakan pada sistem & game engine.',
+        en: 'High-performance language, widely used in systems & game engines.'
+      },
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M2 12c0-5.52 4.48-10 10-10s10 4.48 10 10-4.48 10-10 10S2 17.52 2 12zm8.5-4h-4v8h4v-1.5h-2.5v-1h2.5v-1.5h-2.5v-1h2.5V8zm7.5 2.5h-1.5v-1.5h-1v1.5h-1.5v1h1.5v1.5h1v-1.5h1.5v-1zm5 0h-1.5v-1.5h-1v1.5h-1.5v1h1.5v1.5h1v-1.5h1.5v-1z" />
+        </svg>
+      )
+    },
+    {
+      name: 'Linux',
+      cat: 'OS',
+      color: '#fcc624',
+      colorRgb: '252, 198, 36',
+      desc: {
+        id: 'Sistem operasi open-source tangguh, tulang punggung server cloud.',
+        en: 'Robust open-source operating system, the backbone of cloud servers.'
+      },
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="4 17 10 11 4 5" />
+          <line x1="12" y1="19" x2="20" y2="19" />
+        </svg>
+      )
+    },
+    {
+      name: 'SQL',
+      cat: 'Database',
+      color: '#00758f',
+      colorRgb: '0, 117, 143',
+      desc: {
+        id: 'Bahasa standar untuk mengelola, kueri database relasional secara efisien.',
+        en: 'Standard language for managing and querying relational databases.'
+      },
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <ellipse cx="12" cy="5" rx="9" ry="3" />
+          <path d="M3 5v6c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+          <path d="M3 11v6c0 1.66 4 3 9 3s9-1.34 9-3v-6" />
+        </svg>
+      )
+    }
   ];
 
   const timeline = isID ? [
@@ -1028,7 +972,7 @@ export default function Home() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,400;1,9..144,700&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;600;700;800&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,700;1,400&family=Lato:wght@400;700&family=Bebas+Neue&family=Teko:wght@400;600;700&family=Pacifico&family=Libre+Caslon+Display&family=Libre+Caslon+Text:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap');
         *,*::before,*::after{box-sizing:border-box;}
-        html{margin:0;padding:0;width:100%;overflow-x:hidden;background:#111110;transition:background 0.5s ease;scrollbar-width:thin;scrollbar-color:rgba(100,100,100,0.5) transparent;}
+        html{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden!important;background:#111110;transition:background 0.5s ease;scrollbar-width:thin;scrollbar-color:rgba(100,100,100,0.5) transparent;}
         html.site-dark{background:#111110;}
         html:not(.site-dark){background:#ffffff;}
         html{scrollbar-gutter:stable;}
@@ -1036,7 +980,7 @@ export default function Home() {
         html::-webkit-scrollbar-track{background:transparent;}
         html::-webkit-scrollbar-thumb{background:rgba(100,100,100,0.4);border-radius:4px;}
         html::-webkit-scrollbar-thumb:hover{background:rgba(150,150,150,0.6);}
-        body{margin:0;padding:0;width:100%;overflow-x:hidden;background:transparent;}
+        body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden!important;background:transparent;}
         /* Modern Custom Cursor - Elegant Dot Style */
         body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23d4eb00' stroke='%230d0d0d' stroke-width='1.5'/%3E%3Ccircle cx='8' cy='8' r='2' fill='%230d0d0d'/%3E%3C/svg%3E") 8 8,auto;}
         a,button,[role="button"],input,textarea,select,label[for]{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%23d4eb00' stroke-width='2'/%3E%3Ccircle cx='10' cy='10' r='3' fill='%23d4eb00'/%3E%3C/svg%3E") 10 10,pointer;}
@@ -1061,7 +1005,7 @@ export default function Home() {
         @keyframes spin{to{transform:rotate(360deg);}}
 
         /* ── THEME VARS ── */
-        .rw{--acc:#d4eb00;--acc-bg:rgba(212,235,0,0.12);--ink:#1a1a1a;--ink2:#555555;--ink3:#999999;--bg:#ffffff;--bg2:#f4f4f0;--bd:rgba(0,0,0,0.09);--shadow:rgba(0,0,0,0.07);--font-heading:'Fraunces',serif;--font-body:'Plus Jakarta Sans',sans-serif;font-family:var(--font-body);background:var(--bg);color:var(--ink);min-height:100vh;width:100%;transition:background 0.5s ease,color 0.5s ease;position:relative;overflow-x:clip;}
+        .rw{--acc:#d4eb00;--acc-bg:rgba(212,235,0,0.12);--ink:#1a1a1a;--ink2:#555555;--ink3:#999999;--bg:#ffffff;--bg2:#f4f4f0;--bd:rgba(0,0,0,0.09);--shadow:rgba(0,0,0,0.07);--font-heading:'Fraunces',serif;--font-body:'Plus Jakarta Sans',sans-serif;font-family:var(--font-body);background:var(--bg);color:var(--ink);min-height:100vh;width:100%;max-width:100%;transition:background 0.5s ease,color 0.5s ease;position:relative;overflow-x:hidden!important;}
         .rw.dark{--ink:#f0efe8;--ink2:#909088;--ink3:#555550;--bg:#111110;--bg2:#1c1c1a;--bd:rgba(255,255,255,0.07);--shadow:rgba(0,0,0,0.3);}
         .rw *{transition-property:background-color,border-color,color,box-shadow;transition-duration:0.5s;transition-timing-function:ease;}
         .hero-photo-wrap,.proj-card,.cert-card,.skill-card,.gh-repo-card{transform:translateZ(0);}
@@ -1187,13 +1131,14 @@ export default function Home() {
 
         /* ── HERO ── */
         .hero{padding-top:116px;padding-bottom:80px;display:grid;grid-template-columns:1fr 300px;align-items:center;gap:60px;border-bottom:1px solid var(--bd);}
-        .hero-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:0.1em;color:var(--ink2);text-transform:uppercase;margin-bottom:18px;}
+        .hero-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:0.12em;color:var(--ink);background:var(--acc-bg);border:1px solid rgba(212,235,0,0.15);padding:6px 16px;border-radius:100px;text-transform:uppercase;margin-bottom:24px;backdrop-filter:blur(8px);box-shadow:0 4px 20px rgba(0,0,0,0.04);}
         .hero-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);animation:blink 2s ease infinite;flex-shrink:0;}
         @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
         .hero-h1{font-family:var(--font-heading);font-size:clamp(38px,6vw,84px);font-weight:900;line-height:0.93;letter-spacing:-0.02em;color:var(--ink);margin:0 0 22px;}
         .hero-line-1{display:block;animation:heroSlideIn 0.7s cubic-bezier(.22,1,.36,1) both;}
         .hero-line-2{display:block;animation:heroSlideIn 0.7s 0.15s cubic-bezier(.22,1,.36,1) both;}
         .hero-loop-name{animation:heroSlideIn 0.7s 0.25s cubic-bezier(.22,1,.36,1) both;font-style:italic;font-weight:400;color:var(--ink2);}
+        .gradient-text{background:linear-gradient(135deg, var(--acc, #d4eb00) 0%, #38bdf8 50%, #818cf8 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:none;display:inline-block;}
         @keyframes heroSlideIn{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
         .hero-cursor{display:inline-block;color:var(--acc);animation:cursorBlink 0.75s step-end infinite;margin-left:1px;font-style:normal;font-weight:900;}
         .type-cursor{color:var(--acc);animation:cursorBlink 0.75s step-end infinite;font-weight:300;}
@@ -1206,9 +1151,20 @@ export default function Home() {
         .btn-dark:hover{transform:translateY(-3px);box-shadow:0 10px 28px var(--shadow);}
         .btn-acc{padding:12px 18px;background:var(--acc);color:#0d0d0d;border:none;border-radius:100px;font-family:inherit;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;}
         .btn-acc:hover{transform:translateY(-2px);}
-        .hero-photo-wrap{position:relative;height:320px;}
-        .hero-photo-bg{position:absolute;inset:-10px;background:var(--acc);border-radius:24px;transform:rotate(4deg);transition:transform 0.5s cubic-bezier(.34,1.56,.64,1);}
-        .hero-photo-wrap:hover .hero-photo-bg{transform:rotate(8deg) scale(1.03);}
+
+        /* Floating Badges */
+        .float-badge{position:absolute;padding:8px 14px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.2);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink);z-index:10;user-select:none;pointer-events:none;white-space:nowrap;}
+        .rw.dark .float-badge{background:rgba(20,20,20,0.65);border:1px solid rgba(255,255,255,0.05);}
+        .badge-1{top:-15px;left:-35px;animation:floatSlow 4s ease-in-out infinite alternate;}
+        .badge-2{bottom:35px;right:-35px;animation:floatSlow2 4.5s ease-in-out infinite alternate;}
+        .badge-3{top:50%;left:-45px;animation:floatSlow3 5s ease-in-out infinite alternate;}
+        @keyframes floatSlow{0%{transform:translateY(0) rotate(-2deg);}100%{transform:translateY(-10px) rotate(2deg);}}
+        @keyframes floatSlow2{0%{transform:translateY(0) rotate(3deg);}100%{transform:translateY(8px) rotate(-3deg);}}
+        @keyframes floatSlow3{0%{transform:translateY(0) rotate(-1deg);}100%{transform:translateY(-8px) rotate(1deg);}}
+
+        .hero-photo-wrap{position:relative;height:320px;width:100%;max-width:300px;margin:0 auto;}
+        .hero-photo-bg{position:absolute;inset:-10px;background:linear-gradient(135deg, var(--acc, #d4eb00), #818cf8);border-radius:24px;transform:rotate(4deg);transition:transform 0.5s cubic-bezier(.34,1.56,.64,1);filter:blur(2px);opacity:0.85;}
+        .hero-photo-wrap:hover .hero-photo-bg{transform:rotate(8deg) scale(1.03);filter:blur(0px);opacity:1;}
         .hero-photo{position:relative;width:100%;height:100%;border-radius:20px;overflow:hidden;background:var(--bg2);}
         .hero-photo img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s;}
         .hero-photo-wrap:hover .hero-photo img{transform:scale(1.04);}
@@ -1264,13 +1220,128 @@ export default function Home() {
 
         /* ── SKILLS ── */
         .skills-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
-        .skill-card{padding:18px;background:var(--bg2);border:1px solid var(--bd);border-radius:16px;transition:border-color 0.2s,box-shadow 0.2s;}
-        .skill-card:hover{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-bg);}
-        .skill-cat{font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;}
-        .skill-name{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:12px;}
-        .skill-bar-bg{height:4px;background:var(--bd);border-radius:4px;overflow:hidden;}
-        .skill-bar-fill{height:100%;background:var(--acc);border-radius:4px;transition:width 1.2s ease;}
-        .skill-pct{font-size:11px;font-weight:600;color:var(--ink3);margin-top:5px;text-align:right;}
+        .skill-card{
+          position:relative;
+          overflow:hidden;
+          min-height:136px;
+          padding:18px;
+          background:var(--bg2);
+          border:1px solid var(--bd);
+          border-radius:18px;
+          transition: border-color 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+          cursor:pointer;
+          display:flex;
+          flex-direction:column;
+          justify-content:space-between;
+        }
+        .skill-card:hover, .skill-card.active{
+          border-color: var(--skill-color);
+          box-shadow: 0 12px 30px -10px rgba(var(--skill-color-rgb), 0.25), 0 0 0 3px rgba(var(--skill-color-rgb), 0.08);
+          transform: translateY(-4px);
+        }
+        .skill-main{
+          display:flex;
+          flex-direction:column;
+          height:100%;
+          justify-content:space-between;
+          transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s;
+        }
+        .skill-card:hover .skill-main, .skill-card.active .skill-main{
+          transform: translateY(-10px);
+          opacity: 0;
+          pointer-events: none;
+        }
+        .skill-header{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          margin-bottom:12px;
+        }
+        .skill-icon-wrap{
+          width:40px;
+          height:40px;
+          border-radius:12px;
+          background: rgba(var(--skill-color-rgb), 0.06);
+          color: var(--skill-color);
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          transition: transform 0.3s ease, background 0.3s ease;
+        }
+        .rw:not(.dark) .skill-card[style*="#ffffff"] .skill-icon-wrap,
+        .rw:not(.dark) .skill-card[style*="#FFFFFF"] .skill-icon-wrap {
+          background: rgba(0, 0, 0, 0.06);
+          color: #000000;
+        }
+        .rw.dark .skill-card[style*="#ffffff"] .skill-icon-wrap,
+        .rw.dark .skill-card[style*="#FFFFFF"] .skill-icon-wrap {
+          background: rgba(255, 255, 255, 0.08);
+          color: #ffffff;
+        }
+        .skill-card:hover .skill-icon-wrap{
+          transform: scale(1.1) rotate(4deg);
+        }
+        .skill-icon-wrap svg{
+          width:22px;
+          height:22px;
+        }
+        .skill-cat{
+          font-size:9px;
+          font-weight:700;
+          letter-spacing:0.12em;
+          text-transform:uppercase;
+          color:var(--ink3);
+        }
+        .skill-name{
+          font-size:16px;
+          font-weight:800;
+          color:var(--ink);
+          margin:0;
+          letter-spacing:-0.01em;
+        }
+        .skill-desc-overlay{
+          position:absolute;
+          inset:0;
+          padding:18px;
+          background: var(--bg2);
+          display:flex;
+          flex-direction:column;
+          justify-content:space-between;
+          opacity:0;
+          transform: translateY(100%);
+          transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s;
+          pointer-events:none;
+        }
+        .skill-card:hover .skill-desc-overlay, .skill-card.active .skill-desc-overlay{
+          opacity:1;
+          transform: translateY(0);
+          pointer-events:auto;
+        }
+        .skill-desc-cat{
+          font-size:9px;
+          font-weight:700;
+          letter-spacing:0.12em;
+          text-transform:uppercase;
+          color: var(--skill-color);
+        }
+        .skill-desc-text{
+          font-size:12px;
+          line-height:1.5;
+          color:var(--ink2);
+          margin:8px 0 auto 0;
+          font-weight:500;
+        }
+        .skill-desc-footer{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          font-size:10px;
+          font-weight:700;
+          color:var(--ink3);
+          border-top: 1px solid var(--bd);
+          padding-top:8px;
+          margin-top:6px;
+        }
 
         /* ── GOALS ── */
         .goals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
@@ -1309,10 +1380,9 @@ export default function Home() {
         .cert-nav-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--bg2);color:var(--ink);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1;}
         .cert-nav-btn:hover:not(:disabled){border-color:var(--acc);color:var(--acc);}
         .cert-nav-btn:disabled{opacity:0.3;cursor:not-allowed;}
-        /* ── CERT SLIDER ── */
-        .cert-grid-wrap{overflow:hidden;width:100%;}
-        .cert-grid{display:flex;transition:transform 0.5s cubic-bezier(.4,0,.2,1);will-change:transform;}
-        .cert-page{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;min-width:100%;width:100%;flex-shrink:0;box-sizing:border-box;align-items:start;}
+        /* ── CERT GRID ── */
+        .cert-grid-wrap{width:100%;}
+        .cert-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;width:100%;}
         .cert-card{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color 0.25s,box-shadow 0.3s;display:block;}
         .cert-card:hover{border-color:var(--acc);box-shadow:0 12px 32px var(--shadow);}
         .cert-img{overflow:hidden;width:100%;aspect-ratio:16/10;flex-shrink:0;background:var(--bg);position:relative;}
@@ -1408,34 +1478,303 @@ export default function Home() {
         .music-btn.playing{animation:spin 8s linear infinite;}
 
         /* ── GITHUB ACTIVITY ── */
-        .disc-block{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;padding:14px 18px;margin-bottom:14px;}
-        .disc-head-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-        .disc-label-text{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);}
-        .disc-since{font-size:10px;color:var(--ink3);margin-left:auto;}
-        .disc-card{display:flex;align-items:center;gap:13px;}
-        .disc-vscode-icon{width:46px;height:46px;border-radius:10px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-        .disc-info{flex:1;min-width:0;}
-        .disc-app-name{font-size:13px;font-weight:700;color:var(--ink);}
-        .disc-detail-line{font-size:11px;color:var(--ink2);margin-top:2px;}
-        .disc-detail-line strong{color:var(--acc);}
-        .disc-workspace{font-size:10px;color:var(--ink3);margin-top:1px;}
-        .disc-online-badge{font-size:10px;font-weight:700;color:#23d05e;white-space:nowrap;padding:3px 9px;background:rgba(35,208,94,.1);border:1px solid rgba(35,208,94,.2);border-radius:100px;flex-shrink:0;}
-        .gh-repos-block{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;padding:14px 18px;margin-bottom:36px;}
-        .gh-repos-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-        .gh-repos-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);}
-        .gh-repos-link{font-size:11px;font-weight:700;color:var(--acc);text-decoration:none;opacity:.85;transition:opacity .2s;}
-        .gh-repos-link:hover{opacity:1;}
-        .gh-repos-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-        .gh-repo-card{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:11px 13px;text-decoration:none;display:flex;flex-direction:column;gap:5px;transition:border-color .2s,transform .15s;will-change:transform;}
-        .gh-repo-card:hover{border-color:var(--acc);transform:translateY(-2px);}
-        .gh-repo-name{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink);overflow:hidden;}
-        .gh-repo-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .gh-repo-desc{font-size:10px;color:var(--ink2);line-height:1.45;}
-        .gh-repo-meta{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--ink3);margin-top:auto;flex-wrap:wrap;}
+        /* ── HIGH-TECH DEV CONSOLE HUD ── */
+        .dev-hub-console {
+          background: rgba(30, 30, 30, 0.45);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 20px;
+          overflow: hidden;
+          backdrop-filter: blur(20px);
+          box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+          margin-bottom: 24px;
+          font-family: var(--font-body), sans-serif;
+          transition: all 0.3s;
+        }
+        .rw:not(.dark) .dev-hub-console {
+          background: rgba(255, 255, 255, 0.7);
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        }
+        .dev-hub-header {
+          background: rgba(0, 0, 0, 0.25);
+          padding: 12px 20px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+        .rw:not(.dark) .dev-hub-header {
+          background: rgba(0, 0, 0, 0.04);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .dev-hub-dots {
+          display: flex;
+          gap: 6px;
+        }
+        .dev-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          display: inline-block;
+        }
+        .dev-dot.red { background: #ff5f56; }
+        .dev-dot.yellow { background: #ffbd2e; }
+        .dev-dot.green { background: #27c93f; }
+        .dev-hub-tabs {
+          display: flex;
+          gap: 4px;
+          margin-left: 12px;
+        }
+        .dev-tab {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 14px;
+          border-radius: 8px 8px 0 0;
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--ink3);
+          background: transparent;
+          cursor: pointer;
+          user-select: none;
+        }
+        .dev-tab.active {
+          background: rgba(255,255,255,0.04);
+          color: var(--ink);
+          border-bottom: 2px solid var(--acc);
+        }
+        .rw:not(.dark) .dev-tab.active {
+          background: rgba(0,0,0,0.03);
+          border-bottom: 2px solid var(--acc);
+        }
+        .dev-hub-status {
+          margin-left: auto;
+        }
+        .status-badge {
+          font-size: 10px;
+          font-weight: 700;
+          padding: 4px 10px;
+          border-radius: 100px;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+        }
+        .status-badge.online {
+          color: #23d05e;
+          background: rgba(35, 208, 94, 0.1);
+          border: 1px solid rgba(35, 208, 94, 0.2);
+        }
+        .status-badge.offline {
+          color: var(--ink3);
+          background: rgba(255,255,255,0.03);
+          border: 1px solid var(--bd);
+        }
+        .dev-hub-body {
+          padding: 24px;
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          gap: 24px;
+          align-items: center;
+        }
+        @media(max-width: 900px) {
+          .dev-hub-body {
+            grid-template-columns: 1fr;
+            gap: 20px;
+          }
+          .dev-hub-divider {
+            display: none;
+          }
+        }
+        .dev-vscode-card {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        .dev-vscode-icon {
+          width: 52px;
+          height: 52px;
+          border-radius: 12px;
+          overflow: hidden;
+          background: rgba(255,255,255,0.03);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+          flex-shrink: 0;
+          animation: floatSlow 3s ease-in-out infinite alternate;
+        }
+        .dev-vscode-info {
+          flex: 1;
+          min-width: 0;
+        }
+        .dev-vscode-label {
+          font-size: 9px;
+          font-weight: 800;
+          color: var(--acc);
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+        .dev-vscode-app {
+          font-size: 14px;
+          font-weight: 800;
+          color: var(--ink);
+          margin-top: 2px;
+        }
+        .dev-vscode-file {
+          font-size: 12px;
+          color: var(--ink2);
+          margin-top: 4px;
+        }
+        .dev-vscode-file strong {
+          color: var(--acc);
+        }
+        .dev-vscode-time {
+          font-size: 10px;
+          color: var(--ink3);
+          margin-top: 4px;
+        }
+        .dev-hub-divider {
+          width: 1px;
+          height: 80px;
+          background: var(--bd);
+        }
+        .dev-github-card {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .dev-github-label {
+          font-size: 9px;
+          font-weight: 800;
+          color: var(--ink3);
+          letter-spacing: 0.1em;
+        }
+        .dev-github-title {
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--ink);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .gh-status-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #2ea043;
+          animation: blink 2s ease infinite;
+        }
+        .dev-github-chart {
+          width: 100%;
+          border-radius: 10px;
+          overflow: hidden;
+          background: rgba(0, 0, 0, 0.1);
+          padding: 8px;
+          border: 1px solid var(--bd);
+        }
+        .dev-github-chart img {
+          width: 100%;
+          height: auto;
+          display: block;
+        }
+        .rw.dark .dev-github-chart img {
+          filter: invert(1) hue-rotate(180deg) brightness(0.85);
+        }
+
+        /* ── REPOS CARD OVERHAUL ── */
+        .gh-repos-block {
+          background: rgba(30, 30, 30, 0.25);
+          border: 1px solid var(--bd);
+          border-radius: 20px;
+          padding: 20px;
+          backdrop-filter: blur(12px);
+          margin-bottom: 36px;
+        }
+        .rw:not(.dark) .gh-repos-block {
+          background: rgba(255,255,255,0.4);
+        }
+        .gh-repos-hd {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 16px;
+        }
+        .gh-repos-title {
+          font-size: 11px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: var(--ink2);
+        }
+        .gh-repos-link {
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--acc);
+          text-decoration: none;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .gh-repos-link:hover {
+          transform: translateX(3px);
+          opacity: 0.85;
+        }
+        .gh-repos-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        @media(max-width:580px){.gh-repos-grid{grid-template-columns:1fr;}}
+        .gh-repo-card {
+          background: rgba(20, 20, 20, 0.4);
+          border: 1px solid var(--bd);
+          border-radius: 12px;
+          padding: 16px;
+          text-decoration: none;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .rw:not(.dark) .gh-repo-card {
+          background: rgba(255, 255, 255, 0.7);
+        }
+        .gh-repo-card:hover {
+          border-color: var(--acc);
+          background: rgba(20, 20, 20, 0.6);
+          transform: translateY(-4px);
+          box-shadow: 0 10px 24px rgba(0,0,0,0.15);
+        }
+        .rw:not(.dark) .gh-repo-card:hover {
+          background: rgba(255, 255, 255, 0.9);
+          box-shadow: 0 10px 24px rgba(0,0,0,0.04);
+        }
+        .gh-repo-name {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 13px;
+          font-weight: 800;
+          color: var(--ink);
+        }
+        .gh-repo-desc {
+          font-size: 11px;
+          color: var(--ink2);
+          line-height: 1.5;
+        }
+        .gh-repo-meta {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 10px;
+          color: var(--ink3);
+          margin-top: auto;
+        }
         .gh-repo-lang{display:flex;align-items:center;gap:3px;}
         .gh-lang-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-        @media(max-width:580px){.gh-repos-grid{grid-template-columns:1fr;}}
-        .mobile-scroll-hint{display:none;}
         .gh-repo-skeleton{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:8px;}
         .skel{background:linear-gradient(90deg,var(--bd) 25%,var(--bg2) 50%,var(--bd) 75%);background-size:200% 100%;animation:skelShimmer 1.4s ease infinite;border-radius:4px;}
         .skel-title{height:12px;width:60%;}
@@ -1443,34 +1782,47 @@ export default function Home() {
         .skel-meta{height:9px;width:40%;}
         @keyframes skelShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 
-        /* ── LIKE SECTION (centered + merged) ── */
-        .like-section{
-          padding:48px 0 56px;
-          border-top:1px solid var(--bd);
-          display:flex;flex-direction:column;align-items:center;justify-content:center;
-          text-align:center;position:relative;overflow:hidden;
+        /* ── FOOTER LIKE HUB ── */
+        .footer-like-section {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          position: relative;
         }
-        .like-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;position:relative;z-index:2;}
-        .like-btn{display:flex;align-items:center;gap:10px;padding:16px 36px;background:var(--bg2);border:2px solid var(--bd);border-radius:100px;font-family:inherit;font-size:16px;font-weight:700;color:var(--ink);transition:all .25s;}
-        .like-btn:hover:not(:disabled){border-color:var(--acc);transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow);}
-        .like-btn.liked{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.06);color:#dc2626;}
+        @media(max-width:768px) {
+          .footer-inner {
+            flex-direction: column;
+            align-items: center;
+            gap: 28px;
+            text-align: center;
+          }
+          .footer-right {
+            align-items: center;
+          }
+        }
+        .like-wrap{display:flex;flex-direction:row;align-items:center;gap:12px;position:relative;z-index:2;}
+        .like-btn{display:flex;align-items:center;gap:6px;padding:9px 18px;background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.08);border-radius:100px;font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);backdrop-filter:blur(8px);cursor:pointer;}
+        .rw:not(.dark) .like-btn{background:rgba(0,0,0,0.03);border:1.5px solid rgba(0,0,0,0.08);}
+        .like-btn:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.1);}
+        .like-btn.liked{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08);color:#ef4444;box-shadow:0 0 15px rgba(239,68,68,0.12);}
         .like-btn.anim .like-heart{animation:heartPop .6s cubic-bezier(.34,1.56,.64,1);}
-        .like-heart{font-size:22px;line-height:1;}
-        @keyframes heartPop{0%{transform:scale(1);}40%{transform:scale(1.6);}70%{transform:scale(0.9);}100%{transform:scale(1);}}
-        .like-count{display:flex;align-items:center;gap:8px;}
-        .like-num{font-size:32px;font-weight:900;font-family:var(--font-heading);color:var(--ink);}
-        .like-sub{font-size:13px;color:var(--ink2);font-weight:600;}
+        .like-heart{font-size:15px;line-height:1;}
+        @keyframes heartPop{0%{transform:scale(1);}40%{transform:scale(1.5);}70%{transform:scale(0.95);}100%{transform:scale(1);}}
+        .like-count{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,0.02);border:1px solid var(--bd);padding:8px 14px;border-radius:100px;font-size:11px;}
+        .rw:not(.dark) .like-count{background:rgba(0,0,0,0.01);}
+        .like-num{font-size:15px;font-weight:800;font-family:var(--font-heading);color:var(--ink);}
+        .like-sub{font-size:11px;color:var(--ink2);font-weight:600;}
 
-        /* ── LOVE PARTICLES ── */
+        /* ── Radial Fireworks Love Particles ── */
         .love-particle{
-          position:absolute;font-size:var(--sz,20px);pointer-events:none;z-index:3;
-          animation:loveFloat var(--dur,2s) var(--delay,0s) ease-out forwards;
+          position:absolute;font-size:var(--sz,20px);pointer-events:none;z-index:10;
+          animation:loveFloat var(--dur,2s) var(--delay,0s) cubic-bezier(0.25, 1, 0.5, 1) forwards;
           opacity:0;user-select:none;
         }
         @keyframes loveFloat{
-          0%{opacity:0;transform:translateY(0) scale(0.5) rotate(var(--rot,0deg));}
-          15%{opacity:1;transform:translateY(-20px) scale(1) rotate(var(--rot,0deg));}
-          100%{opacity:0;transform:translateY(-120px) scale(0.8) rotate(calc(var(--rot,0deg) + 30deg));}
+          0%{opacity:0;transform:translate(-50%, -50%) scale(0.3) rotate(0deg);}
+          15%{opacity:1;transform:translate(-50%, -50%) scale(1.1) rotate(0deg);}
+          100%{opacity:0;transform:translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, -120px))) scale(var(--scale, 1)) rotate(var(--rot, 45deg));}
         }
 
         /* ── COMMUNITY GALLERY ── */
@@ -1503,10 +1855,83 @@ export default function Home() {
         .gallery-dot.active{width:18px;background:var(--acc);border-color:var(--acc);}
 
         /* ── COMMENT REPLIES ── */
-        .reply-item{display:flex;align-items:flex-start;gap:7px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd);}
-        .reply-arrow{color:var(--acc);font-size:12px;flex-shrink:0;margin-top:2px;}
-        .reply-name{font-size:11px;font-weight:700;color:var(--ink);margin-right:6px;}
-        .reply-msg{font-size:12px;color:var(--ink2);}
+        /* ── COMMENTS AVATAR OVERHAUL ── */
+        .comment-user-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
+        .comment-avatar, .reply-avatar {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: 800;
+          color: #ffffff;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+          user-select: none;
+          flex-shrink: 0;
+        }
+        .reply-avatar {
+          width: 28px;
+          height: 28px;
+          font-size: 11px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .comment-meta-info {
+          flex: 1;
+        }
+        .comment-name {
+          font-size: 13px;
+          font-weight: 800;
+          color: var(--ink);
+          margin: 0 0 2px 0;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .comment-name::after {
+          display: none;
+        }
+        .comment-dt {
+          font-size: 9px;
+          font-weight: 700;
+          color: var(--ink3);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin: 0;
+        }
+        .reply-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          margin-top: 12px;
+          padding-left: 12px;
+          border-left: 2px solid var(--bd);
+        }
+        .reply-arrow {
+          display: none;
+        }
+        .reply-content-box {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .reply-name {
+          font-size: 11px;
+          font-weight: 800;
+          color: var(--ink);
+        }
+        .reply-msg {
+          font-size: 11px;
+          color: var(--ink2);
+          line-height: 1.4;
+        }
         .reply-toggle{margin-top:8px;}
         .reply-btn{font-size:11px;font-weight:700;color:var(--acc);background:none;border:none;padding:0;cursor:pointer;opacity:.8;transition:opacity .2s;}
         .reply-btn:hover{opacity:1;}
@@ -1514,16 +1939,6 @@ export default function Home() {
         .reply-input{padding:8px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;font-family:inherit;font-size:12px;color:var(--ink);outline:none;transition:border-color .2s;}
         .reply-input:focus{border-color:var(--acc);}
         .reply-send{padding:7px 14px;background:var(--acc);color:#0d0d0d;border:none;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;align-self:flex-end;}
-
-        .gh-activity{background:var(--bg2);border:1px solid var(--bd);border-radius:20px;padding:20px 24px;margin-bottom:14px;overflow:hidden;}
-        .gh-activity-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
-        .gh-status-dot{width:8px;height:8px;border-radius:50%;background:#2ea043;animation:blink 2s ease infinite;flex-shrink:0;}
-        .gh-activity-title{font-size:13px;font-weight:700;color:var(--ink);}
-        .gh-activity-sub{font-size:11px;color:var(--ink2);margin-left:auto;}
-        .gh-chart-wrap{width:100%;overflow:hidden;border-radius:10px;}
-        .gh-chart-wrap img{width:100%;height:auto;display:block;border-radius:8px;}
-        .rw:not(.dark) .gh-chart-wrap img{filter:none;}
-        .rw.dark .gh-chart-wrap img{filter:invert(1) hue-rotate(180deg) brightness(0.85);}
 
         /* ── AI CHAT PANEL ── */
         .ai-panel{position:fixed;bottom:100px;right:100px;z-index:300;width:420px;background:var(--bg2);border:1px solid var(--bd);border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;animation:up 0.25s ease;}
@@ -1582,6 +1997,7 @@ export default function Home() {
           .modal-box{flex-direction:column;max-height:92vh;overflow-y:auto;}
           .modal-info-side{width:100%;border-left:none;border-top:1px solid var(--bd);min-height:auto;}
           .modal-img-side{min-height:220px;flex:none;}
+          .cert-grid{grid-template-columns:repeat(2,1fr) !important;}
           .footer-inner{flex-direction:column;align-items:center;text-align:center;}
           .footer-right{align-items:center;}
         }
@@ -1617,8 +2033,12 @@ export default function Home() {
           .about-grid{gap:32px;}
 
           .skills-grid{grid-template-columns:1fr 1fr;gap:10px;}
-          .skill-card{padding:14px;}
+          .skill-card{padding:14px; min-height:124px;}
           .skill-name{font-size:14px;}
+          .skill-desc-overlay{padding:14px;}
+          .skill-desc-text{font-size:11px; line-height:1.45; margin:6px 0 auto 0;}
+          .skill-icon-wrap{width:36px; height:36px; border-radius:10px;}
+          .skill-icon-wrap svg{width:20px; height:20px;}
 
           .goals-grid{grid-template-columns:1fr;gap:12px;}
           .goal-card{padding:20px;}
@@ -1627,15 +2047,14 @@ export default function Home() {
           .proj-grid::-webkit-scrollbar{display:none;}
           .proj-grid .proj-card{min-width:82vw;max-width:82vw;scroll-snap-align:start;flex-shrink:0;}
 
-          /* CSS Mobile untuk Certificate Slider */
-          .cert-grid-wrap{overflow:visible;width:100%;}
-          .cert-grid{display:flex!important;overflow:visible!important;gap:0!important;padding-bottom:8px!important;transition:transform 0.5s cubic-bezier(.4,0,.2,1);}
-          .cert-page{min-width:100%!important;width:100%!important;max-width:100%!important;display:flex!important;flex-direction:column!important;gap:16px!important;flex-shrink:0;box-sizing:border-box;padding:0 4px;}
-          .cert-page .cert-card{width:100%;border-radius:16px;overflow:hidden;background:var(--bg2);border:1px solid var(--bd);}
+          /* CSS Mobile untuk Certificate Grid */
+          .cert-grid-wrap{width:100%;}
+          .cert-grid{grid-template-columns:1fr !important;gap:16px !important;display:grid !important;}
+          .cert-card{width:100%;border-radius:16px;overflow:hidden;background:var(--bg2);border:1px solid var(--bd);}
           .cert-img{aspect-ratio:16/10!important;width:100%!important;background:var(--bg);position:relative;}
           .cert-img img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:top center!important;display:block!important;}
           .cert-info{padding:12px 14px!important;}
-          .cert-info-t p{font-size:14px!important;}
+          .cert-info-t p{font-size:14px!important;max-width:240px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
           .cert-info-t span{font-size:12px!important;}
           
           .gallery-grid .gallery-item{min-width:78vw;max-width:78vw;scroll-snap-align:start;flex-shrink:0;}
@@ -1665,7 +2084,7 @@ export default function Home() {
 
           .cert-empty,.proj-empty{padding:40px 16px;}
 
-          .like-section{padding:36px 0 48px;}
+          .footer-like-section{margin:0;}
           .like-num{font-size:26px;}
         }
 
@@ -1677,10 +2096,49 @@ export default function Home() {
           .hero-btns{flex-direction:column;align-items:flex-start;}
           .btn-dark,.btn-acc{width:100%;justify-content:center;}
         }
+
+        /* ── SECTION CTA BUTTONS ── */
+        .sec-cta-wrap {
+          display: flex;
+          justify-content: center;
+          margin-top: 48px;
+        }
+        .sec-cta-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 36px;
+          background: var(--bg2);
+          border: 1px solid var(--bd);
+          color: var(--ink);
+          font-family: var(--font-body);
+          font-size: 13px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          border-radius: 100px;
+          text-decoration: none;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          cursor: pointer;
+        }
+        .sec-cta-btn:hover {
+          border-color: var(--acc);
+          background: rgba(212, 235, 0, 0.05);
+          transform: translateY(-2px);
+          box-shadow: 0 10px 25px -10px rgba(212, 235, 0, 0.25);
+        }
+        .sec-cta-arrow {
+          transition: transform 0.25s ease;
+          display: inline-block;
+          font-weight: 900;
+        }
+        .sec-cta-btn:hover .sec-cta-arrow {
+          transform: translateX(4px);
+        }
       `}</style>
 
       {/* ── BG ANIMATION CANVAS ── */}
-      <canvas ref={bgCanvasRef} className="bg-canvas" style={{ display: bgAnimation === 'none' ? 'none' : 'block' }} />
+      <BackgroundCanvas bgAnimation={bgAnimation} themeColor={themeColor} isDark={isDark} />
 
       <div className={`rw${d ? ' dark' : ''}`} style={{
         '--acc':         themeColor,
@@ -1699,34 +2157,163 @@ export default function Home() {
         )}
 
         {/* LOADING SCREEN */}
+        {/* LOADING SCREEN */}
         {!pageReady && (
           <div
             style={{
               position:'fixed',inset:0,zIndex:99999,
-              background:'#06090f',
+              background:'radial-gradient(circle at center, #09090c 0%, #020204 100%)',
               display:'flex',flexDirection:'column',
               alignItems:'center',justifyContent:'center',
-              gap:'28px',
+              gap:'24px',
             }}
           >
-            <div style={{position:'relative',width:'80px',height:'80px',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <div style={{position:'absolute',width:'80px',height:'80px',borderRadius:'50%',border:'2px solid transparent',borderTopColor:'#6366f1',borderRightColor:'rgba(99,102,241,0.2)',boxSizing:'border-box',animation:'spin 1.2s linear infinite'}}/>
-              <div style={{position:'absolute',width:'56px',height:'56px',borderRadius:'50%',border:'2px solid transparent',borderTopColor:'rgba(99,102,241,0.5)',borderLeftColor:'rgba(99,102,241,0.15)',boxSizing:'border-box',animation:'spin 0.9s linear infinite reverse'}}/>
-              <div style={{position:'absolute',width:'32px',height:'32px',borderRadius:'50%',border:'2px solid transparent',borderTopColor:'#6366f1',boxSizing:'border-box',animation:'spin 1.5s linear infinite'}}/>
-              <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#6366f1',boxShadow:'0 0 16px #6366f1'}}/>
+            {/* Holographic Glowing grid overlay */}
+            <div style={{
+              position:'absolute',inset:0,
+              backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)',
+              backgroundSize: '30px 30px',
+              backgroundPosition: 'center center',
+              maskImage: 'radial-gradient(circle, black 30%, transparent 80%)',
+              WebkitMaskImage: 'radial-gradient(circle, black 30%, transparent 80%)',
+              opacity: 0.8,
+              zIndex: 0,
+              pointerEvents: 'none'
+            }}/>
+
+            {/* Soft Accent Ambient Glow */}
+            <div style={{
+              position: 'absolute',
+              width: '450px',
+              height: '450px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(129,140,248,0.08) 0%, transparent 70%)',
+              filter: 'blur(60px)',
+              pointerEvents: 'none',
+              zIndex: 0,
+              animation: 'glowPulse 4s ease-in-out infinite alternate'
+            }} />
+
+            {/* Cybernetic Rotating Rings */}
+            <div style={{ position: 'relative', width: '130px', height: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+              {/* Outer Spin Ring */}
+              <svg style={{ position: 'absolute', width: '100%', height: '100%', transform: 'rotate(-90deg)', animation: 'spinCw 4s linear infinite' }} viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" stroke="rgba(255,255,255,0.03)" strokeWidth="1.5" fill="transparent"/>
+                <circle cx="50" cy="50" r="45" stroke="#818cf8" strokeWidth="2.5" fill="transparent"
+                  strokeDasharray={`${2 * Math.PI * 45}`} strokeDashoffset={`${2 * Math.PI * 45 * (1 - loadProgress / 100)}`}
+                  strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.1s ease-out', filter: 'drop-shadow(0 0 8px #818cf8)' }}/>
+              </svg>
+
+              {/* Inner Speed Ring */}
+              <svg style={{ position: 'absolute', width: '80%', height: '80%', transform: 'rotate(45deg)', animation: 'spinCcw 2.5s ease-in-out infinite alternate' }} viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.02)" strokeWidth="1" fill="transparent"/>
+                <circle cx="50" cy="50" r="40" stroke="#818cf8" strokeWidth="2" fill="transparent"
+                  strokeDasharray="60 180" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 4px #818cf8)' }}/>
+              </svg>
+
+              {/* Central Pulsing Glowing Orb */}
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, #ffffff 0%, #38bdf8 65%, #818cf8 100%)',
+                boxShadow: '0 0 25px rgba(56,189,248,0.85), 0 0 12px rgba(129,140,248,0.4), inset 0 2px 4px rgba(255,255,255,0.7)',
+                zIndex: 2,
+                animation: 'textBreath 2s ease-in-out infinite',
+                userSelect: 'none'
+              }} />
             </div>
-            <div style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:'18px',fontWeight:'800',color:'rgba(240,239,232,0.85)',letterSpacing:'0.2em'}}>
-              aura<em style={{fontStyle:'normal',color:'#6366f1'}}>au</em>varose
+
+            {/* Premium Brand Typographic Label */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '6px',
+              zIndex: 1
+            }}>
+              <div style={{
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: '16px',
+                fontWeight: '800',
+                color: '#ffffff',
+                letterSpacing: '0.35em',
+                textTransform: 'uppercase',
+                textIndent: '0.35em',
+              }}>
+                aura<span style={{ color: '#38bdf8' }}>au</span>varose
+              </div>
+              <div style={{
+                fontFamily: "'Space Grotesk', monospace",
+                fontSize: '9px',
+                fontWeight: '700',
+                color: 'rgba(255,255,255,0.3)',
+                letterSpacing: '0.25em',
+                textTransform: 'uppercase',
+                textIndent: '0.25em'
+              }}>
+                creative developer portfolio
+              </div>
             </div>
-            <div style={{width:'180px',height:'2px',background:'rgba(255,255,255,0.07)',borderRadius:'2px',overflow:'hidden'}}>
-              <div style={{height:'100%',background:'#6366f1',borderRadius:'2px',animation:'loadBar 2s ease forwards'}}/>
+
+            {/* High-Tech Monospace Load-Log Console */}
+            <div style={{
+              width: '280px',
+              background: 'rgba(0,0,0,0.4)',
+              border: '1px solid rgba(255,255,255,0.04)',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+              zIndex: 1,
+              boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.5)',
+              fontFamily: "'Space Grotesk', monospace"
+            }}>
+              {/* Row 1 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'rgba(255,255,255,0.2)' }}>
+                <span>SYS_INIT // BOOT_SEQUENCE</span>
+                <span style={{ color: '#38bdf8' }}>[ ONLINE ]</span>
+              </div>
+              {/* Row 2 */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.85)', fontWeight: '600', marginTop: '2px' }}>
+                <span style={{ color: '#38bdf8' }}>&gt;</span>
+                <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '220px' }}>{loadText}</span>
+              </div>
+              {/* Progress Slider Bar */}
+              <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '100px', marginTop: '6px', overflow: 'hidden', position: 'relative' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${loadProgress}%`,
+                  background: 'linear-gradient(90deg, #38bdf8, #818cf8)',
+                  boxShadow: '0 0 10px rgba(129,140,248,0.4), 0 0 2px rgba(129,140,248,0.2)',
+                  borderRadius: '100px',
+                  transition: 'width 0.1s ease-out'
+                }}/>
+              </div>
+              {/* Percentage Indicator */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
+                <span>SECURE DATABASE SYNC</span>
+                <span style={{ fontWeight: '700', color: '#38bdf8' }}>{loadProgress}%</span>
+              </div>
             </div>
-            <div style={{fontSize:'10px',fontWeight:'700',letterSpacing:'0.18em',textTransform:'uppercase',color:'rgba(240,239,232,0.28)'}}>
-              Memuat portofolio...
-            </div>
+
             <style>{`
-              @keyframes spin { to { transform: rotate(360deg); } }
-              @keyframes loadBar { from { width: 0%; } to { width: 100%; } }
+              @keyframes glowPulse {
+                0% { transform: scale(0.9); opacity: 0.8; }
+                100% { transform: scale(1.15); opacity: 1.1; }
+              }
+              @keyframes spinCw {
+                100% { transform: rotate(270deg); }
+              }
+              @keyframes spinCcw {
+                0% { transform: rotate(45deg); }
+                100% { transform: rotate(-315deg); }
+              }
+              @keyframes textBreath {
+                0%, 100% { transform: scale(1); opacity: 0.95; filter: drop-shadow(0 0 12px ${themeColor}55); }
+                50% { transform: scale(1.05); opacity: 0.8; filter: drop-shadow(0 0 24px ${themeColor}aa); }
+              }
             `}</style>
           </div>
         )}
@@ -1822,7 +2409,7 @@ export default function Home() {
               <div className="hero-tag"><span className="hero-dot" />{tx.heroBadge}</div>
               <h1 className="hero-h1">
                 <span className="hero-line-1">{tx.heroGreet}</span>
-                <span className="hero-line-2">Aura <em className="hero-loop-name">{loopName}<span className="hero-cursor">|</span></em></span>
+                <span className="hero-line-2">Aura <em className="hero-loop-name gradient-text">{loopName}<span className="hero-cursor">|</span></em></span>
               </h1>
               <p className="hero-p">
                 {typedDesc}<span className={`type-cursor${typingDone?' done':''}`}>|</span>
@@ -1857,6 +2444,19 @@ export default function Home() {
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.3 }}
                   />
+                </div>
+                {/* Floating Badges */}
+                <div className="float-badge badge-1">
+                  <span>🚀</span>
+                  <span>{isID ? 'Fedora Linux' : 'Fedora Linux'}</span>
+                </div>
+                <div className="float-badge badge-2">
+                  <span>💻</span>
+                  <span>{isID ? 'Pengembang Kreatif' : 'Creative Dev'}</span>
+                </div>
+                <div className="float-badge badge-3">
+                  <span>⚡</span>
+                  <span>Next.js 16</span>
                 </div>
               </div>
             </FloatingElement>
@@ -1935,11 +2535,41 @@ export default function Home() {
           </div>
           <div className="skills-grid">
             {skills.map((sk,i)=>(
-              <div key={`${sk.name}-${i}`} className="skill-card mag" data-reveal data-delay={String((i%4)+1)}>
-                <div className="skill-cat">{sk.cat}</div>
-                <div className="skill-name">{sk.name}</div>
-                <div className="skill-bar-bg"><div className="skill-bar-fill" style={{width:`${sk.level}%`}} /></div>
-                <div className="skill-pct">{sk.level}%</div>
+              <div
+                key={`${sk.name}-${i}`}
+                className={`skill-card mag ${activeSkill === i ? 'active' : ''}`}
+                data-reveal
+                data-delay={String((i%4)+1)}
+                onMouseEnter={() => setActiveSkill(i)}
+                onMouseLeave={() => setActiveSkill(null)}
+                onClick={() => setActiveSkill(activeSkill === i ? null : i)}
+                style={{
+                  '--skill-color': sk.color,
+                  '--skill-color-rgb': sk.colorRgb
+                }}
+              >
+                {/* Standard layout */}
+                <div className="skill-main">
+                  <div className="skill-header">
+                    <div className="skill-icon-wrap">
+                      {sk.icon}
+                    </div>
+                    <div className="skill-cat">{sk.cat}</div>
+                  </div>
+                  <div className="skill-name">{sk.name}</div>
+                </div>
+
+                {/* Description slide-up overlay on hover / click */}
+                <div className="skill-desc-overlay">
+                  <div className="skill-desc-cat">{sk.cat}</div>
+                  <div className="skill-desc-text">
+                    {isID ? sk.desc.id : sk.desc.en}
+                  </div>
+                  <div className="skill-desc-footer">
+                    <span>{sk.name}</span>
+                    <span>{isID ? 'Tekan/Hover' : 'Tap/Hover'}</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -1965,40 +2595,61 @@ export default function Home() {
 
         {/* PROJECTS */}
         <section className="wrap sec" id="projects">
-          {/* DISCORD ACTIVITY STATUS */}
-          <div className="disc-block" data-reveal>
-            <div className="disc-head-row">
-              <span className="disc-label-text">{tx.currentActivity}</span>
-              {ghStatus.since && <span className="disc-since">{ghStatus.since}</span>}
-            </div>
-            <div className="disc-card">
-              <div className="disc-vscode-icon">
-                <svg viewBox="0 0 100 100" width="32" height="32">
-                  <rect width="100" height="100" rx="16" fill="#2b5fce"/>
-                  <path d="M70 15L40 47 22 33l-8 6 18 16-18 16 8 6 18-14 30 32 10-5V20z" fill="white" opacity=".9"/>
-                </svg>
+          {/* HIGH-TECH DEVELOPER HUB / IDE CONSOLE */}
+          <div className="dev-hub-console" data-reveal>
+            <div className="dev-hub-header">
+              <div className="dev-hub-dots">
+                <span className="dev-dot red"></span>
+                <span className="dev-dot yellow"></span>
+                <span className="dev-dot green"></span>
               </div>
-              <div className="disc-info">
-                <div className="disc-app-name">Visual Studio Code</div>
-                <div className="disc-detail-line">Editing <strong>{ghStatus.detail || 'my-portfolio'}</strong></div>
-                <div className="disc-workspace">{tx.discWorkspace}</div>
+              <div className="dev-hub-tabs">
+                <div className="dev-tab active">
+                  <span className="dev-tab-icon">⚡</span>
+                  <span>status.js</span>
+                </div>
+                <div className="dev-tab">
+                  <span className="dev-tab-icon">📊</span>
+                  <span>github.json</span>
+                </div>
               </div>
-              {ghStatus.online
-                ? <span className="disc-online-badge">{tx.onlineLabel}</span>
-                : <span className="disc-online-badge" style={{color:'var(--ink3)',background:'var(--bg)',border:'1px solid var(--bd)'}}>{tx.offlineLabel}</span>
-              }
+              <div className="dev-hub-status">
+                {ghStatus.online ? (
+                  <span className="status-badge online">● {tx.onlineLabel}</span>
+                ) : (
+                  <span className="status-badge offline">● {tx.offlineLabel}</span>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* GITHUB CONTRIBUTION CHART */}
-          <div className="gh-activity" data-reveal>
-            <div className="gh-activity-head">
-              <span className="gh-status-dot"/>
-              <span className="gh-activity-title">Active on GitHub</span>
-              <span className="gh-activity-sub">@auraauvarose · 370 contributions this year</span>
-            </div>
-            <div className="gh-chart-wrap">
-              <img src="https://ghchart.rshah.org/2ea043/auraauvarose" alt="GitHub Contribution Chart" loading="lazy"/>
+            <div className="dev-hub-body">
+              <div className="dev-vscode-card">
+                <div className="dev-vscode-icon">
+                  <svg viewBox="0 0 100 100" width="36" height="36">
+                    <rect width="100" height="100" rx="18" fill="#2b5fce"/>
+                    <path d="M70 15L40 47 22 33l-8 6 18 16-18 16 8 6 18-14 30 32 10-5V20z" fill="white" opacity=".9"/>
+                  </svg>
+                </div>
+                <div className="dev-vscode-info">
+                  <div className="dev-vscode-label">{tx.currentActivity}</div>
+                  <div className="dev-vscode-app">Visual Studio Code</div>
+                  <div className="dev-vscode-file">
+                    Editing <strong>{ghStatus.detail || 'my-portfolio'}</strong>
+                  </div>
+                  {ghStatus.since && <div className="dev-vscode-time">🕒 {ghStatus.since}</div>}
+                </div>
+              </div>
+
+              <div className="dev-hub-divider"></div>
+
+              <div className="dev-github-card">
+                <div className="dev-github-info">
+                  <div className="dev-github-label">OPEN SOURCE CONTRIBUTIONS</div>
+                </div>
+                <div className="dev-github-chart">
+                  <img src="https://ghchart.rshah.org/2ea043/auraauvarose" alt="GitHub Contribution Chart" loading="lazy"/>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -2024,7 +2675,7 @@ export default function Home() {
                   const LC = {JavaScript:'#f7df1e',TypeScript:'#3178c6',Python:'#3776ab',CSS:'#264de4',HTML:'#e34c26',Shell:'#89e051'};
                   const lc = (repo.language && LC[repo.language]) || 'var(--ink3)';
                   return (
-                    <a key={repo.id} href={repo.html_url} target="_blank" rel="noopener noreferrer" className="gh-repo-card">
+                    <a key={repo.id} href={repo.html_url} target="_blank" rel="noopener noreferrer" className="gh-repo-card" style={{ borderTop: `3px solid ${lc}` }}>
                       <div className="gh-repo-name">
                         <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" style={{opacity:.5,flexShrink:0}}>
                           <path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 011-1h8zM5 12.25v3.25a.25.25 0 00.4.2l1.45-1.087a.25.25 0 01.3 0L8.6 15.7a.25.25 0 00.4-.2v-3.25a.25.25 0 00-.25-.25h-3.5a.25.25 0 00-.25.25z"/>
@@ -2035,7 +2686,7 @@ export default function Home() {
                       <div className="gh-repo-meta">
                         {repo.language && <span className="gh-repo-lang"><span className="gh-lang-dot" style={{background:lc}}/>{repo.language}</span>}
                         <span>🕒 {ago}</span>
-                        {repo.stargazers_count > 0 && <span>⭐{repo.stargazers_count}</span>}
+                        {repo.stargazers_count > 0 && <span>⭐ {repo.stargazers_count}</span>}
                       </div>
                     </a>
                   );
@@ -2051,7 +2702,7 @@ export default function Home() {
           <div className="proj-grid" ref={projGridRef}>
             {projects.length === 0 ? (
               <div className="proj-empty">{tx.projEmpty}</div>
-            ) : projects.map((p,i)=>{
+            ) : projects.slice(0, 3).map((p,i)=>{
               const stack = p.tech_stack ? p.tech_stack.split(',').map(s=>s.trim()) : [];
               return (
                 <div key={p.id} className="proj-card mag" data-reveal data-delay={String((i%3)+1)}>
@@ -2071,8 +2722,18 @@ export default function Home() {
               );
             })}
           </div>
+
+          {projects.length > 0 && (
+            <div className="sec-cta-wrap" data-reveal>
+              <a href="/projects" className="sec-cta-btn">
+                <span>{isID ? 'Lihat Semua Proyek' : 'View All Projects'}</span>
+                <span className="sec-cta-arrow">→</span>
+              </a>
+            </div>
+          )}
+
           <div className="mobile-scroll-hint">
-            {projects.length > 0 && projects.map((_,i)=><span key={i} className={i===projActiveIdx?'active':''}/>)}
+            {projects.length > 0 && projects.slice(0, 3).map((_,i)=><span key={i} className={i===projActiveIdx?'active':''}/>)}
           </div>
         </section>
 
@@ -2084,82 +2745,40 @@ export default function Home() {
           </div>
           {certificates.length === 0 ? (
             <div className="cert-empty" data-reveal>{tx.certEmpty}</div>
-          ) : (() => {
-            const pageSize = isMobile ? 1 : 4;
-            const pages = [];
-            for (let i = 0; i < certificates.length; i += pageSize) {
-              pages.push(certificates.slice(i, i + pageSize));
-            }
-            const totalPages = pages.length;
-            // Reset certPage jika melebihi totalPages (misal switch mobile<->desktop)
-            const safePage = Math.min(certPage, totalPages - 1);
-
-            const renderCard = (cert) => (
-              <div key={cert.id} className="cert-card mag" onClick={()=>setSelectedCert(cert)}>
-                <div className="cert-img">
-                  <img
-                    src={cert.image_url}
-                    alt={cert.title || 'Sertifikat'}
-                    loading="eager"
-                    onError={e => { e.currentTarget.style.opacity='0.3'; }}
-                  />
-                </div>
-                <div className="cert-info">
-                  <div className="cert-info-t">
-                    <p>{cert.title || tx.certDefault}</p>
-                    <span>{cert.issuer || tx.certClick}</span>
-                  </div>
-                  <div className="cert-arr">↗</div>
-                </div>
-              </div>
-            );
-
-            return (
-              <>
-                <div className="cert-more-label" data-reveal>
-                  <span>{isID ? `Menampilkan ${pages[safePage]?.length || 0} dari total ${certificates.length} sertifikat` : `Showing ${pages[safePage]?.length || 0} of ${certificates.length} certificates`}</span>
-                  <div className="cert-nav-btns">
-                    <button
-                      className="cert-nav-btn"
-                      onClick={() => setCertPage(p => Math.max(0, p - 1))}
-                      disabled={safePage === 0}
-                    >‹</button>
-                    <button
-                      className="cert-nav-btn"
-                      onClick={() => setCertPage(p => Math.min(totalPages - 1, p + 1))}
-                      disabled={safePage === totalPages - 1}
-                    >›</button>
-                  </div>
-                </div>
-
-                <div className="cert-grid-wrap" data-reveal>
-                  <div
-                    className="cert-grid"
-                    ref={certGridRef}
-                    style={{ transform: `translateX(-${safePage * 100}%)` }}
-                  >
-                    {pages.map((group, pi) => (
-                      <div key={pi} className="cert-page">
-                        {group.map(renderCard)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {totalPages > 1 && (
-                  <div className="cert-page-dots">
-                    {Array.from({length: totalPages}).map((_,pi)=>(
-                      <span
-                        key={pi}
-                        className={`cert-page-dot${pi===safePage?' active':''}`}
-                        onClick={()=>setCertPage(pi)}
+          ) : (
+            <>
+              <div className="cert-grid" data-reveal>
+                {certificates.slice(0, 4).map(cert => (
+                  <div key={cert.id} className="cert-card mag" onClick={()=>setSelectedCert(cert)}>
+                    <div className="cert-img">
+                      <img
+                        src={cert.image_url}
+                        alt={cert.title || 'Sertifikat'}
+                        loading="lazy"
+                        onError={e => { e.currentTarget.style.opacity='0.3'; }}
                       />
-                    ))}
+                    </div>
+                    <div className="cert-info">
+                      <div className="cert-info-t">
+                        <p>{cert.title || tx.certDefault}</p>
+                        <span>{cert.issuer || tx.certClick}</span>
+                      </div>
+                      <div className="cert-arr">↗</div>
+                    </div>
                   </div>
-                )}
-              </>
-            );
-          })()}
+                ))}
+              </div>
+
+              {certificates.length > 0 && (
+                <div className="sec-cta-wrap" data-reveal>
+                  <a href="/certificates" className="sec-cta-btn">
+                    <span>{isID ? 'Lihat Semua Sertifikat' : 'View All Certificates'}</span>
+                    <span className="sec-cta-arrow">→</span>
+                  </a>
+                </div>
+              )}
+            </>
+          )}
         </section>
 
         {/* GALLERY (Momen & Kenangan) */}
@@ -2174,15 +2793,15 @@ export default function Home() {
           <div className="gallery-slider-wrap" data-reveal>
             <div className="gallery-grid" ref={galleryGridRef}>
               {profileImage && (
-                <div className="gallery-item gallery-item-featured" onClick={()=>setSelectedPhoto({image_url:profileImage, sender_name:'Aura Auvarose', caption:'', badge:'Admin'})}>
+                <div className="gallery-item gallery-item-featured" onClick={()=>setSelectedPhoto({image_url:profileImage, sender_name:'Aura Auvarose', caption:'Potret Kreator Utama', badge:'Admin'})}>
                   <img src={profileImage} alt="Aura Auvarose"/>
-                  <div className="gallery-overlay">
+                  <div className="gallery-overlay" style={{ opacity: 1 }}>
                     <div className="gallery-badge">📌 Admin</div>
                     <div className="gallery-name">Aura Auvarose</div>
                   </div>
                 </div>
               )}
-              {communityPhotos.map(p=>(
+              {communityPhotos.slice(0, 4).map(p=>(
                 <div key={p.id} className="gallery-item" onClick={()=>setSelectedPhoto(p)}>
                   <img src={p.image_url} alt={p.sender_name}/>
                   <div className="gallery-overlay">
@@ -2200,15 +2819,25 @@ export default function Home() {
               )}
             </div>
           </div>
+          
+          {(communityPhotos.length > 0 || profileImage) && (
+            <div className="sec-cta-wrap" data-reveal>
+              <a href="/gallery" className="sec-cta-btn">
+                <span>{isID ? 'Lihat Semua Kenangan' : 'View All Memories'}</span>
+                <span className="sec-cta-arrow">→</span>
+              </a>
+            </div>
+          )}
+
           <div className="gallery-dots">
-            {(communityPhotos.length + (profileImage ? 1 : 0)) > 0 &&
-              Array.from({length: communityPhotos.length + (profileImage ? 1 : 0)}).map((_,i)=>(
+            {(communityPhotos.slice(0, 4).length + (profileImage ? 1 : 0)) > 0 &&
+              Array.from({length: communityPhotos.slice(0, 4).length + (profileImage ? 1 : 0)}).map((_,i)=>(
                 <span
                   key={i}
                   className={`gallery-dot${i===galleryActiveIdx?' active':''}`}
                   onClick={()=>{
                     if (!galleryGridRef.current) return;
-                    const total = communityPhotos.length + (profileImage ? 1 : 0);
+                    const total = communityPhotos.slice(0, 4).length + (profileImage ? 1 : 0);
                     const w = galleryGridRef.current.scrollWidth / total;
                     galleryGridRef.current.scrollTo({ left: w * i, behavior: 'smooth' });
                     setGalleryActiveIdx(i);
@@ -2240,69 +2869,56 @@ export default function Home() {
               <div className="comments-list custom-scrollbar">
                 {comments.length===0
                   ? <div className="comments-empty">{tx.commentsEmpty}</div>
-                  : comments.map(c=>(
-                    <div key={c.id} className="comment-card">
-                      <p className="comment-name">{c.name}</p>
-                      <p className="comment-msg">{c.message}</p>
-                      <p className="comment-dt">{new Date(c.created_at).toLocaleDateString(isID?'id-ID':'en-US',{day:'numeric',month:'long',year:'numeric'})}</p>
-                      {(commentReplies[c.id]||[]).map((r,ri)=>(
-                        <div key={ri} className="reply-item">
-                          <span className="reply-arrow">↳</span>
-                          <div>
-                            <span className="reply-name">{r.name}</span>
-                            <span className="reply-msg">{r.message}</span>
+                  : comments.map(c=>{
+                      const firstLetter = c.name ? c.name.charAt(0).toUpperCase() : 'A';
+                      const charCode = firstLetter.charCodeAt(0);
+                      const hue = (charCode * 15) % 360;
+                      const avatarBg = `linear-gradient(135deg, hsl(${hue}, 75%, 60%) 0%, hsl(${(hue + 45) % 360}, 80%, 50%) 100%)`;
+                      return (
+                        <div key={c.id} className="comment-card">
+                          <div className="comment-user-row">
+                            <div className="comment-avatar" style={{ background: avatarBg }}>{firstLetter}</div>
+                            <div className="comment-meta-info">
+                              <p className="comment-name">{c.name}</p>
+                              <p className="comment-dt">{new Date(c.created_at).toLocaleDateString(isID?'id-ID':'en-US',{day:'numeric',month:'long',year:'numeric'})}</p>
+                            </div>
                           </div>
+                          <p className="comment-msg">{c.message}</p>
+                          {(commentReplies[c.id]||[]).map((r,ri)=>{
+                            const replyFirstLetter = r.name ? r.name.charAt(0).toUpperCase() : 'A';
+                            const replyCharCode = replyFirstLetter.charCodeAt(0);
+                            const replyHue = (replyCharCode * 15) % 360;
+                            const replyAvatarBg = `linear-gradient(135deg, hsl(${replyHue}, 75%, 60%) 0%, hsl(${(replyHue + 45) % 360}, 80%, 50%) 100%)`;
+                            return (
+                              <div key={ri} className="reply-item">
+                                <div className="reply-avatar" style={{ background: replyAvatarBg }}>{replyFirstLetter}</div>
+                                <div className="reply-content-box">
+                                  <span className="reply-name">{r.name}</span>
+                                  <span className="reply-msg">{r.message}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <div className="reply-toggle">
+                            <button className="reply-btn" onClick={()=>setReplyOpen(prev=>({...prev,[c.id]:!prev[c.id]}))}>
+                              {replyOpen[c.id] ? tx.replyClose : `${tx.replyOpen}${(commentReplies[c.id]||[]).length>0?' ('+commentReplies[c.id].length+')':''}`}
+                            </button>
+                          </div>
+                          {replyOpen[c.id] && (
+                            <div className="reply-form">
+                              <input className="reply-input" placeholder={tx.replyNamePh} value={replyInput[`${c.id}_name`]||''} onChange={e=>setReplyInput(prev=>({...prev,[`${c.id}_name`]:e.target.value}))}/>
+                              <input className="reply-input" placeholder={tx.replyMsgPh} value={replyInput[c.id]||''} onChange={e=>setReplyInput(prev=>({...prev,[c.id]:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&submitReply(c.id, replyInput[`${c.id}_name`])}/>
+                              <button className="reply-send" onClick={()=>submitReply(c.id, replyInput[`${c.id}_name`])}>{tx.replySend}</button>
+                            </div>
+                          )}
                         </div>
-                      ))}
-                      <div className="reply-toggle">
-                        <button className="reply-btn" onClick={()=>setReplyOpen(prev=>({...prev,[c.id]:!prev[c.id]}))}>
-                          {replyOpen[c.id] ? tx.replyClose : `${tx.replyOpen}${(commentReplies[c.id]||[]).length>0?' ('+commentReplies[c.id].length+')':''}`}
-                        </button>
-                      </div>
-                      {replyOpen[c.id] && (
-                        <div className="reply-form">
-                          <input className="reply-input" placeholder={tx.replyNamePh} value={replyInput[`${c.id}_name`]||''} onChange={e=>setReplyInput(prev=>({...prev,[`${c.id}_name`]:e.target.value}))}/>
-                          <input className="reply-input" placeholder={tx.replyMsgPh} value={replyInput[c.id]||''} onChange={e=>setReplyInput(prev=>({...prev,[c.id]:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&submitReply(c.id, replyInput[`${c.id}_name`])}/>
-                          <button className="reply-send" onClick={()=>submitReply(c.id, replyInput[`${c.id}_name`])}>{tx.replySend}</button>
-                        </div>
-                      )}
-                    </div>
-                  ))
+                      );
+                    })
                 }
               </div>
             </div>
           </div>
         </section>
-
-        {/* ── LIKE BUTTON (centered, merged, with love particles) ── */}
-        <div className="like-section" data-reveal>
-          {loveParticles.map(p => (
-            <span
-              key={p.id}
-              className="love-particle"
-              style={{
-                left: `${p.x}%`,
-                top: `${p.y}%`,
-                '--sz': `${p.size}px`,
-                '--dur': `${p.dur}s`,
-                '--delay': `${p.delay}s`,
-                '--rot': `${Math.random() * 60 - 30}deg`,
-              }}
-            >
-              {p.emoji}
-            </span>
-          ))}
-          <div className="like-wrap">
-            <button className={`like-btn${liked?' liked':''}${likeAnim?' anim':''}`} onClick={handleLike} disabled={liked}>
-              <span className="like-heart">{liked ? '❤️' : '🤍'}</span>
-              <span className="like-label">{liked ? tx.likedLabel : tx.likeLabel}</span>
-            </button>
-            <div className="like-count">
-              <span className="like-num">{likeCount}</span>
-              <span className="like-sub">{tx.likeSubLabel}</span>
-            </div>
-          </div>
-        </div>
 
         {/* FOOTER */}
         <footer className="wrap footer" data-reveal>
@@ -2311,6 +2927,42 @@ export default function Home() {
               <div className="footer-logo">aura<em>a</em>uvarose</div>
               <p className="footer-copy">© 2026 auraauvarose</p>
             </div>
+
+            {/* Centered Premium Like Section inside Footer */}
+            <div className="footer-like-section">
+              <div className="like-wrap" style={{ position: 'relative' }}>
+                {loveParticles.map(p => (
+                  <span
+                    key={p.id}
+                    className="love-particle"
+                    style={{
+                      position: 'absolute',
+                      left: '50%',
+                      top: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      '--sz': `${p.size}px`,
+                      '--dur': `${p.dur}s`,
+                      '--delay': `${p.delay}s`,
+                      '--tx': p.tx,
+                      '--ty': p.ty,
+                      '--rot': p.rot,
+                      '--scale': p.scale,
+                    }}
+                  >
+                    {p.emoji}
+                  </span>
+                ))}
+                <button className={`like-btn${liked?' liked':''}${likeAnim?' anim':''}`} onClick={handleLike}>
+                  <span className="like-heart">{liked ? '❤️' : '🤍'}</span>
+                  <span className="like-label">{liked ? tx.likedLabel : tx.likeLabel}</span>
+                </button>
+                <div className="like-count">
+                  <span className="like-num">{likeCount}</span>
+                  <span className="like-sub">{tx.likeSubLabel}</span>
+                </div>
+              </div>
+            </div>
+
             <div className="footer-right">
               <div className="footer-views">
                 <span className="footer-views-dot"/>

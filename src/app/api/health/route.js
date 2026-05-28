@@ -1,4 +1,3 @@
-// src/app/api/health/route.js
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
