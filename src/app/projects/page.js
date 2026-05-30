@@ -12,15 +12,52 @@ export default function ProjectsPage() {
   const [tags, setTags] = useState([]);
   
   // Custom Appearance
-  const [isDark, setIsDark] = useState(true);
-  const [themeColor, setThemeColor] = useState('#d4eb00');
-  const [bgTheme, setBgTheme] = useState('default');
-  const [fontChoice, setFontChoice] = useState('fraunces');
-  const [bgAnimation, setBgAnimation] = useState('none');
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('default_theme');
+      if (saved) return saved === 'dark';
+    }
+    return true;
+  });
+  const [themeColor, setThemeColor] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme_color') || '#d4eb00';
+    }
+    return '#d4eb00';
+  });
+  const [bgTheme, setBgTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bg_theme') || 'default';
+    }
+    return 'default';
+  });
+  const [fontChoice, setFontChoice] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('font_choice') || 'fraunces';
+    }
+    return 'fraunces';
+  });
+  const [bgAnimation, setBgAnimation] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bg_animation') || 'none';
+    }
+    return 'none';
+  });
   const [pageReady, setPageReady] = useState(false);
 
   const bgCanvasRef = useRef(null);
   const bgAnimRef = useRef(null);
+
+  const handleBack = (e) => {
+    e.preventDefault();
+    if (typeof window !== 'undefined') {
+      if (document.referrer && document.referrer.includes(window.location.host)) {
+        window.history.back();
+      } else {
+        window.location.href = '/';
+      }
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -44,11 +81,11 @@ export default function ProjectsPage() {
       const { data: settingsData } = await supabase.from('settings').select('key,value');
       if (settingsData) {
         settingsData.forEach(row => {
-          if (row.key === 'theme_color' && row.value) setThemeColor(row.value);
-          if (row.key === 'bg_theme' && row.value) setBgTheme(row.value);
-          if (row.key === 'font_choice' && row.value) setFontChoice(row.value);
-          if (row.key === 'default_theme' && row.value) setIsDark(row.value === 'dark');
-          if (row.key === 'bg_animation' && row.value) setBgAnimation(row.value);
+          if (row.key === 'theme_color' && row.value) { setThemeColor(row.value); localStorage.setItem('theme_color', row.value); }
+          if (row.key === 'bg_theme' && row.value) { setBgTheme(row.value); localStorage.setItem('bg_theme', row.value); }
+          if (row.key === 'font_choice' && row.value) { setFontChoice(row.value); localStorage.setItem('font_choice', row.value); }
+          if (row.key === 'default_theme' && row.value) { setIsDark(row.value === 'dark'); localStorage.setItem('default_theme', row.value); }
+          if (row.key === 'bg_animation' && row.value) { setBgAnimation(row.value); localStorage.setItem('bg_animation', row.value); }
         });
       }
       setPageReady(true);
@@ -246,7 +283,7 @@ export default function ProjectsPage() {
 
       <div className="wrapper">
         <header className="header">
-          <a href="/" className="back-btn">← Kembali</a>
+          <a href="/" onClick={handleBack} className="back-btn">← Kembali</a>
           <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: themeColor }}>Koleksi Proyek</span>
         </header>
 

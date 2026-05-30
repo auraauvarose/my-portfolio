@@ -10,6 +10,17 @@ const INITIAL_SPEED = 150;
 
 export default function SnakeGame() {
   const [snake, setSnake] = useState([{ x: 10, y: 10 }]);
+
+  const handleBack = (e) => {
+    e.preventDefault();
+    if (typeof window !== 'undefined') {
+      if (document.referrer && document.referrer.includes(window.location.host)) {
+        window.history.back();
+      } else {
+        window.location.href = '/game';
+      }
+    }
+  };
   const [food, setFood] = useState({ x: 15, y: 15 });
   const [direction, setDirection] = useState({ x: 0, y: -1 });
   const [gameOver, setGameOver] = useState(false);
@@ -179,7 +190,7 @@ export default function SnakeGame() {
         }}>
           aura<span style={{ color: '#00ff88' }}>a</span>uvarose
         </Link>
-        <Link href="/game" style={{
+        <Link href="/game" onClick={handleBack} style={{
           color: '#888',
           textDecoration: 'none',
           fontSize: '14px',

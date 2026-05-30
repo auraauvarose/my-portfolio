@@ -26,7 +26,13 @@ function GeminiLogo({ size = 14 }) {
 }
 
 export default function Home() {
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('default_theme');
+      if (saved) return saved === 'dark';
+    }
+    return true;
+  });
   const [lang, setLang] = useState('id');
   const [time, setTime] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
@@ -42,11 +48,59 @@ export default function Home() {
   const [pageReady, setPageReady] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [ripple, setRipple] = useState(null);
-  const [profileImage, setProfileImage] = useState('');
-  const [aiOpen, setAiOpen] = useState(false);
-  const [aiMessages, setAiMessages] = useState([]);
-  const [aiInput, setAiInput] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
+  const [profileImage, setProfileImage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('profile_image') || '';
+    }
+    return '';
+  });
+  const [ecoMode, setEcoMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('eco_mode');
+      if (local !== null) return local === 'true';
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      return isMobile;
+    }
+    return false;
+  });
+  const [sandboxCode, setSandboxCode] = useState(() => {
+    return `<div class="card-wrap">
+  <div class="glow-box">Aura Auvarose</div>
+</div>
+
+<style>
+  body {
+    background: #0d0d12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
+    margin: 0;
+    font-family: sans-serif;
+  }
+  .card-wrap {
+    padding: 2px;
+    background: linear-gradient(135deg, var(--theme-color, #d4eb00) 0%, #1e1e24 100%);
+    border-radius: 12px;
+  }
+  .glow-box {
+    padding: 16px 28px;
+    background: #15151a;
+    color: #ffffff;
+    font-weight: 800;
+    text-align: center;
+    border-radius: 10px;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    animation: bouncePulse 2s infinite ease-in-out;
+  }
+  @keyframes bouncePulse {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+</style>`;
+  });
   const [typedDesc, setTypedDesc] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const [typedAbout1, setTypedAbout1] = useState('');
@@ -74,16 +128,55 @@ export default function Home() {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoSubmitDone, setPhotoSubmitDone] = useState(false);
   const [photoSubmitting, setPhotoSubmitting] = useState(false);
-  const [themeColor, setThemeColor] = useState('#d4eb00');
-  const [bgTheme, setBgTheme]       = useState('default');
-  const [fontChoice, setFontChoice] = useState('fraunces');
-  const [musicUrl, setMusicUrl]     = useState('https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3');
+  const [devHubActiveTab, setDevHubActiveTab] = useState('status');
+  const [ghCommits, setGhCommits] = useState([]);
+  const [termOpen, setTermOpen] = useState(false);
+  const [matrixActive, setMatrixActive] = useState(false);
+  const [termLines, setTermLines] = useState([
+    { type: 'output', text: "Welcome to Fedora Workstation inside Aura's Portfolio!\nType \"help\" for a list of available commands." }
+  ]);
+  const [termInput, setTermInput] = useState('');
+  const termEndRef = useRef(null);
+  const [themeColor, setThemeColor] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme_color') || '#d4eb00';
+    }
+    return '#d4eb00';
+  });
+  const [bgTheme, setBgTheme]       = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bg_theme') || 'default';
+    }
+    return 'default';
+  });
+  const [fontChoice, setFontChoice] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('font_choice') || 'fraunces';
+    }
+    return 'fraunces';
+  });
+  const [musicUrl, setMusicUrl]     = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('music_url') || 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3';
+    }
+    return 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3';
+  });
 
   // ── NEW STATES ──
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [bgAnimation, setBgAnimation] = useState('constellation');
+  const [bgAnimation, setBgAnimation] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bg_animation') || 'constellation';
+    }
+    return 'constellation';
+  });
   const [loveParticles, setLoveParticles] = useState([]);
-  const [defaultThemeMode, setDefaultThemeMode] = useState('dark');
+  const [defaultThemeMode, setDefaultThemeMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('default_theme') || 'dark';
+    }
+    return 'dark';
+  });
   const [isMobile, setIsMobile] = useState(false);
   const [activeSkill, setActiveSkill] = useState(null);
   const [loadProgress, setLoadProgress] = useState(0);
@@ -138,16 +231,17 @@ export default function Home() {
     wildcat:   { heading:"'Teko',sans-serif",                  body:"'Nunito',sans-serif" },
     sugarpie:  { heading:"'Pacifico',cursive",                 body:"'Plus Jakarta Sans',sans-serif" },
     tan:       { heading:"'Libre Caslon Display',serif",       body:"'Libre Caslon Text',serif" },
+    
     // font untuk hal lain semisal error
-
-
+    error:     { heading:"'Roboto Mono',monospace", body:"'Roboto Mono',monospace" },
+    
 
 
 
 
 
   };
-  const curBg   = BG_THEMES[bgTheme]   || BG_THEMES.default;
+  const curBg   = BG_THEMES[bgTheme]   || BG_THEMES.default; // fallback ke default kalau bgTheme gak ketemu
   const curFont = FONTS[fontChoice]     || FONTS.fraunces;
   const accHex  = themeColor.replace('#','');
   const accRgb  = accHex.length===6
@@ -167,29 +261,110 @@ export default function Home() {
     setIsDark(prev => !prev);
   };
 
-  const sendAI = async () => {
-    if (!aiInput.trim() || aiLoading) return;
-    const userMsg = { role: 'user', content: aiInput.trim() };
-    const newMsgs = [...aiMessages, userMsg];
-    setAiMessages(newMsgs);
-    setAiInput('');
-    setAiLoading(true);
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMsgs }),
-      });
-      const data = await res.json();
-      const reply = data.reply || 'Maaf, tidak ada respons.';
-      setAiMessages(prev => [...prev, { role: 'assistant', content: reply }]);
-    } catch {
-      setAiMessages(prev => [...prev, { role: 'assistant', content: 'Koneksi gagal. Coba lagi.' }]);
+
+
+  const handleTermCommand = (input) => {
+    const cmd = input.trim().toLowerCase();
+    if (!cmd) return;
+    
+    setTermLines(prev => [...prev, { type: 'input', text: `[aura@fedora ~]$ ${input}` }]);
+    setTermInput('');
+    
+    let outputText = '';
+    
+    switch (cmd) {
+      case 'help':
+        outputText = 'Available commands:\n  help      - Show this help message\n  neofetch  - Display system info in retro Fedora workstation style\n  skills    - List tech stack and programming skills\n  projects  - Show highlighted software engineering projects\n  matrix    - Toggle green full-screen falling digital rain\n  clear     - Clear the terminal console screen\n  theme     - View current theme & customization settings\n  time      - Display current localized system time\n  exit      - Close this interactive terminal console';
+        break;
+      case 'clear':
+        setTermLines([]);
+        return;
+      case 'exit':
+      case 'close':
+        setTermOpen(false);
+        return;
+      case 'neofetch':
+        outputText = `       ,---.\n      /     \\\n      | () () |  OS: Fedora Linux 40 (x86_64)\n       \\  ^  /   Host: Aura's Dev Box\n        |||||    Kernel: 6.8.9-fedora\n                 Uptime: 2 days, 4 hours\n                 Shell: Bash on JetBrains Mono\n                 DE: GNOME 46\n                 Accent Color: ${themeColor}\n                 Font: ${fontChoice}\n                 CPU: AMD Ryzen 9 7940HS (16) @ 4.0GHz\n                 GPU: NVIDIA RTX 4070 Mobile\n                 Memory: 16.2 GB / 32.0 GB`;
+        break;
+      case 'skills':
+        outputText = '-- Aura\'s Full Stack & Creative Technologies --\n\n🎨 FRONTEND: HTML5, CSS3, JavaScript (ES6+), React.js, Next.js (App Router), Framer Motion, Vanilla CSS\n💻 BACKEND: Node.js, Express, Supabase (PostgreSQL), RESTful APIs, Secure Database Architecture\n⚙️ TOOLS & DEV: Git & GitHub, Linux (Fedora Workstation, GNOME, Bash CLI), Docker, Webpack, Figma';
+        break;
+      case 'projects':
+        outputText = '-- Outstanding Developer Showcases --\n\n🌟 1. Aura\'s Premium Developer Portfolio & Dynamic Dashboard\n🌐 2. Retro Arcade Hub (Featuring Canvas-based Tetris, Snake & Memory Matrix)\n📷 3. Secure Drag & Drop Photo Gallery Upload Center';
+        break;
+      case 'matrix':
+        setMatrixActive(prev => !prev);
+        outputText = !matrixActive 
+          ? 'INITIALIZING DYNAMIC GREEN MATRIX CODES... DRAIN ACTIVATED! [Close terminal or type "matrix" to exit]'
+          : 'TERMINATING MATRIX CODES... RETURNING TO NORMAL SPACETIME CONTINUUM.';
+        break;
+      case 'theme':
+        outputText = `🎨 DYNAMIC DESIGN SYSTEM CUSTOMIZATION:\n-------------------------------------\nAccent Color : ${themeColor}\nFont Family  : ${fontChoice}\nBG Palette   : ${bgTheme}`;
+        break;
+      case 'time':
+        outputText = `🕒 Localized Server Time:\n-------------------------\n${new Date().toString()}`;
+        break;
+      default:
+        outputText = `bash: command not found: ${input}. Type "help" for a list of available commands.`;
     }
-    setAiLoading(false);
+    
+    setTermLines(prev => [...prev, { type: 'output', text: outputText }]);
   };
 
-  useEffect(() => { aiEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages]);
+  useEffect(() => {
+    if (termOpen) {
+      termEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [termLines, termOpen]);
+
+  useEffect(() => {
+    if (!matrixActive) return;
+    const canvas = document.getElementById('matrix-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    let animationFrameId;
+    
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const alphabet = katakana.split('');
+    
+    const fontSize = 16;
+    const columns = Math.ceil(canvas.width / fontSize);
+    
+    const rainDrops = Array(columns).fill(1);
+    
+    const draw = () => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.fillStyle = themeColor || '#27c93f';
+      ctx.font = fontSize + 'px monospace';
+      
+      for (let i = 0; i < rainDrops.length; i++) {
+        const text = alphabet[Math.floor(Math.random() * alphabet.length)];
+        ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+        
+        if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          rainDrops[i] = 0;
+        }
+        rainDrops[i]++;
+      }
+    };
+    
+    const interval = setInterval(draw, 30);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, [matrixActive, themeColor]);
 
   useEffect(() => {
     if (!pageReady) {
@@ -483,13 +658,13 @@ export default function Home() {
     const loadSettings = async () => {
       const { data } = await supabase.from('settings').select('key,value');
       if (data) data.forEach(row => {
-        if (row.key === 'profile_image'   && row.value) setProfileImage(row.value);
-        if (row.key === 'theme_color'     && row.value) setThemeColor(row.value);
-        if (row.key === 'bg_theme'        && row.value) setBgTheme(row.value);
-        if (row.key === 'font_choice'     && row.value) setFontChoice(row.value);
-        if (row.key === 'music_url'       && row.value) setMusicUrl(row.value);
-        if (row.key === 'default_theme'   && row.value) { setDefaultThemeMode(row.value); setIsDark(row.value === 'dark'); }
-        if (row.key === 'bg_animation'    && row.value) setBgAnimation(row.value);
+        if (row.key === 'profile_image'   && row.value) { setProfileImage(row.value); localStorage.setItem('profile_image', row.value); }
+        if (row.key === 'theme_color'     && row.value) { setThemeColor(row.value); localStorage.setItem('theme_color', row.value); }
+        if (row.key === 'bg_theme'        && row.value) { setBgTheme(row.value); localStorage.setItem('bg_theme', row.value); }
+        if (row.key === 'font_choice'     && row.value) { setFontChoice(row.value); localStorage.setItem('font_choice', row.value); }
+        if (row.key === 'music_url'       && row.value) { setMusicUrl(row.value); localStorage.setItem('music_url', row.value); }
+        if (row.key === 'default_theme'   && row.value) { setDefaultThemeMode(row.value); setIsDark(row.value === 'dark'); localStorage.setItem('default_theme', row.value); }
+        if (row.key === 'bg_animation'    && row.value) { setBgAnimation(row.value); localStorage.setItem('bg_animation', row.value); }
       });
     };
     let loadTimer;
@@ -527,10 +702,29 @@ export default function Home() {
 
       fetch('https://api.github.com/users/auraauvarose/repos?sort=pushed&per_page=4')
         .then(r => r.json()).then(d => { if (Array.isArray(d)) setGhRepos(d.slice(0,4)); }).catch(()=>{});
-      fetch('https://api.github.com/users/auraauvarose/events/public?per_page=10')
+      fetch('https://api.github.com/users/auraauvarose/events/public?per_page=15')
         .then(r => r.json()).then(events => {
           if (!Array.isArray(events)) return;
-          const push = events.find(e => e.type === 'PushEvent');
+          
+          // 1. Process recent commits timeline
+          const pushEvents = events.filter(e => e.type === 'PushEvent');
+          const commitsList = [];
+          pushEvents.forEach(evt => {
+            if (evt.payload && evt.payload.commits) {
+              evt.payload.commits.forEach(c => {
+                commitsList.push({
+                  sha: c.sha.slice(0, 7),
+                  message: c.message,
+                  repo: evt.repo.name.split('/')[1] || 'repository',
+                  time: evt.created_at,
+                });
+              });
+            }
+          });
+          setGhCommits(commitsList.slice(0, 4));
+
+          // 2. Set current status
+          const push = pushEvents[0];
           if (!push) { setGhStatus({ detail: null, since: null, online: false }); return; }
           const repo = (push.repo?.name || '').split('/')[1] || 'repository';
           const msg  = push.payload?.commits?.[0]?.message || 'Commit terbaru';
@@ -725,6 +919,7 @@ export default function Home() {
     heroBadge: isID ? 'Pelajar & IT Student' : 'Student & IT Learner',
     heroGreet: isID ? 'Alo, Saya' : "Hey, I'm",
     heroBtn: isID ? 'Hubungi Saya →' : 'Contact Me →',
+    downloadCV: isID ? 'Unduh CV 📄' : 'Download CV 📄',
     statProjects: isID ? 'Proyek Selesai' : 'Projects Done',
     statVisitors: isID ? 'Pengunjung' : 'Visitors',
     statYears: isID ? 'Tahun Belajar' : 'Years Learning',
@@ -1477,6 +1672,190 @@ export default function Home() {
         .music-btn:hover{transform:scale(1.1);box-shadow:0 12px 32px var(--shadow);}
         .music-btn.playing{animation:spin 8s linear infinite;}
 
+        /* Custom dynamic tab Visualizer & Fedora Terminal GNOME styling */
+        .float-term-btn{width:54px;height:54px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(255,255,255,0.06);transition:all 0.25s;background:#1c1c1f;color:#27c93f;font-family:monospace;font-size:18px;font-weight:bold;cursor:pointer;}
+        .float-term-btn:hover{transform:scale(1.1);border:1px solid #27c93f;box-shadow:0 12px 32px rgba(39,201,63,0.2);}
+
+        .fedora-term-modal {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 90vw;
+          max-width: 650px;
+          height: 420px;
+          background: rgba(22, 10, 24, 0.95);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 12px;
+          box-shadow: 0 30px 70px rgba(0,0,0,0.8), 0 0 40px var(--acc)15;
+          z-index: 99999;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          font-family: 'JetBrains Mono', 'Fira Code', monospace;
+          color: #f0efe8;
+        }
+        .fedora-term-header {
+          background: #1c1921;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 16px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          user-select: none;
+        }
+        .fedora-term-title {
+          font-size: 11px;
+          color: #a0a0a8;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .fedora-ctrl {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          display: inline-block;
+          cursor: pointer;
+        }
+        .fedora-ctrl.close { background: #ff5f56; }
+        .fedora-ctrl.min { background: #ffbd2e; }
+        .fedora-ctrl.max { background: #27c93f; }
+        
+        .fedora-term-body {
+          flex: 1;
+          padding: 16px;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        .fedora-term-line {
+          white-space: pre-wrap;
+          word-break: break-all;
+        }
+        .fedora-term-line.input {
+          color: var(--acc);
+        }
+        .fedora-term-line.output {
+          color: #dfdfe6;
+        }
+        .fedora-term-prompt-line {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .fedora-prompt-symbol {
+          color: var(--acc);
+          font-weight: 700;
+        }
+        .fedora-term-input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          color: #fff;
+          font-family: inherit;
+          font-size: 13px;
+          outline: none;
+        }
+        @media(max-width: 600px) {
+          .fedora-term-modal {
+            width: 95vw !important;
+            height: 70vh !important;
+            max-height: 380px !important;
+          }
+          .fedora-term-body {
+            font-size: 11.5px !important;
+            padding: 10px !important;
+            gap: 6px !important;
+          }
+          .fedora-term-header {
+            padding: 0 10px !important;
+            height: 32px !important;
+          }
+          .fedora-prompt-symbol, .fedora-term-input {
+            font-size: 11.5px !important;
+          }
+        }
+
+        .dev-github-timeline {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          max-height: 140px;
+          overflow-y: auto;
+          scrollbar-width: none;
+        }
+        .dev-github-timeline::-webkit-scrollbar { display: none; }
+        .dev-github-commits-hd {
+          font-size: 9px;
+          font-weight: 800;
+          color: var(--acc);
+          letter-spacing: 0.1em;
+          margin-bottom: 4px;
+        }
+        .dev-github-commits-empty {
+          font-size: 11px;
+          color: var(--ink3);
+          font-style: italic;
+        }
+        .dev-github-commit-item {
+          display: flex;
+          gap: 10px;
+          align-items: flex-start;
+          font-size: 12px;
+          border-left: 2px solid var(--bd);
+          padding-left: 10px;
+          margin-left: 4px;
+          position: relative;
+        }
+        .commit-dot {
+          position: absolute;
+          left: -5px;
+          top: 3px;
+          font-size: 8px;
+          color: var(--acc);
+          text-shadow: 0 0 8px var(--acc);
+        }
+        .commit-details {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          width: 100%;
+        }
+        .commit-header {
+          display: flex;
+          justify-content: space-between;
+          font-size: 10px;
+          font-weight: 700;
+        }
+        .commit-repo { color: var(--acc); }
+        .commit-sha { color: var(--ink3); font-family: monospace; }
+        .commit-time { color: var(--ink3); font-size: 9px; }
+        .commit-msg {
+          color: var(--ink);
+          text-overflow: ellipsis;
+          overflow: hidden;
+          white-space: nowrap;
+          max-width: 250px;
+        }
+
+        .dev-neofetch-card {
+          font-family: monospace;
+          font-size: 11px;
+          color: var(--ink);
+          line-height: 1.4;
+        }
+        .neofetch-line {
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
+        }
+
         /* ── GITHUB ACTIVITY ── */
         /* ── HIGH-TECH DEV CONSOLE HUD ── */
         .dev-hub-console {
@@ -1578,9 +1957,25 @@ export default function Home() {
           gap: 24px;
           align-items: center;
         }
+        .dev-hub-body.sandbox-active {
+          grid-template-columns: 1fr;
+        }
+        .sandbox-wrapper {
+          display: flex;
+          gap: 20px;
+          width: 100%;
+          flex-wrap: wrap;
+        }
+        .sandbox-col {
+          flex: 1;
+          min-width: 280px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
         @media(max-width: 900px) {
           .dev-hub-body {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr !important;
             gap: 20px;
           }
           .dev-hub-divider {
@@ -2051,11 +2446,26 @@ export default function Home() {
           .cert-grid-wrap{width:100%;}
           .cert-grid{grid-template-columns:1fr !important;gap:16px !important;display:grid !important;}
           .cert-card{width:100%;border-radius:16px;overflow:hidden;background:var(--bg2);border:1px solid var(--bd);}
+          .cert-card:nth-child(n+3) { display: none !important; }
           .cert-img{aspect-ratio:16/10!important;width:100%!important;background:var(--bg);position:relative;}
           .cert-img img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:top center!important;display:block!important;}
           .cert-info{padding:12px 14px!important;}
           .cert-info-t p{font-size:14px!important;max-width:240px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
           .cert-info-t span{font-size:12px!important;}
+
+          /* CSS Mobile untuk Code Sandbox */
+          .sandbox-wrapper {
+            gap: 16px !important;
+          }
+          .sandbox-col {
+            min-width: 100% !important;
+          }
+          .sandbox-col textarea, .sandbox-col iframe {
+            height: 200px !important;
+          }
+          .dev-hub-body {
+            padding: 14px !important;
+          }
           
           .gallery-grid .gallery-item{min-width:78vw;max-width:78vw;scroll-snap-align:start;flex-shrink:0;}
           .mobile-scroll-hint{display:flex!important;justify-content:center;gap:6px;margin-top:14px;align-items:center;}
@@ -2138,7 +2548,7 @@ export default function Home() {
       `}</style>
 
       {/* ── BG ANIMATION CANVAS ── */}
-      <BackgroundCanvas bgAnimation={bgAnimation} themeColor={themeColor} isDark={isDark} />
+      {!ecoMode && <BackgroundCanvas bgAnimation={bgAnimation} themeColor={themeColor} isDark={isDark} />}
 
       <div className={`rw${d ? ' dark' : ''}`} style={{
         '--acc':         themeColor,
@@ -2348,7 +2758,7 @@ export default function Home() {
             <li><a href="#portfolio" onClick={() => setMobileMenuOpen(false)}>{tx.navCerts}</a></li>
             <li><a href="#gallery" onClick={() => setMobileMenuOpen(false)}>📸 Gallery</a></li>
             <li><a href="#contact" onClick={() => setMobileMenuOpen(false)}>{tx.navContact}</a></li>
-            <li><a href="/game" className="nav-game">🎮 {tx.navGame}</a></li>
+            <li><a href="/game" className="nav-game">{tx.navGame}</a></li>
           </ul>
           <div className="mobile-drawer-actions">
             <div className="mobile-action-row">
@@ -2375,7 +2785,7 @@ export default function Home() {
         {/* NAV */}
         <nav className="nav">
           <div className="nav-in">
-            <a href="#" className="logo"><em>A.</em></a>
+            <a href="#" className="logo">aura<em>a</em>uvarose</a>
             <ul className="nav-links">
               <li><a href="#">{tx.navHome}</a></li>
               <li><a href="#about">{tx.navAbout}</a></li>
@@ -2383,7 +2793,7 @@ export default function Home() {
               <li><a href="#projects">{tx.navProjects}</a></li>
               <li><a href="#portfolio">{tx.navCerts}</a></li>
               <li><a href="#contact">{tx.navContact}</a></li>
-              <li><a href="/game" className="nav-game">🎮 {tx.navGame}</a></li>
+              <li><a href="/game" className="nav-game">{tx.navGame}</a></li>
             </ul>
             <div className="nav-right">
               <button ref={themeBtnRef} className="btn-theme" onClick={toggleTheme}>
@@ -2422,6 +2832,17 @@ export default function Home() {
                   whileTap={{ scale: 0.98 }}
                 >
                   {tx.heroBtn}
+                </motion.a>
+                <motion.a
+                  href={`/cv?lang=${lang}&color=${encodeURIComponent(themeColor)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-dark"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{ background: 'transparent', border: `2px solid ${themeColor}`, color: themeColor, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {tx.downloadCV}
                 </motion.a>
                 <motion.div
                   className="btn-acc"
@@ -2604,13 +3025,17 @@ export default function Home() {
                 <span className="dev-dot green"></span>
               </div>
               <div className="dev-hub-tabs">
-                <div className="dev-tab active">
+                <div className={`dev-tab ${devHubActiveTab === 'status' ? 'active' : ''}`} onClick={() => setDevHubActiveTab('status')}>
                   <span className="dev-tab-icon">⚡</span>
                   <span>status.js</span>
                 </div>
-                <div className="dev-tab">
+                <div className={`dev-tab ${devHubActiveTab === 'github' ? 'active' : ''}`} onClick={() => setDevHubActiveTab('github')}>
                   <span className="dev-tab-icon">📊</span>
                   <span>github.json</span>
+                </div>
+                <div className={`dev-tab ${devHubActiveTab === 'sandbox' ? 'active' : ''}`} onClick={() => setDevHubActiveTab('sandbox')}>
+                  <span className="dev-tab-icon">🎨</span>
+                  <span>sandbox.html</span>
                 </div>
               </div>
               <div className="dev-hub-status">
@@ -2622,34 +3047,116 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="dev-hub-body">
-              <div className="dev-vscode-card">
-                <div className="dev-vscode-icon">
-                  <svg viewBox="0 0 100 100" width="36" height="36">
-                    <rect width="100" height="100" rx="18" fill="#2b5fce"/>
-                    <path d="M70 15L40 47 22 33l-8 6 18 16-18 16 8 6 18-14 30 32 10-5V20z" fill="white" opacity=".9"/>
-                  </svg>
-                </div>
-                <div className="dev-vscode-info">
-                  <div className="dev-vscode-label">{tx.currentActivity}</div>
-                  <div className="dev-vscode-app">Visual Studio Code</div>
-                  <div className="dev-vscode-file">
-                    Editing <strong>{ghStatus.detail || 'my-portfolio'}</strong>
+            <div className={`dev-hub-body ${devHubActiveTab === 'sandbox' ? 'sandbox-active' : ''}`}>
+              {devHubActiveTab === 'sandbox' ? (
+                <div className="sandbox-wrapper">
+                  {/* Left Side: Code Editor */}
+                  <div className="sandbox-col">
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', fontFamily: 'monospace' }}>📝 CODE EDITOR</div>
+                    <textarea
+                      value={sandboxCode}
+                      onChange={e => setSandboxCode(e.target.value)}
+                      style={{
+                        width: '100%',
+                        height: '240px',
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '10px',
+                        padding: '12px',
+                        color: themeColor,
+                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                        fontSize: '12px',
+                        lineHeight: '1.5',
+                        outline: 'none',
+                        resize: 'none'
+                      }}
+                    />
                   </div>
-                  {ghStatus.since && <div className="dev-vscode-time">🕒 {ghStatus.since}</div>}
-                </div>
-              </div>
 
-              <div className="dev-hub-divider"></div>
+                  {/* Right Side: Live Preview */}
+                  <div className="sandbox-col">
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', fontFamily: 'monospace' }}>👁️ LIVE PREVIEW</div>
+                    <iframe
+                      srcDoc={sandboxCode.replaceAll('var(--theme-color, #d4eb00)', themeColor).replaceAll('#d4eb00', themeColor)}
+                      title="Sandbox Live Preview"
+                      style={{
+                        width: '100%',
+                        height: '240px',
+                        background: '#0d0d12',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '10px',
+                        overflow: 'hidden'
+                      }}
+                      sandbox="allow-scripts"
+                    />
+                  </div>
+                </div>
+              ) : devHubActiveTab === 'status' ? (
+                <>
+                  <div className="dev-vscode-card">
+                    <div className="dev-vscode-icon">
+                      <svg viewBox="0 0 100 100" width="36" height="36">
+                        <rect width="100" height="100" rx="18" fill="#2b5fce"/>
+                        <path d="M70 15L40 47 22 33l-8 6 18 16-18 16 8 6 18-14 30 32 10-5V20z" fill="white" opacity=".9"/>
+                      </svg>
+                    </div>
+                    <div className="dev-vscode-info">
+                      <div className="dev-vscode-label">{tx.currentActivity}</div>
+                      <div className="dev-vscode-app">Visual Studio Code</div>
+                      <div className="dev-vscode-file">
+                        Editing <strong>{ghStatus.detail || 'my-portfolio'}</strong>
+                      </div>
+                      {ghStatus.since && <div className="dev-vscode-time">🕒 {ghStatus.since}</div>}
+                    </div>
+                  </div>
 
-              <div className="dev-github-card">
-                <div className="dev-github-info">
-                  <div className="dev-github-label">OPEN SOURCE CONTRIBUTIONS</div>
-                </div>
-                <div className="dev-github-chart">
-                  <img src="https://ghchart.rshah.org/2ea043/auraauvarose" alt="GitHub Contribution Chart" loading="lazy"/>
-                </div>
-              </div>
+                  <div className="dev-hub-divider"></div>
+
+                  <div className="dev-neofetch-card">
+                    <div className="neofetch-line" style={{ fontWeight: 'bold', color: themeColor }}>aura@fedora-workstation</div>
+                    <div className="neofetch-line" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}>-----------------------</div>
+                    <div className="neofetch-line">💻 OS: <span style={{ color: 'rgba(255,255,255,0.85)' }}>Fedora Linux 40</span></div>
+                    <div className="neofetch-line">🐚 Shell: <span style={{ color: 'rgba(255,255,255,0.85)' }}>Bash (JetBrains Mono)</span></div>
+                    <div className="neofetch-line">📝 Editor: <span style={{ color: 'rgba(255,255,255,0.85)' }}>VS Code 1.89</span></div>
+                    <div className="neofetch-line">🎨 Aksen: <span style={{ color: themeColor, fontWeight: '700' }}>{themeColor}</span></div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="dev-github-card" style={{ width: '100%' }}>
+                    <div className="dev-github-info" style={{ marginBottom: '8px' }}>
+                      <div className="dev-github-label" style={{ fontSize: '9px', fontWeight: '800', color: themeColor }}>OPEN SOURCE CONTRIBUTIONS</div>
+                    </div>
+                    <div className="dev-github-chart">
+                      <img src="https://ghchart.rshah.org/2ea043/auraauvarose" alt="GitHub Contribution Chart" loading="lazy" style={{ width: '100%', height: 'auto', filter: 'brightness(0.95)' }}/>
+                    </div>
+                  </div>
+
+                  <div className="dev-hub-divider"></div>
+
+                  <div className="dev-github-timeline">
+                    <div className="dev-github-commits-hd">💻 RECENT COMMITS FEED</div>
+                    {ghCommits.length === 0 ? (
+                      <div className="dev-github-commits-empty">No public commits logged today...</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {ghCommits.map((c, i) => (
+                          <div key={i} className="dev-github-commit-item">
+                            <span className="commit-dot">●</span>
+                            <div className="commit-details">
+                              <div className="commit-header">
+                                <span className="commit-repo">[{c.repo}]</span>
+                                <span className="commit-sha">{c.sha}</span>
+                              </div>
+                              <div className="commit-msg">{c.message}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -3020,50 +3527,83 @@ export default function Home() {
           </div>
         )}
 
-        {/* AI CHAT PANEL */}
-        {aiOpen && (
-          <div className="ai-panel">
-            <div className="ai-panel-head">
-              <span className="ai-panel-dot"/>
-              <span className="ai-panel-title" style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                <GeminiLogo size={13} /> AI Aura
-              </span>
-              <button className="ai-panel-close" onClick={() => setAiOpen(false)}>✕</button>
+        {termOpen && (
+          <div className="fedora-term-modal">
+            <div className="fedora-term-header">
+              <div className="fedora-term-title">
+                <span style={{ fontSize: '12px' }}>🐚</span> aura@fedora: ~
+              </div>
+              <div className="fedora-term-controls" style={{ display: 'flex', gap: '6px' }}>
+                <span className="fedora-ctrl close" onClick={() => setTermOpen(false)}></span>
+                <span className="fedora-ctrl min"></span>
+                <span className="fedora-ctrl max"></span>
+              </div>
             </div>
-            <div className="ai-msgs custom-scrollbar">
-              {aiMessages.length === 0 && (
-                <div className="ai-empty">Halo! 👋 Tanya apa saja tentang Aura atau pemrograman.</div>
-              )}
-              {aiMessages.map((m, i) => (
-                <div key={i} className={`ai-msg ${m.role}`}>{m.content}</div>
+            <div className="fedora-term-body custom-scrollbar" style={{ overflowY: 'auto' }}>
+              {termLines.map((line, i) => (
+                <div key={i} className={`fedora-term-line ${line.type}`} style={{ whiteSpace: 'pre-wrap' }}>
+                  {line.text}
+                </div>
               ))}
-              {aiLoading && <div className="ai-msg assistant">✦ Sedang berpikir...</div>}
-              <div ref={aiEndRef}/>
-            </div>
-            <div className="ai-panel-foot">
-              <input
-                className="ai-input"
-                placeholder="Tanya sesuatu..."
-                value={aiInput}
-                onChange={e => setAiInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && sendAI()}
-              />
-              <button className="ai-send" onClick={sendAI} disabled={aiLoading}>{tx.replySend}</button>
+              <div ref={termEndRef} />
+              <div className="fedora-term-prompt-line">
+                <span className="fedora-prompt-symbol">[aura@fedora ~]$</span>
+                <input
+                  className="fedora-term-input"
+                  value={termInput}
+                  onChange={e => setTermInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleTermCommand(termInput)}
+                  autoFocus
+                  style={{ background: 'transparent', border: 'none', outline: 'none', color: '#fff', flex: 1 }}
+                />
+              </div>
             </div>
           </div>
         )}
 
-        {/* FLOAT: LANG + AI (Gemini) + MUSIC */}
+        {matrixActive && (
+          <div className="matrix-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.92)', zIndex: 99990, pointerEvents: 'auto' }} onClick={() => setMatrixActive(false)}>
+            <canvas id="matrix-canvas" style={{ display: 'block', width: '100%', height: '100%' }} />
+            <button style={{ position: 'fixed', top: '20px', right: '20px', background: '#e02424', color: '#fff', border: 'none', borderRadius: '8px', padding: '10px 18px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', zIndex: 99995 }} onClick={(e) => { e.stopPropagation(); setMatrixActive(false); }}>
+              ✕ Exit Matrix
+            </button>
+          </div>
+        )}
+
+        {/* FLOAT: LANG + ECO MODE + MUSIC */}
         <audio ref={audioRef} loop>
           <source src={musicUrl} type="audio/mpeg"/>
         </audio>
         <div className="float-group">
+          <button className="float-term-btn" onClick={() => setTermOpen(!termOpen)} title="Fedora Linux Terminal ($ _)">
+            $_
+          </button>
           <button className="lang-btn" onClick={()=>setLang(lang==='id'?'en':'id')} title={lang==='id'?'Switch to English':'Ganti ke Indonesia'}>
             <span style={{fontSize:'14px'}}>{lang==='id'?'🇮🇩':'🇬🇧'}</span>
             <span>{lang==='id'?'ID':'EN'}</span>
           </button>
-          <button className="float-ai-btn" onClick={() => setAiOpen(!aiOpen)} title="AI Aura (Gemini)">
-            <GeminiLogo size={22} />
+          <button className="eco-btn" onClick={() => {
+            const next = !ecoMode;
+            setEcoMode(next);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('eco_mode', next ? 'true' : 'false');
+            }
+          }} title={ecoMode ? 'Matikan Mode Hemat Daya (Aktifkan Animasi)' : 'Aktifkan Mode Hemat Daya (Matikan Animasi)'} style={{
+            width: '54px',
+            height: '54px',
+            borderRadius: '50%',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: ecoMode ? '#10b981' : '#1c1c1f',
+            color: ecoMode ? '#fff' : '#8f8f94',
+            boxShadow: ecoMode ? '0 8px 24px rgba(16,185,129,0.3)' : '0 8px 24px rgba(0,0,0,0.1)',
+            cursor: 'pointer',
+            transition: 'all 0.25s',
+            fontSize: '16px'
+          }}>
+            🌿
           </button>
           <button onClick={toggleMusic} className={`music-btn${isPlaying?' playing':''}`} title={isPlaying?'Pause':'Play'}>
             {isPlaying?'♪':'▶'}

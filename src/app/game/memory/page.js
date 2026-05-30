@@ -8,6 +8,17 @@ const EMOJIS = ['🎮', '🎯', '🎲', '🎸', '🎨', '🚀', '💎', '🔥', 
 
 export default function MemoryGame() {
   const [cards, setCards] = useState([]);
+
+  const handleBack = (e) => {
+    e.preventDefault();
+    if (typeof window !== 'undefined') {
+      if (document.referrer && document.referrer.includes(window.location.host)) {
+        window.history.back();
+      } else {
+        window.location.href = '/game';
+      }
+    }
+  };
   const [flipped, setFlipped] = useState([]);
   const [matched, setMatched] = useState([]);
   const [moves, setMoves] = useState(0);
@@ -118,7 +129,7 @@ export default function MemoryGame() {
         <Link href="/" style={{ color: '#fff', textDecoration: 'none', fontSize: '18px', fontWeight: 700 }}>
           aura<span style={{ color: '#e94560' }}>a</span>uvarose
         </Link>
-        <Link href="/game" style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>
+        <Link href="/game" onClick={handleBack} style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>
           ← Kembali ke Game
         </Link>
       </div>
