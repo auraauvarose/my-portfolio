@@ -133,7 +133,7 @@ export default function Home() {
   const [termOpen, setTermOpen] = useState(false);
   const [matrixActive, setMatrixActive] = useState(false);
   const [termLines, setTermLines] = useState([
-    { type: 'output', text: "Welcome to Fedora Workstation inside Aura's Portfolio!\nType \"help\" for a list of available commands." }
+    { type: 'output', text: "Welcome to Arch Workstation inside Aura's Portfolio!\nType \"help\" for a list of available commands." }
   ]);
   const [termInput, setTermInput] = useState('');
   const termEndRef = useRef(null);
@@ -267,14 +267,14 @@ export default function Home() {
     const cmd = input.trim().toLowerCase();
     if (!cmd) return;
     
-    setTermLines(prev => [...prev, { type: 'input', text: `[aura@fedora ~]$ ${input}` }]);
+    setTermLines(prev => [...prev, { type: 'input', text: `[aura@Arch ~]$ ${input}` }]);
     setTermInput('');
     
     let outputText = '';
     
     switch (cmd) {
       case 'help':
-        outputText = 'Available commands:\n  help      - Show this help message\n  neofetch  - Display system info in retro Fedora workstation style\n  skills    - List tech stack and programming skills\n  projects  - Show highlighted software engineering projects\n  matrix    - Toggle green full-screen falling digital rain\n  clear     - Clear the terminal console screen\n  theme     - View current theme & customization settings\n  time      - Display current localized system time\n  exit      - Close this interactive terminal console';
+        outputText = 'Available commands:\n  help      - Show this help message\n  neofetch  - Display system info in retro Arch workstation style\n  skills    - List tech stack and programming skills\n  projects  - Show highlighted software engineering projects\n  matrix    - Toggle green full-screen falling digital rain\n  clear     - Clear the terminal console screen\n  theme     - View current theme & customization settings\n  time      - Display current localized system time\n  exit      - Close this interactive terminal console';
         break;
       case 'clear':
         setTermLines([]);
@@ -284,10 +284,10 @@ export default function Home() {
         setTermOpen(false);
         return;
       case 'neofetch':
-        outputText = `       ,---.\n      /     \\\n      | () () |  OS: Fedora Linux 40 (x86_64)\n       \\  ^  /   Host: Aura's Dev Box\n        |||||    Kernel: 6.8.9-fedora\n                 Uptime: 2 days, 4 hours\n                 Shell: Bash on JetBrains Mono\n                 DE: GNOME 46\n                 Accent Color: ${themeColor}\n                 Font: ${fontChoice}\n                 CPU: AMD Ryzen 9 7940HS (16) @ 4.0GHz\n                 GPU: NVIDIA RTX 4070 Mobile\n                 Memory: 16.2 GB / 32.0 GB`;
+        outputText = `       ,---.\n      /     \\\n      | () () |  OS: Arch Linux (x86_64)\n       \\  ^  /   Host: Aura's Dev Box\n        |||||    Kernel: 6.8.9-Arch\n                 Uptime: 2 days, 4 hours\n                 Shell: Bash on JetBrains Mono\n                 DE: GNOME 46\n                 Accent Color: ${themeColor}\n                 Font: ${fontChoice}\n                 CPU: AMD Ryzen 9 7940HS (16) @ 4.0GHz\n                 GPU: NVIDIA RTX 4070 Mobile\n                 Memory: 16.2 GB / 32.0 GB`;
         break;
       case 'skills':
-        outputText = '-- Aura\'s Full Stack & Creative Technologies --\n\n🎨 FRONTEND: HTML5, CSS3, JavaScript (ES6+), React.js, Next.js (App Router), Framer Motion, Vanilla CSS\n💻 BACKEND: Node.js, Express, Supabase (PostgreSQL), RESTful APIs, Secure Database Architecture\n⚙️ TOOLS & DEV: Git & GitHub, Linux (Fedora Workstation, GNOME, Bash CLI), Docker, Webpack, Figma';
+        outputText = '-- Aura\'s Full Stack & Creative Technologies --\n\n🎨 FRONTEND: HTML5, CSS3, JavaScript (ES6+), React.js, Next.js (App Router), Framer Motion, Vanilla CSS\n💻 BACKEND: Node.js, Express, Supabase (PostgreSQL), RESTful APIs, Secure Database Architecture\n⚙️ TOOLS & DEV: Git & GitHub, Linux (Arch Workstation, GNOME, Bash CLI), Docker, Webpack, Figma';
         break;
       case 'projects':
         outputText = '-- Outstanding Developer Showcases --\n\n🌟 1. Aura\'s Premium Developer Portfolio & Dynamic Dashboard\n🌐 2. Retro Arcade Hub (Featuring Canvas-based Tetris, Snake & Memory Matrix)\n📷 3. Secure Drag & Drop Photo Gallery Upload Center';
@@ -444,8 +444,8 @@ export default function Home() {
       ? 'Hai! Saya Aura Auvarose, seorang mahasiswa Informatika semester 1 yang sedang meniti jalan di dunia teknologi. Perjalanan saya bukan tentang kemudahan, melainkan tentang ketekunan di tengah keterbatasan.'
       : "Hi! I'm Aura Auvarose, a first-semester Informatics student carving my path in the tech world. My journey isn't about ease — it's about persistence through limitations.";
     const p2 = isID
-      ? 'Saat ini, saya sedang aktif mendalami Fedora Linux dan membangun portofolio pribadi sebagai bukti nyata perkembangan saya. Fokus saya saat ini adalah menguasai logika pemrograman yang kuat dan terus konsisten belajar setiap malam demi mencapai level profesional.'
-      : "Currently I'm actively exploring Fedora Linux and building this personal portfolio as real proof of my growth. My focus is on mastering strong programming logic and staying consistent — learning every night to reach a professional level.";
+      ? 'Saat ini, saya sedang aktif mendalami Arch Linux dan membangun portofolio pribadi sebagai bukti nyata perkembangan saya. Fokus saya saat ini adalah menguasai logika pemrograman yang kuat dan terus konsisten belajar setiap malam demi mencapai level profesional.'
+      : "Currently I'm actively exploring Arch Linux and building this personal portfolio as real proof of my growth. My focus is on mastering strong programming logic and staying consistent — learning every night to reach a professional level.";
     setTypedAbout1(''); setTypedAbout2(''); setAboutTypingDone(false);
     let i = 0; const speed = 18;
     const tick1 = () => {
@@ -1672,11 +1672,11 @@ export default function Home() {
         .music-btn:hover{transform:scale(1.1);box-shadow:0 12px 32px var(--shadow);}
         .music-btn.playing{animation:spin 8s linear infinite;}
 
-        /* Custom dynamic tab Visualizer & Fedora Terminal GNOME styling */
+        /* Custom dynamic tab Visualizer & Arch Terminal GNOME styling */
         .float-term-btn{width:54px;height:54px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(255,255,255,0.06);transition:all 0.25s;background:#1c1c1f;color:#27c93f;font-family:monospace;font-size:18px;font-weight:bold;cursor:pointer;}
         .float-term-btn:hover{transform:scale(1.1);border:1px solid #27c93f;box-shadow:0 12px 32px rgba(39,201,63,0.2);}
 
-        .fedora-term-modal {
+        .Arch-term-modal {
           position: fixed;
           top: 50%;
           left: 50%;
@@ -1695,7 +1695,7 @@ export default function Home() {
           font-family: 'JetBrains Mono', 'Fira Code', monospace;
           color: #f0efe8;
         }
-        .fedora-term-header {
+        .Arch-term-header {
           background: #1c1921;
           height: 36px;
           display: flex;
@@ -1705,7 +1705,7 @@ export default function Home() {
           border-bottom: 1px solid rgba(255, 255, 255, 0.05);
           user-select: none;
         }
-        .fedora-term-title {
+        .Arch-term-title {
           font-size: 11px;
           color: #a0a0a8;
           font-weight: 700;
@@ -1713,18 +1713,18 @@ export default function Home() {
           align-items: center;
           gap: 6px;
         }
-        .fedora-ctrl {
+        .Arch-ctrl {
           width: 12px;
           height: 12px;
           border-radius: 50%;
           display: inline-block;
           cursor: pointer;
         }
-        .fedora-ctrl.close { background: #ff5f56; }
-        .fedora-ctrl.min { background: #ffbd2e; }
-        .fedora-ctrl.max { background: #27c93f; }
+        .Arch-ctrl.close { background: #ff5f56; }
+        .Arch-ctrl.min { background: #ffbd2e; }
+        .Arch-ctrl.max { background: #27c93f; }
         
-        .fedora-term-body {
+        .Arch-term-body {
           flex: 1;
           padding: 16px;
           overflow-y: auto;
@@ -1734,26 +1734,26 @@ export default function Home() {
           font-size: 13px;
           line-height: 1.5;
         }
-        .fedora-term-line {
+        .Arch-term-line {
           white-space: pre-wrap;
           word-break: break-all;
         }
-        .fedora-term-line.input {
+        .Arch-term-line.input {
           color: var(--acc);
         }
-        .fedora-term-line.output {
+        .Arch-term-line.output {
           color: #dfdfe6;
         }
-        .fedora-term-prompt-line {
+        .Arch-term-prompt-line {
           display: flex;
           align-items: center;
           gap: 8px;
         }
-        .fedora-prompt-symbol {
+        .Arch-prompt-symbol {
           color: var(--acc);
           font-weight: 700;
         }
-        .fedora-term-input {
+        .Arch-term-input {
           flex: 1;
           background: transparent;
           border: none;
@@ -1763,21 +1763,21 @@ export default function Home() {
           outline: none;
         }
         @media(max-width: 600px) {
-          .fedora-term-modal {
+          .Arch-term-modal {
             width: 95vw !important;
             height: 70vh !important;
             max-height: 380px !important;
           }
-          .fedora-term-body {
+          .Arch-term-body {
             font-size: 11.5px !important;
             padding: 10px !important;
             gap: 6px !important;
           }
-          .fedora-term-header {
+          .Arch-term-header {
             padding: 0 10px !important;
             height: 32px !important;
           }
-          .fedora-prompt-symbol, .fedora-term-input {
+          .Arch-prompt-symbol, .Arch-term-input {
             font-size: 11.5px !important;
           }
         }
@@ -2869,7 +2869,7 @@ export default function Home() {
                 {/* Floating Badges */}
                 <div className="float-badge badge-1">
                   <span>🚀</span>
-                  <span>{isID ? 'Fedora Linux' : 'Fedora Linux'}</span>
+                  <span>{isID ? 'Arch Linux' : 'Arch Linux'}</span>
                 </div>
                 <div className="float-badge badge-2">
                   <span>💻</span>
@@ -3113,9 +3113,9 @@ export default function Home() {
                   <div className="dev-hub-divider"></div>
 
                   <div className="dev-neofetch-card">
-                    <div className="neofetch-line" style={{ fontWeight: 'bold', color: themeColor }}>aura@fedora-workstation</div>
+                    <div className="neofetch-line" style={{ fontWeight: 'bold', color: themeColor }}>aura@Arch-workstation</div>
                     <div className="neofetch-line" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}>-----------------------</div>
-                    <div className="neofetch-line">💻 OS: <span style={{ color: 'rgba(255,255,255,0.85)' }}>Fedora Linux 40</span></div>
+                    <div className="neofetch-line">💻 OS: <span style={{ color: 'rgba(255,255,255,0.85)' }}>Arch Linux</span></div>
                     <div className="neofetch-line">🐚 Shell: <span style={{ color: 'rgba(255,255,255,0.85)' }}>Bash (JetBrains Mono)</span></div>
                     <div className="neofetch-line">📝 Editor: <span style={{ color: 'rgba(255,255,255,0.85)' }}>VS Code 1.89</span></div>
                     <div className="neofetch-line">🎨 Aksen: <span style={{ color: themeColor, fontWeight: '700' }}>{themeColor}</span></div>
@@ -3528,28 +3528,28 @@ export default function Home() {
         )}
 
         {termOpen && (
-          <div className="fedora-term-modal">
-            <div className="fedora-term-header">
-              <div className="fedora-term-title">
-                <span style={{ fontSize: '12px' }}>🐚</span> aura@fedora: ~
+          <div className="Arch-term-modal">
+            <div className="Arch-term-header">
+              <div className="Arch-term-title">
+                <span style={{ fontSize: '12px' }}>🐚</span> aura@Arch: ~
               </div>
-              <div className="fedora-term-controls" style={{ display: 'flex', gap: '6px' }}>
-                <span className="fedora-ctrl close" onClick={() => setTermOpen(false)}></span>
-                <span className="fedora-ctrl min"></span>
-                <span className="fedora-ctrl max"></span>
+              <div className="Arch-term-controls" style={{ display: 'flex', gap: '6px' }}>
+                <span className="Arch-ctrl close" onClick={() => setTermOpen(false)}></span>
+                <span className="Arch-ctrl min"></span>
+                <span className="Arch-ctrl max"></span>
               </div>
             </div>
-            <div className="fedora-term-body custom-scrollbar" style={{ overflowY: 'auto' }}>
+            <div className="Arch-term-body custom-scrollbar" style={{ overflowY: 'auto' }}>
               {termLines.map((line, i) => (
-                <div key={i} className={`fedora-term-line ${line.type}`} style={{ whiteSpace: 'pre-wrap' }}>
+                <div key={i} className={`Arch-term-line ${line.type}`} style={{ whiteSpace: 'pre-wrap' }}>
                   {line.text}
                 </div>
               ))}
               <div ref={termEndRef} />
-              <div className="fedora-term-prompt-line">
-                <span className="fedora-prompt-symbol">[aura@fedora ~]$</span>
+              <div className="Arch-term-prompt-line">
+                <span className="Arch-prompt-symbol">[aura@Arch ~]$</span>
                 <input
-                  className="fedora-term-input"
+                  className="Arch-term-input"
                   value={termInput}
                   onChange={e => setTermInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleTermCommand(termInput)}
@@ -3575,7 +3575,7 @@ export default function Home() {
           <source src={musicUrl} type="audio/mpeg"/>
         </audio>
         <div className="float-group">
-          <button className="float-term-btn" onClick={() => setTermOpen(!termOpen)} title="Fedora Linux Terminal ($ _)">
+          <button className="float-term-btn" onClick={() => setTermOpen(!termOpen)} title="Arch Linux Terminal ($ _)">
             $_
           </button>
           <button className="lang-btn" onClick={()=>setLang(lang==='id'?'en':'id')} title={lang==='id'?'Switch to English':'Ganti ke Indonesia'}>
