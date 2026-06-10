@@ -367,6 +367,16 @@ export default function Home() {
   }, [matrixActive, themeColor]);
 
   useEffect(() => {
+    document.documentElement.style.setProperty('--accent-color', themeColor);
+    if (themeColor.startsWith('#') && themeColor.length === 7) {
+      const r = parseInt(themeColor.substring(1, 3), 16);
+      const g = parseInt(themeColor.substring(3, 5), 16);
+      const b = parseInt(themeColor.substring(5, 7), 16);
+      document.documentElement.style.setProperty('--accent-color-rgb', `${r}, ${g}, ${b}`);
+    }
+  }, [themeColor]);
+
+  useEffect(() => {
     if (!pageReady) {
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
@@ -2574,29 +2584,16 @@ export default function Home() {
               background:'#0a0a0a',
               display:'flex',flexDirection:'column',
               alignItems:'center',justifyContent:'center',
-              gap:'0',
               fontFamily:"'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
             }}
           >
-            {/* Subtle warm noise texture */}
-            <div style={{
-              position:'absolute',inset:0,
-              opacity:0.03,
-              backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-              pointerEvents:'none',
-              zIndex:0,
-            }}/>
-
-            {/* Name — typewriter reveal */}
             <div style={{
               position:'relative',
               zIndex:1,
               display:'flex',
               flexDirection:'column',
               alignItems:'center',
-              gap:'20px',
             }}>
-              {/* Typewriter Name */}
               <div style={{
                 fontSize: 'clamp(28px, 5vw, 42px)',
                 fontWeight: '900',
@@ -2605,59 +2602,22 @@ export default function Home() {
                 overflow: 'hidden',
                 whiteSpace: 'nowrap',
                 borderRight: '2px solid rgba(240,239,232,0.6)',
-                animation: 'loaderTypewriter 1.8s steps(14, end) forwards, loaderBlink 0.7s step-end 6',
+                animation: 'loaderTypewriter 1.8s steps(12, end) forwards, loaderBlink 0.7s step-end infinite',
                 width: '0',
                 fontFamily: curFont.heading || "'Fraunces', serif",
               }}>
-                aura auvarose
-              </div>
-
-              {/* Subtitle — fade in after typewriter completes */}
-              <div style={{
-                fontSize: '11px',
-                fontWeight: '600',
-                color: 'rgba(240,239,232,0.25)',
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                textIndent: '0.2em',
-                animation: 'loaderFadeIn 0.6s 2s ease forwards',
-                opacity: 0,
-              }}>
-                {isID ? 'memuat portofolio' : 'loading portfolio'}
-              </div>
-
-              {/* Progress — minimalist thin line */}
-              <div style={{
-                width: '120px',
-                height: '1.5px',
-                background: 'rgba(255,255,255,0.06)',
-                borderRadius: '100px',
-                overflow: 'hidden',
-                animation: 'loaderFadeIn 0.4s 1.5s ease forwards',
-                opacity: 0,
-              }}>
-                <div style={{
-                  height: '100%',
-                  width: `${loadProgress}%`,
-                  background: 'rgba(240,239,232,0.5)',
-                  borderRadius: '100px',
-                  transition: 'width 0.15s ease-out',
-                }}/>
+                auraauvarose
               </div>
             </div>
 
             <style>{`
               @keyframes loaderTypewriter {
                 from { width: 0; }
-                to { width: 14ch; }
+                to { width: 12ch; }
               }
               @keyframes loaderBlink {
                 0%, 100% { border-color: rgba(240,239,232,0.6); }
                 50% { border-color: transparent; }
-              }
-              @keyframes loaderFadeIn {
-                from { opacity: 0; transform: translateY(6px); }
-                to { opacity: 1; transform: translateY(0); }
               }
             `}</style>
           </div>

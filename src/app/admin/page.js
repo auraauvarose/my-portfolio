@@ -207,6 +207,17 @@ export default function AdminPage() {
 
   // Background style sync
   useEffect(() => {
+    document.documentElement.style.setProperty('--accent-color', themeColor);
+    if (themeColor.startsWith('#') && themeColor.length === 7) {
+      const r = parseInt(themeColor.substring(1, 3), 16);
+      const g = parseInt(themeColor.substring(3, 5), 16);
+      const b = parseInt(themeColor.substring(5, 7), 16);
+      document.documentElement.style.setProperty('--accent-color-rgb', `${r}, ${g}, ${b}`);
+    }
+  }, [themeColor]);
+
+  // Background style sync
+  useEffect(() => {
     const curBg = BG_THEMES.find(t => t.id === bgTheme) || BG_THEMES[0];
     const bg = d ? curBg.darkBg : curBg.lightBg;
     document.documentElement.style.background = bg;
