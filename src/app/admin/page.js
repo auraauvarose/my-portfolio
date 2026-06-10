@@ -7,7 +7,13 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('default_theme');
+      if (saved) return saved === 'dark';
+    }
+    return true;
+  });
   const [activeTab, setActiveTab] = useState('certs');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -36,12 +42,37 @@ export default function AdminPage() {
   const [visitors, setVisitors] = useState([]);
   const [viewCount, setViewCount] = useState(0);
   
-  // Appearance & Settings
-  const [themeColor, setThemeColor] = useState('#d4eb00');
-  const [bgTheme, setBgTheme] = useState('default');
-  const [fontChoice, setFontChoice] = useState('fraunces');
-  const [defaultTheme, setDefaultTheme] = useState('dark');
-  const [bgAnimation, setBgAnimation] = useState('none');
+  // Appearance & Settings — read from localStorage first to prevent flash
+  const [themeColor, setThemeColor] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme_color') || '#d4eb00';
+    }
+    return '#d4eb00';
+  });
+  const [bgTheme, setBgTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bg_theme') || 'default';
+    }
+    return 'default';
+  });
+  const [fontChoice, setFontChoice] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('font_choice') || 'fraunces';
+    }
+    return 'fraunces';
+  });
+  const [defaultTheme, setDefaultTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('default_theme') || 'dark';
+    }
+    return 'dark';
+  });
+  const [bgAnimation, setBgAnimation] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bg_animation') || 'none';
+    }
+    return 'none';
+  });
   const [settingsSaved, setSettingsSaved] = useState('');
   
   // Music
@@ -157,16 +188,17 @@ export default function AdminPage() {
       const { data } = await supabase.from('settings').select('key,value');
       if (data) {
         data.forEach(row => {
-          if (row.key === 'theme_color' && row.value) setThemeColor(row.value);
+          if (row.key === 'theme_color' && row.value) { setThemeColor(row.value); localStorage.setItem('theme_color', row.value); }
           if (row.key === 'profile_image' && row.value) setProfilePreview(row.value);
-          if (row.key === 'bg_theme' && row.value) setBgTheme(row.value);
-          if (row.key === 'font_choice' && row.value) setFontChoice(row.value);
+          if (row.key === 'bg_theme' && row.value) { setBgTheme(row.value); localStorage.setItem('bg_theme', row.value); }
+          if (row.key === 'font_choice' && row.value) { setFontChoice(row.value); localStorage.setItem('font_choice', row.value); }
           if (row.key === 'music_url' && row.value) setMusicUrl(row.value);
           if (row.key === 'default_theme' && row.value) {
             setDefaultTheme(row.value);
             setIsDark(row.value === 'dark');
+            localStorage.setItem('default_theme', row.value);
           }
-          if (row.key === 'bg_animation' && row.value) setBgAnimation(row.value);
+          if (row.key === 'bg_animation' && row.value) { setBgAnimation(row.value); localStorage.setItem('bg_animation', row.value); }
         });
       }
     };
@@ -187,6 +219,9 @@ export default function AdminPage() {
 
   const saveSetting = async (key, value) => {
     await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
   };
   const toast = (setter, msg) => { setter(msg); setTimeout(() => setter(''), 2500); };
   const broadcastUpdate = async (msg) => {
@@ -792,9 +827,9 @@ export default function AdminPage() {
       <style>{css}</style>
       <BackgroundCanvas bgAnimation={bgAnimation} themeColor={themeColor} isDark={isDark} />
       <div className={`aw${d?'':' light'}`} style={{
-        '--acc':         themeColor,
-        '--acc-bg':      accBg,
-        '--acc-rgb':     `${accRgb[0]}, ${accRgb[1]}, ${accRgb[2]}`,
+        '--acc':         `var(--accent-color, ${themeColor})`,
+        '--acc-bg':      `color-mix(in srgb, var(--acc, ${themeColor}) 12%, transparent)`,
+        '--acc-rgb':     `var(--accent-color-rgb, ${accRgb[0]}, ${accRgb[1]}, ${accRgb[2]})`,
         '--bg':          d ? curBg.darkBg  : curBg.lightBg,
         '--bg2':         d ? curBg.darkBg2 : curBg.lightBg2,
         '--font-heading': fontStyle.heading,
@@ -832,9 +867,9 @@ export default function AdminPage() {
       <style>{css}</style>
       <BackgroundCanvas bgAnimation={bgAnimation} themeColor={themeColor} isDark={isDark} />
       <div className={`aw${d?'':' light'}`} style={{
-        '--acc':         themeColor,
-        '--acc-bg':      accBg,
-        '--acc-rgb':     `${accRgb[0]}, ${accRgb[1]}, ${accRgb[2]}`,
+        '--acc':         `var(--accent-color, ${themeColor})`,
+        '--acc-bg':      `color-mix(in srgb, var(--acc, ${themeColor}) 12%, transparent)`,
+        '--acc-rgb':     `var(--accent-color-rgb, ${accRgb[0]}, ${accRgb[1]}, ${accRgb[2]})`,
         '--bg':          d ? curBg.darkBg  : curBg.lightBg,
         '--bg2':         d ? curBg.darkBg2 : curBg.lightBg2,
         '--font-heading': fontStyle.heading,

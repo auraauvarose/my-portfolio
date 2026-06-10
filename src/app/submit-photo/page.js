@@ -179,6 +179,11 @@ export default function SubmitPhoto() {
       position: 'relative',
     }}>
       <style>{`
+        :root {
+          --acc: var(--accent-color, ${themeColor});
+          --acc-33: color-mix(in srgb, var(--acc) 20%, transparent);
+          --acc-55: color-mix(in srgb, var(--acc) 33%, transparent);
+        }
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,400;1,9..144,700&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;600;700;800&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,700;1,400&family=Lato:wght@400;700&family=Bebas+Neue&family=Teko:wght@400;600;700&family=Pacifico&family=Libre+Caslon+Display&family=Libre+Caslon+Text:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;}
         a{color:inherit;}
@@ -193,7 +198,7 @@ export default function SubmitPhoto() {
         .sp-logo{font-family:${fontHeading};font-size:20px;font-weight:700;
           text-decoration:none;color:${isDark ? '#f0efe8' : '#1a1a1a'};letter-spacing:-.5px;
           transition: color 0.3s;}
-        .sp-logo em{font-style:normal;color:${themeColor};}
+        .sp-logo em{font-style:normal;color:var(--acc);}
         .sp-back{
           font-size:12px;font-weight:700;color:${isDark ? '#909088' : '#555555'};text-decoration:none;
           display:flex;align-items:center;gap:6px;transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -202,7 +207,7 @@ export default function SubmitPhoto() {
         }
         .sp-back:hover{
           color:${isDark ? '#f0efe8' : '#1a1a1a'};
-          border-color: ${themeColor};
+          border-color: var(--acc);
           transform: translateX(-4px);
         }
 
@@ -211,7 +216,7 @@ export default function SubmitPhoto() {
           position: relative; z-index: 2;
         }
         .sp-eyebrow{font-size:11px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;
-          color:${themeColor};margin-bottom:12px;}
+          color:var(--acc);margin-bottom:12px;}
         .sp-h1{font-family:${fontHeading};font-size:clamp(32px,6vw,52px);font-weight:700;
           line-height:1.05;color:${isDark ? '#f0efe8' : '#1a1a1a'};margin-bottom:12px;
           transition: color 0.3s;}
@@ -232,7 +237,7 @@ export default function SubmitPhoto() {
           border-radius:10px;font-family:inherit;font-size:14px;color:${isDark ? '#f0efe8' : '#1a1a1a'};outline:none;
           transition: all 0.3s;
         }
-        .sp-input:focus{border-color:${themeColor};}
+        .sp-input:focus{border-color:var(--acc);}
         .sp-input::placeholder{color:${isDark ? '#555550' : '#b0b0a8'};}
 
         .sp-dropzone{
@@ -240,7 +245,7 @@ export default function SubmitPhoto() {
           padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s;
           background:${currentBg2};position:relative;
         }
-        .sp-dropzone:hover,.sp-dropzone.drag{border-color:${themeColor};background:${currentBg2};filter: brightness(1.05);}
+        .sp-dropzone:hover,.sp-dropzone.drag{border-color:var(--acc);background:${currentBg2};filter: brightness(1.05);}
         .sp-drop-icon{font-size:36px;margin-bottom:10px;}
         .sp-drop-text{font-size:13px;color:${isDark ? '#909088' : '#555555'};font-weight:600;}
         .sp-drop-sub{font-size:11px;color:${isDark ? '#555550' : '#b0b0a8'};margin-top:4px;}
@@ -257,11 +262,11 @@ export default function SubmitPhoto() {
         }
 
         .sp-submit{
-          width:100%;padding:15px;background:${themeColor};color:#0d0d0d;border:none;
+          width:100%;padding:15px;background:var(--acc);color:#0d0d0d;border:none;
           border-radius:12px;font-family:inherit;font-size:15px;font-weight:800;
           cursor:pointer;transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .sp-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 24px ${themeColor}55;}
+        .sp-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 24px var(--acc-55);}
         .sp-submit:disabled{opacity:.5;cursor:not-allowed;}
 
         .sp-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
@@ -275,11 +280,11 @@ export default function SubmitPhoto() {
         .sp-success-h{font-family:${fontHeading};font-size:28px;font-weight:700;margin-bottom:10px;color:${isDark ? '#f0efe8' : '#1a1a1a'};}
         .sp-success-p{font-size:14px;color:${isDark ? '#909088' : '#555555'};line-height:1.65;margin-bottom:24px;}
         .sp-success-btn{
-          display:inline-block;padding:12px 24px;background:${themeColor};color:#0d0d0d;
+          display:inline-block;padding:12px 24px;background:var(--acc);color:#0d0d0d;
           border-radius:100px;font-weight:800;font-size:13px;text-decoration:none;
-          box-shadow:0 4px 12px ${themeColor}33;transition:all .25s;
+          box-shadow:0 4px 12px var(--acc-33);transition:all .25s;
         }
-        .sp-success-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px ${themeColor}55;}
+        .sp-success-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px var(--acc-55);}
 
         .sp-footer{
           margin-top:auto;padding:20px 32px;border-top:1px solid ${isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)'};
@@ -288,7 +293,7 @@ export default function SubmitPhoto() {
           transition: border-color 0.3s;
         }
         .sp-footer a{color:${isDark ? '#909088' : '#555555'};text-decoration:none;font-weight:700;}
-        .sp-footer a:hover{color:${themeColor};}
+        .sp-footer a:hover{color:var(--acc);}
 
         .sp-info{background:${currentBg2};border:1px solid ${isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)'};border-radius:12px;
           padding:14px 16px;font-size:12px;color:${isDark ? '#909088' : '#555555'};line-height:1.6;

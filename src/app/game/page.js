@@ -772,10 +772,18 @@ export default function GamePage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,400;1,9..144,700&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;600;700;800&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,700;1,400&family=Lato:wght@400;700&family=Bebas+Neue&family=Teko:wght@400;600;700&family=Pacifico&family=Libre+Caslon+Display&family=Libre+Caslon+Text:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap');
         *,*::before,*::after{box-sizing:border-box;}
+        :root {
+          --acc: var(--accent-color, ${themeColor});
+          --acc-15: color-mix(in srgb, var(--acc) 8%, transparent);
+          --acc-20: color-mix(in srgb, var(--acc) 20%, transparent);
+          --acc-30: color-mix(in srgb, var(--acc) 13%, transparent);
+          --acc-50: color-mix(in srgb, var(--acc) 30%, transparent);
+          --acc-55: color-mix(in srgb, var(--acc) 33%, transparent);
+        }
         body{margin:0;padding:0;background:${currentBg};color:${isDark ? '#f0efe8' : '#1a1a1a'};font-family:${fontBody};min-height:100vh;transition: background 0.3s, color 0.3s;}
-
+ 
         .game-page{min-height:100vh;display:flex;flex-direction:column;position:relative;z-index:2;}
-
+ 
         /* ── NAV ── */
         .game-nav{
           display:flex;align-items:center;justify-content:space-between;
@@ -787,7 +795,7 @@ export default function GamePage() {
           transition: background 0.3s, border-color 0.3s;
         }
         .game-nav-logo{font-family:${fontHeading};font-size:20px;font-weight:900;text-decoration:none;color:${isDark ? '#f0efe8' : '#1a1a1a'};transition: color 0.3s;}
-        .game-nav-logo em{font-style:normal;color:${themeColor};}
+        .game-nav-logo em{font-style:normal;color:var(--acc);}
         .game-nav-back{
           display:flex;align-items:center;gap:6px;
           padding:8px 16px;background:${currentBg2};
@@ -797,10 +805,10 @@ export default function GamePage() {
         }
         .game-nav-back:hover{
           color:${isDark ? '#f0efe8' : '#1a1a1a'};
-          border-color: ${themeColor};
+          border-color: var(--acc);
           transform: translateX(-4px);
         }
-
+ 
         /* ── MAIN ── */
         .game-main{
           flex:1;display:flex;flex-direction:column;align-items:center;
@@ -808,9 +816,9 @@ export default function GamePage() {
         }
         .game-header{text-align:center;margin-bottom:32px;}
         .game-title{font-family:${fontHeading};font-size:clamp(28px,5vw,48px);font-weight:900;margin:0 0 8px;letter-spacing:-0.03em;color:${isDark ? '#f0efe8' : '#1a1a1a'};transition: color 0.3s;}
-        .game-title em{font-style:normal;color:${themeColor};}
+        .game-title em{font-style:normal;color:var(--acc);}
         .game-sub{font-size:13px;color:${isDark ? 'rgba(240,239,232,0.4)' : '#555555'};margin:0;transition: color 0.3s;}
-
+ 
         /* ── GAME MENU ── */
         .game-menu{width:100%;max-width:800px;}
         .game-menu-title{
@@ -855,7 +863,7 @@ export default function GamePage() {
         .game-card:hover .game-card-arrow{
           color:var(--game-color);transform:translateY(-50%) translateX(4px);
         }
-
+ 
         /* ── GAME ── */
         .game-wrap{
           display:flex;gap:24px;align-items:flex-start;
@@ -879,12 +887,12 @@ export default function GamePage() {
         .game-next-label{font-size:9px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;color:${isDark ? 'rgba(240,239,232,0.35)' : '#888888'};}
         .game-next-canvas{border:1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'};border-radius:8px;background:#0d0d0f;display:block;}
         .game-start-btn{
-          padding:12px 20px;background:${themeColor};color:#0d0d0d;
+          padding:12px 20px;background:var(--acc);color:#0d0d0d;
           border:none;border-radius:12px;font-family:inherit;font-size:13px;font-weight:800;
           cursor:pointer;transition:all 0.2s;letter-spacing:0.04em;
         }
-        .game-start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px ${themeColor}55;}
-
+        .game-start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px var(--acc-55);}
+ 
         /* ── MOBILE CONTROLS ── */
         .mobile-controls{
           display:none;flex-direction:column;align-items:center;gap:10px;
@@ -900,9 +908,9 @@ export default function GamePage() {
           cursor:pointer;transition:all 0.15s;user-select:none;
           font-family:inherit;
         }
-        .ctrl-btn:active{background:rgba(212,235,0,0.2);border-color:${themeColor};transform:scale(0.95);}
+        .ctrl-btn:active{background:var(--acc-20);border-color:var(--acc);transform:scale(0.95);}
         .ctrl-btn-wide{width:180px;font-size:14px;}
-
+ 
         /* ── TIPS ── */
         .game-tips{
           margin-top:28px;padding:16px 20px;
@@ -911,7 +919,7 @@ export default function GamePage() {
           line-height:1.8;text-align:center;max-width:400px;
         }
         .game-tips strong{color:${isDark ? 'rgba(240,239,232,0.7)' : '#1a1a1a'};}
-
+ 
         /* ── LEADERBOARD ── */
         .arcade-leaderboard{
           width:100%;max-width:600px;margin:48px auto 0;
@@ -936,8 +944,8 @@ export default function GamePage() {
           color:${isDark ? 'rgba(240,239,232,0.5)' : '#555555'};transition:all 0.25s;
         }
         .leaderboard-tab.active{
-          background:${themeColor}15;border-color:${themeColor}50;color:${themeColor};
-          text-shadow:0 0 8px ${themeColor}30;
+          background:var(--acc-15);border-color:var(--acc-50);color:var(--acc);
+          text-shadow:0 0 8px var(--acc-30);
         }
         .leaderboard-list{
           display:flex;flex-direction:column;gap:8px;
@@ -953,7 +961,7 @@ export default function GamePage() {
         }
         .leaderboard-rank{font-weight:900;font-size:14px;}
         .leaderboard-player{font-weight:600;font-size:13px;}
-        .leaderboard-score{font-family:monospace;font-weight:800;color:${themeColor};font-size:15px;}
+        .leaderboard-score{font-family:monospace;font-weight:800;color:var(--acc);font-size:15px;}
         .leaderboard-empty{
           text-align:center;padding:24px;font-size:12px;color:rgba(255,255,255,0.4);
           font-style:italic;

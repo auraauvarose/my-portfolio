@@ -503,7 +503,7 @@ export default function Home() {
       window.removeEventListener('scroll', onScroll);
       cards.forEach(c => { c.removeEventListener('mousemove', handler); c.removeEventListener('mouseleave', reset); });
     };
-  });
+  }, [projects, certificates, pageReady]);
 
 
 
@@ -1687,7 +1687,7 @@ export default function Home() {
           background: rgba(22, 10, 24, 0.95);
           border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 12px;
-          box-shadow: 0 30px 70px rgba(0,0,0,0.8), 0 0 40px var(--acc)15;
+          box-shadow: 0 30px 70px rgba(0,0,0,0.8), 0 0 40px rgba(212,235,0,0.15);
           z-index: 99999;
           display: flex;
           flex-direction: column;
@@ -2483,7 +2483,6 @@ export default function Home() {
 
           .float-group{bottom:18px;right:16px;gap:7px;}
           .lang-btn{display:none;}
-          .lang-btn{width:48px;height:30px;font-size:11px;}
           .float-ai-btn{width:48px;height:48px;font-size:13px;}
           .music-btn{width:48px;height:48px;font-size:16px;}
 
@@ -2545,14 +2544,15 @@ export default function Home() {
         .sec-cta-btn:hover .sec-cta-arrow {
           transform: translateX(4px);
         }
+        .mobile-scroll-hint{display:none;}
       `}</style>
 
       {/* ── BG ANIMATION CANVAS ── */}
       {!ecoMode && <BackgroundCanvas bgAnimation={bgAnimation} themeColor={themeColor} isDark={isDark} />}
 
       <div className={`rw${d ? ' dark' : ''}`} style={{
-        '--acc':         themeColor,
-        '--acc-bg':      accBg,
+        '--acc':         `var(--accent-color, ${themeColor})`,
+        '--acc-bg':      `color-mix(in srgb, var(--acc, ${themeColor}) 12%, transparent)`,
         '--bg':          d ? curBg.darkBg  : curBg.lightBg,
         '--bg2':         d ? curBg.darkBg2 : curBg.lightBg2,
         '--font-heading': curFont.heading,
@@ -2566,163 +2566,98 @@ export default function Home() {
           />
         )}
 
-        {/* LOADING SCREEN */}
-        {/* LOADING SCREEN */}
+        {/* LOADING SCREEN — Typewriter Minimalis */}
         {!pageReady && (
           <div
             style={{
               position:'fixed',inset:0,zIndex:99999,
-              background:'radial-gradient(circle at center, #09090c 0%, #020204 100%)',
+              background:'#0a0a0a',
               display:'flex',flexDirection:'column',
               alignItems:'center',justifyContent:'center',
-              gap:'24px',
+              gap:'0',
+              fontFamily:"'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
             }}
           >
-            {/* Holographic Glowing grid overlay */}
+            {/* Subtle warm noise texture */}
             <div style={{
               position:'absolute',inset:0,
-              backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)',
-              backgroundSize: '30px 30px',
-              backgroundPosition: 'center center',
-              maskImage: 'radial-gradient(circle, black 30%, transparent 80%)',
-              WebkitMaskImage: 'radial-gradient(circle, black 30%, transparent 80%)',
-              opacity: 0.8,
-              zIndex: 0,
-              pointerEvents: 'none'
+              opacity:0.03,
+              backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+              pointerEvents:'none',
+              zIndex:0,
             }}/>
 
-            {/* Soft Accent Ambient Glow */}
+            {/* Name — typewriter reveal */}
             <div style={{
-              position: 'absolute',
-              width: '450px',
-              height: '450px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(129,140,248,0.08) 0%, transparent 70%)',
-              filter: 'blur(60px)',
-              pointerEvents: 'none',
-              zIndex: 0,
-              animation: 'glowPulse 4s ease-in-out infinite alternate'
-            }} />
-
-            {/* Cybernetic Rotating Rings */}
-            <div style={{ position: 'relative', width: '130px', height: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-              {/* Outer Spin Ring */}
-              <svg style={{ position: 'absolute', width: '100%', height: '100%', transform: 'rotate(-90deg)', animation: 'spinCw 4s linear infinite' }} viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" stroke="rgba(255,255,255,0.03)" strokeWidth="1.5" fill="transparent"/>
-                <circle cx="50" cy="50" r="45" stroke="#818cf8" strokeWidth="2.5" fill="transparent"
-                  strokeDasharray={`${2 * Math.PI * 45}`} strokeDashoffset={`${2 * Math.PI * 45 * (1 - loadProgress / 100)}`}
-                  strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.1s ease-out', filter: 'drop-shadow(0 0 8px #818cf8)' }}/>
-              </svg>
-
-              {/* Inner Speed Ring */}
-              <svg style={{ position: 'absolute', width: '80%', height: '80%', transform: 'rotate(45deg)', animation: 'spinCcw 2.5s ease-in-out infinite alternate' }} viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.02)" strokeWidth="1" fill="transparent"/>
-                <circle cx="50" cy="50" r="40" stroke="#818cf8" strokeWidth="2" fill="transparent"
-                  strokeDasharray="60 180" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 4px #818cf8)' }}/>
-              </svg>
-
-              {/* Central Pulsing Glowing Orb */}
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, #ffffff 0%, #38bdf8 65%, #818cf8 100%)',
-                boxShadow: '0 0 25px rgba(56,189,248,0.85), 0 0 12px rgba(129,140,248,0.4), inset 0 2px 4px rgba(255,255,255,0.7)',
-                zIndex: 2,
-                animation: 'textBreath 2s ease-in-out infinite',
-                userSelect: 'none'
-              }} />
-            </div>
-
-            {/* Premium Brand Typographic Label */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '6px',
-              zIndex: 1
+              position:'relative',
+              zIndex:1,
+              display:'flex',
+              flexDirection:'column',
+              alignItems:'center',
+              gap:'20px',
             }}>
+              {/* Typewriter Name */}
               <div style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: '16px',
-                fontWeight: '800',
-                color: '#ffffff',
-                letterSpacing: '0.35em',
-                textTransform: 'uppercase',
-                textIndent: '0.35em',
+                fontSize: 'clamp(28px, 5vw, 42px)',
+                fontWeight: '900',
+                color: '#f0efe8',
+                letterSpacing: '-0.02em',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                borderRight: '2px solid rgba(240,239,232,0.6)',
+                animation: 'loaderTypewriter 1.8s steps(14, end) forwards, loaderBlink 0.7s step-end 6',
+                width: '0',
+                fontFamily: curFont.heading || "'Fraunces', serif",
               }}>
-                aura<span style={{ color: '#38bdf8' }}>au</span>varose
+                aura auvarose
               </div>
-              <div style={{
-                fontFamily: "'Space Grotesk', monospace",
-                fontSize: '9px',
-                fontWeight: '700',
-                color: 'rgba(255,255,255,0.3)',
-                letterSpacing: '0.25em',
-                textTransform: 'uppercase',
-                textIndent: '0.25em'
-              }}>
-                creative developer portfolio
-              </div>
-            </div>
 
-            {/* High-Tech Monospace Load-Log Console */}
-            <div style={{
-              width: '280px',
-              background: 'rgba(0,0,0,0.4)',
-              border: '1px solid rgba(255,255,255,0.04)',
-              borderRadius: '12px',
-              padding: '12px 16px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px',
-              zIndex: 1,
-              boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.5)',
-              fontFamily: "'Space Grotesk', monospace"
-            }}>
-              {/* Row 1 */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'rgba(255,255,255,0.2)' }}>
-                <span>SYS_INIT // BOOT_SEQUENCE</span>
-                <span style={{ color: '#38bdf8' }}>[ ONLINE ]</span>
+              {/* Subtitle — fade in after typewriter completes */}
+              <div style={{
+                fontSize: '11px',
+                fontWeight: '600',
+                color: 'rgba(240,239,232,0.25)',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                textIndent: '0.2em',
+                animation: 'loaderFadeIn 0.6s 2s ease forwards',
+                opacity: 0,
+              }}>
+                {isID ? 'memuat portofolio' : 'loading portfolio'}
               </div>
-              {/* Row 2 */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.85)', fontWeight: '600', marginTop: '2px' }}>
-                <span style={{ color: '#38bdf8' }}>&gt;</span>
-                <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '220px' }}>{loadText}</span>
-              </div>
-              {/* Progress Slider Bar */}
-              <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '100px', marginTop: '6px', overflow: 'hidden', position: 'relative' }}>
+
+              {/* Progress — minimalist thin line */}
+              <div style={{
+                width: '120px',
+                height: '1.5px',
+                background: 'rgba(255,255,255,0.06)',
+                borderRadius: '100px',
+                overflow: 'hidden',
+                animation: 'loaderFadeIn 0.4s 1.5s ease forwards',
+                opacity: 0,
+              }}>
                 <div style={{
                   height: '100%',
                   width: `${loadProgress}%`,
-                  background: 'linear-gradient(90deg, #38bdf8, #818cf8)',
-                  boxShadow: '0 0 10px rgba(129,140,248,0.4), 0 0 2px rgba(129,140,248,0.2)',
+                  background: 'rgba(240,239,232,0.5)',
                   borderRadius: '100px',
-                  transition: 'width 0.1s ease-out'
+                  transition: 'width 0.15s ease-out',
                 }}/>
-              </div>
-              {/* Percentage Indicator */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
-                <span>SECURE DATABASE SYNC</span>
-                <span style={{ fontWeight: '700', color: '#38bdf8' }}>{loadProgress}%</span>
               </div>
             </div>
 
             <style>{`
-              @keyframes glowPulse {
-                0% { transform: scale(0.9); opacity: 0.8; }
-                100% { transform: scale(1.15); opacity: 1.1; }
+              @keyframes loaderTypewriter {
+                from { width: 0; }
+                to { width: 14ch; }
               }
-              @keyframes spinCw {
-                100% { transform: rotate(270deg); }
+              @keyframes loaderBlink {
+                0%, 100% { border-color: rgba(240,239,232,0.6); }
+                50% { border-color: transparent; }
               }
-              @keyframes spinCcw {
-                0% { transform: rotate(45deg); }
-                100% { transform: rotate(-315deg); }
-              }
-              @keyframes textBreath {
-                0%, 100% { transform: scale(1); opacity: 0.95; filter: drop-shadow(0 0 12px ${themeColor}55); }
-                50% { transform: scale(1.05); opacity: 0.8; filter: drop-shadow(0 0 24px ${themeColor}aa); }
+              @keyframes loaderFadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
               }
             `}</style>
           </div>
@@ -2886,7 +2821,7 @@ export default function Home() {
 
         {/* STATS */}
         <div style={{borderBottom:'1px solid var(--bd)',position:'relative',zIndex:1}}>
-          <div className="wrap" id="about" style={{padding:0}}>
+          <div className="wrap" style={{padding:0}}>
             <div className="stats">
               {[
                 {n:'0+',l:tx.statProjects},{n:views||0,l:tx.statVisitors},

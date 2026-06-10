@@ -165,6 +165,12 @@ export default function ProjectsPage() {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,400;1,9..144,700&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;600;700;800&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,700;1,400&family=Lato:wght@400;700&family=Bebas+Neue&family=Teko:wght@400;600;700&family=Pacifico&family=Libre+Caslon+Display&family=Libre+Caslon+Text:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap');
+        :root {
+          --acc: var(--accent-color, ${themeColor});
+          --acc-1a: color-mix(in srgb, var(--acc) 10%, transparent);
+          --acc-22: color-mix(in srgb, var(--acc) 13%, transparent);
+          --acc-33: color-mix(in srgb, var(--acc) 20%, transparent);
+        }
         *, *::before, *::after { box-sizing: border-box; }
         body {
           margin: 0; padding: 0;
@@ -188,7 +194,7 @@ export default function ProjectsPage() {
           text-decoration: none;
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .back-btn:hover { border-color: ${themeColor}; color: ${isDark ? '#f0efe8' : '#1a1a1a'}; transform: translateX(-4px); }
+        .back-btn:hover { border-color: var(--acc); color: ${isDark ? '#f0efe8' : '#1a1a1a'}; transform: translateX(-4px); }
         
         .title-sec { text-align: center; margin-bottom: 48px; }
         .title { font-family: ${fontHeading}; font-size: clamp(36px, 6vw, 64px); font-weight: 900; line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 12px; }
@@ -209,7 +215,7 @@ export default function ProjectsPage() {
           outline: none;
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .search-input:focus { border-color: ${themeColor}; box-shadow: 0 0 0 4px ${themeColor}1a; background: ${currentBg}; }
+        .search-input:focus { border-color: var(--acc); box-shadow: 0 0 0 4px var(--acc-1a); background: ${currentBg}; }
         
         .tags-wrap { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
         .tag-btn {
@@ -223,9 +229,9 @@ export default function ProjectsPage() {
           cursor: pointer;
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .tag-btn:hover { border-color: ${themeColor}; color: ${isDark ? '#f0efe8' : '#1a1a1a'}; }
-        .tag-btn.active { background: ${themeColor}; color: #0d0d0d; border-color: ${themeColor}; box-shadow: 0 4px 12px ${themeColor}22; }
-
+        .tag-btn:hover { border-color: var(--acc); color: ${isDark ? '#f0efe8' : '#1a1a1a'}; }
+        .tag-btn.active { background: var(--acc); color: #0d0d0d; border-color: var(--acc); box-shadow: 0 4px 12px var(--acc-22); }
+ 
         /* Grid */
         .proj-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
         .proj-card {
@@ -238,7 +244,7 @@ export default function ProjectsPage() {
           flex-direction: column;
         }
         .proj-card:hover {
-          border-color: ${themeColor};
+          border-color: var(--acc);
           transform: translateY(-6px);
           box-shadow: 0 20px 40px -15px ${isDark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.08)'};
         }
@@ -263,9 +269,9 @@ export default function ProjectsPage() {
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .proj-link.gh { background: ${currentBg}; border: 1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}; color: ${isDark ? '#909088' : '#555555'}; }
-        .proj-link.gh:hover { border-color: ${themeColor}; color: ${isDark ? '#f0efe8' : '#1a1a1a'}; }
-        .proj-link.demo { background: ${themeColor}; color: #0d0d0d; }
-        .proj-link.demo:hover { filter: brightness(1.05); box-shadow: 0 4px 12px ${themeColor}33; }
+        .proj-link.gh:hover { border-color: var(--acc); color: ${isDark ? '#f0efe8' : '#1a1a1a'}; }
+        .proj-link.demo { background: var(--acc); color: #0d0d0d; }
+        .proj-link.demo:hover { filter: brightness(1.05); box-shadow: 0 4px 12px var(--acc-33); }
         
         .empty { text-align: center; padding: 80px 0; color: ${isDark ? '#909088' : '#555555'}; font-size: 14px; grid-column: 1/-1; }
 
