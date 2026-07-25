@@ -5,10 +5,8 @@ export async function GET() {
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
-  const { data, error } = await supabase
-    .from("game_scores")
-    .select("*")
-    .limit(1);
+  // Cek koneksi ringan — cukup akses auth session agar database tetap aktif
+  const { error } = await supabase.auth.getSession();
   return Response.json({
     status: error ? "error" : "alive",
     time: new Date().toISOString(),
