@@ -1,38 +1,40 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, useSyncExternalStore } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 const ThemeContext = createContext();
 
-// Custom hook to handle localStorage safely
 function useLocalStorage(key, initialValue) {
-  // Get stored value
-  const storedValue = useSyncExternalStore(
-    () => () => {}, // subscribe function (not needed for localStorage)
-    () => {
-      if (typeof window === 'undefined') return initialValue;
-      try {
-        const item = window.localStorage.getItem(key);
-        return item ? item : initialValue;
-      } catch (error) {
-        return initialValue;
-      }
-    },
-    () => initialValue // server snapshot
-  );
+  const [value, setValue] = useState(() => {
+    if (typeof window === 'undefined') return initialValue;
+    try {
+      const item = window.localStorage.getItem(key);
+      return item !== null ? item : initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
 
-  const [value, setValue] = useState(storedValue);
-
-  // Update localStorage when value changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem(key, value);
-      } catch (error) {
-        console.warn(`Error setting localStorage key "${key}":`, error);
-      }
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(key, value);
+    } catch (error) {
+      console.warn(`Error setting localStorage key "${key}":`, error);
     }
   }, [key, value]);
+
+  // Sync across tabs
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = (e) => {
+      if (e.key === key) {
+        setValue(e.newValue !== null ? e.newValue : initialValue);
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [key, initialValue]);
 
   return [value, setValue];
 }

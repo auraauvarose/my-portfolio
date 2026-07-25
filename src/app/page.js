@@ -26,13 +26,7 @@ function GeminiLogo({ size = 14 }) {
 }
 
 export default function Home() {
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('default_theme');
-      if (saved) return saved === 'dark';
-    }
-    return true;
-  });
+  const [isDark, setIsDark] = useState(true);
   const [lang, setLang] = useState('id');
   const [time, setTime] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
@@ -48,21 +42,8 @@ export default function Home() {
   const [pageReady, setPageReady] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [ripple, setRipple] = useState(null);
-  const [profileImage, setProfileImage] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('profile_image') || '';
-    }
-    return '';
-  });
-  const [ecoMode, setEcoMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const local = localStorage.getItem('eco_mode');
-      if (local !== null) return local === 'true';
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      return isMobile;
-    }
-    return false;
-  });
+  const [profileImage, setProfileImage] = useState('');
+  const [ecoMode, setEcoMode] = useState(false);
   const [sandboxCode, setSandboxCode] = useState(() => {
     return `<div class="card-wrap">
   <div class="glow-box">Aura Auvarose</div>
@@ -137,46 +118,16 @@ export default function Home() {
   ]);
   const [termInput, setTermInput] = useState('');
   const termEndRef = useRef(null);
-  const [themeColor, setThemeColor] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme_color') || '#d4eb00';
-    }
-    return '#d4eb00';
-  });
-  const [bgTheme, setBgTheme]       = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('bg_theme') || 'default';
-    }
-    return 'default';
-  });
-  const [fontChoice, setFontChoice] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('font_choice') || 'fraunces';
-    }
-    return 'fraunces';
-  });
-  const [musicUrl, setMusicUrl]     = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('music_url') || 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3';
-    }
-    return 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3';
-  });
+  const [themeColor, setThemeColor] = useState('#d4eb00');
+  const [bgTheme, setBgTheme]       = useState('default');
+  const [fontChoice, setFontChoice] = useState('fraunces');
+  const [musicUrl, setMusicUrl]     = useState('https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3');
 
   // ── NEW STATES ──
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [bgAnimation, setBgAnimation] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('bg_animation') || 'constellation';
-    }
-    return 'constellation';
-  });
+  const [bgAnimation, setBgAnimation] = useState('constellation');
   const [loveParticles, setLoveParticles] = useState([]);
-  const [defaultThemeMode, setDefaultThemeMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('default_theme') || 'dark';
-    }
-    return 'dark';
-  });
+  const [defaultThemeMode, setDefaultThemeMode] = useState('dark');
   const [isMobile, setIsMobile] = useState(false);
   const [activeSkill, setActiveSkill] = useState(null);
   const [loadProgress, setLoadProgress] = useState(0);
@@ -780,6 +731,41 @@ export default function Home() {
      setMounted(true);
    }, []);
 
+   // ── Hydration-safe: load all localStorage prefs after mount ──
+   useEffect(() => {
+     try {
+       const dt = localStorage.getItem('default_theme');
+       if (dt) { setIsDark(dt === 'dark'); setDefaultThemeMode(dt); }
+
+       const tc = localStorage.getItem('theme_color');
+       if (tc) setThemeColor(tc);
+
+       const pi = localStorage.getItem('profile_image');
+       if (pi) setProfileImage(pi);
+
+       const bt = localStorage.getItem('bg_theme');
+       if (bt) setBgTheme(bt);
+
+       const fc = localStorage.getItem('font_choice');
+       if (fc) setFontChoice(fc);
+
+       const mu = localStorage.getItem('music_url');
+       if (mu) setMusicUrl(mu);
+
+       const ba = localStorage.getItem('bg_animation');
+       if (ba) setBgAnimation(ba);
+
+       // ecoMode: check explicit setting, else auto-detect mobile
+       const eco = localStorage.getItem('eco_mode');
+       if (eco !== null) {
+         setEcoMode(eco === 'true');
+       } else {
+         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+         setEcoMode(isMobile);
+       }
+     } catch (_) {}
+   }, []);
+
    const submitComment = async (e) => {
     e.preventDefault();
     if (!nameInput || !messageInput) return;
@@ -1197,16 +1183,21 @@ export default function Home() {
         .theme-ripple{position:fixed;inset:0;z-index:9997;pointer-events:none;background:var(--ripple-color,#ffffff);clip-path:circle(0% at var(--rx,50%) var(--ry,50%));animation:waveRipple 0.65s cubic-bezier(0.22,1,0.36,1) forwards;}
         @keyframes waveRipple{0%{clip-path:circle(0% at var(--rx) var(--ry));opacity:0.95;}60%{clip-path:circle(120% at var(--rx) var(--ry));opacity:0.9;}100%{clip-path:circle(150% at var(--rx) var(--ry));opacity:0;}}
 
-        /* ── LOADING ── */
-        .page-loader{position:fixed;inset:0;z-index:9999;background:#111110;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity 0.5s ease, visibility 0.5s ease;}
+        /* ── LOADING SCREEN — Terminal Boot ── */
+        .page-loader{position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at center,#161614 0%,#0a0a0a 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:opacity 0.6s cubic-bezier(.22,1,.36,1),visibility 0.6s ease;}
         .page-loader.done{opacity:0;visibility:hidden;pointer-events:none;}
-        .loader-logo{font-family:var(--font-body,'Plus Jakarta Sans'),sans-serif;font-size:22px;font-weight:800;color:#f0efe8;letter-spacing:0.18em;text-transform:lowercase;}
-        .loader-logo em{font-style:normal;color:var(--loader-acc,#d4eb00);}
-        .loader-bar-wrap{width:160px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
-        .loader-bar{height:100%;width:0%;background:var(--loader-acc,#d4eb00);border-radius:2px;animation:loadProgress 1.2s cubic-bezier(.4,0,.2,1) forwards;}
-        @keyframes loadProgress{0%{width:0%;}60%{width:75%;}100%{width:100%;}}
-        .loader-text{font-family:var(--font-body);font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(240,239,232,0.4);}
-        .loader-spinner{width:40px;height:40px;border:3px solid rgba(212,235,0,0.2);border-top-color:var(--loader-acc,#d4eb00);border-radius:50%;animation:spin 1s linear infinite;}
+        .page-loader::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(255,255,255,0.008) 2px,rgba(255,255,255,0.008) 4px);pointer-events:none;}
+        .loader-inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:28px;animation:bootIn 0.6s cubic-bezier(.22,1,.36,1) both;}
+        @keyframes bootIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+        .loader-logo{font-family:var(--font-heading,'Fraunces'),serif;font-size:clamp(28px,5vw,42px);font-weight:900;color:#f0efe8;letter-spacing:-0.02em;animation:logoGlow 2s ease-in-out infinite alternate;}
+        .loader-logo em{font-style:normal;color:var(--loader-acc,#d4eb00);text-shadow:0 0 24px var(--loader-acc,#d4eb00);}
+        @keyframes logoGlow{from{filter:drop-shadow(0 0 0px rgba(240,239,232,0));}to{filter:drop-shadow(0 0 8px rgba(240,239,232,0.12));}}
+        .loader-bar-wrap{width:200px;height:2px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;position:relative;}
+        .loader-bar{height:100%;border-radius:2px;background:var(--loader-acc,#d4eb00);box-shadow:0 0 8px var(--loader-acc,#d4eb00);transition:width 0.15s linear;}
+        .loader-status-row{display:flex;align-items:center;gap:10px;}
+        .loader-spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,0.08);border-top-color:var(--loader-acc,#d4eb00);border-radius:50%;animation:spin 0.8s linear infinite;}
+        .loader-text{font-family:'Plus Jakarta Sans','Inter',system-ui,monospace;font-size:11px;font-weight:600;letter-spacing:0.08em;color:rgba(240,239,232,0.35);}
+        .loader-pct{font-family:monospace;font-size:11px;font-weight:700;color:rgba(240,239,232,0.5);min-width:28px;text-align:right;}
         @keyframes spin{to{transform:rotate(360deg);}}
 
         /* ── THEME VARS ── */
@@ -1216,7 +1207,7 @@ export default function Home() {
         .hero-photo-wrap,.proj-card,.cert-card,.skill-card,.gh-repo-card{transform:translateZ(0);}
         .nav{contain:layout style;}
         .footer{contain:layout style;}
-        .rw img,.rw canvas,.rw video,.rw .orb,.rw [data-reveal],.rw .theme-ripple{transition:none!important;}
+        .rw img,.rw canvas,.rw video,.rw .orb,.rw .theme-ripple{transition:none!important;}
 
         /* ── LIGHT MODE SHADOWS ── */
         .rw:not(.dark) .skill-card{box-shadow:0 2px 16px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.05);}
@@ -1251,29 +1242,16 @@ export default function Home() {
         @keyframes orbFloat2{0%,100%{transform:translate(0,0);}50%{transform:translate(-30px,-40px);}}
         @keyframes orbFloat3{0%,100%{transform:translate(0,0);}50%{transform:translate(20px,-20px);}}
 
-        /* ── SCROLL REVEAL ── */
-        [data-reveal]{opacity:0.95;transform:translate3d(0,16px,0);transition:opacity 0.5s cubic-bezier(.22,1,.36,1),transform 0.5s cubic-bezier(.22,1,.36,1);will-change:opacity,transform;contain:layout style;}
-        [data-reveal].revealed{opacity:1;transform:translate3d(0,0,0);}
+        /* ── SCROLL REVEAL — fade + subtle slide, GPU-composited ── */
+        [data-reveal]{opacity:0;transform:translateY(8px);transition:opacity 0.5s cubic-bezier(.22,1,.36,1),transform 0.5s cubic-bezier(.22,1,.36,1);will-change:opacity,transform;}
+        [data-reveal].revealed{opacity:1;transform:translateY(0);}
         [data-reveal][data-delay="1"]{transition-delay:0.08s;}
         [data-reveal][data-delay="2"]{transition-delay:0.16s;}
         [data-reveal][data-delay="3"]{transition-delay:0.24s;}
         [data-reveal][data-delay="4"]{transition-delay:0.32s;}
-        /* Reveal variants for cards — subtle slide up + fade */
-        .skill-card[data-reveal]{transform:translate3d(0,16px,0);}
-        .skill-card[data-reveal].revealed{transform:translate3d(0,0,0);}
-        .goal-card[data-reveal]{transform:translate3d(0,16px,0);}
-        .goal-card[data-reveal].revealed{transform:translate3d(0,0,0);}
-        .cert-card[data-reveal]{transform:translate3d(0,12px,0);}
-        .cert-card[data-reveal].revealed{transform:translate3d(0,0,0);}
-        .proj-card[data-reveal]{transform:translate3d(0,12px,0);}
-        .proj-card[data-reveal].revealed{transform:translate3d(0,0,0);}
-        /* Sec-head gets a subtle slide */
-        .sec-head[data-reveal]{transform:translate3d(0,10px,0);}
-        .sec-head[data-reveal].revealed{transform:translate3d(0,0,0);}
         @media(max-width:768px){
-          [data-reveal]{opacity:0.95;transform:translate3d(0,12px,0);transition:opacity 0.35s ease-out,transform 0.35s ease-out;}
+          [data-reveal]{opacity:0;transform:translateY(6px);transition:opacity 0.4s ease-out,transform 0.4s ease-out;}
           [data-reveal][data-delay="1"],[data-reveal][data-delay="2"],[data-reveal][data-delay="3"],[data-reveal][data-delay="4"]{transition-delay:0s;}
-          .sec-head[data-reveal]{transform:translate3d(0,10px,0);}
         }
 
         /* ── MAGNETIC CARDS ── */
@@ -2576,52 +2554,20 @@ export default function Home() {
           />
         )}
 
-        {/* LOADING SCREEN — Typewriter Minimalis */}
-        {!pageReady && (
-          <div
-            style={{
-              position:'fixed',inset:0,zIndex:99999,
-              background:'#0a0a0a',
-              display:'flex',flexDirection:'column',
-              alignItems:'center',justifyContent:'center',
-              fontFamily:"'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
-            }}
-          >
-            <div style={{
-              position:'relative',
-              zIndex:1,
-              display:'flex',
-              flexDirection:'column',
-              alignItems:'center',
-            }}>
-              <div style={{
-                fontSize: 'clamp(28px, 5vw, 42px)',
-                fontWeight: '900',
-                color: '#f0efe8',
-                letterSpacing: '-0.02em',
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                borderRight: '2px solid rgba(240,239,232,0.6)',
-                animation: 'loaderTypewriter 1.8s steps(12, end) forwards, loaderBlink 0.7s step-end infinite',
-                width: '0',
-                fontFamily: curFont.heading || "'Fraunces', serif",
-              }}>
-                auraauvarose
-              </div>
+        {/* LOADING SCREEN — Terminal Boot */}
+        <div className={`page-loader${pageReady ? ' done' : ''}`} style={{ '--loader-acc': themeColor }}>
+          <div className="loader-inner">
+            <div className="loader-logo">aura<em>a</em>uvarose</div>
+            <div className="loader-bar-wrap">
+              <div className="loader-bar" style={{ width: `${loadProgress}%` }} />
             </div>
-
-            <style>{`
-              @keyframes loaderTypewriter {
-                from { width: 0; }
-                to { width: 12ch; }
-              }
-              @keyframes loaderBlink {
-                0%, 100% { border-color: rgba(240,239,232,0.6); }
-                50% { border-color: transparent; }
-              }
-            `}</style>
+            <div className="loader-status-row">
+              <div className="loader-spinner" />
+              <span className="loader-text">{loadText}</span>
+              <span className="loader-pct">{loadProgress}%</span>
+            </div>
           </div>
-        )}
+        </div>
 
         {/* UPDATE BANNER */}
         {updateMsg && (
