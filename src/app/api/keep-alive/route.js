@@ -7,7 +7,7 @@ export async function GET() {
   );
   const { data, error } = await supabase
     .from("game_scores")
-    .select("count")
+    .select("*")
     .limit(1);
   return Response.json({
     status: error ? "error" : "alive",
