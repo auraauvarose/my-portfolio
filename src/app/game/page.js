@@ -1444,17 +1444,12 @@ export default function GamePage() {
               <button
                 className="game-nav-back"
                 onClick={() => setSelectedGame("menu")}
-                style={{
-                  background: "transparent",
-                  cursor: "pointer",
-                  border: "none",
-                }}
               >
                 ← Menu
               </button>
             )}
-            <Link href="/" onClick={handleBack} className="game-nav-back">
-              ← Kembali
+            <Link href="/" className="game-nav-back">
+              ← Home
             </Link>
           </div>
         </nav>

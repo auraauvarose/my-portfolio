@@ -9,16 +9,6 @@ const EMOJIS = ['🎮', '🎯', '🎲', '🎸', '🎨', '🚀', '💎', '🔥', 
 export default function MemoryGame() {
   const [cards, setCards] = useState([]);
 
-  const handleBack = (e) => {
-    e.preventDefault();
-    if (typeof window !== 'undefined') {
-      if (document.referrer && document.referrer.includes(window.location.host)) {
-        window.history.back();
-      } else {
-        window.location.href = '/game';
-      }
-    }
-  };
   const [flipped, setFlipped] = useState([]);
   const [matched, setMatched] = useState([]);
   const [moves, setMoves] = useState(0);
@@ -114,25 +104,37 @@ export default function MemoryGame() {
       padding: '20px',
       fontFamily: "'Inter', system-ui, sans-serif",
     }}>
-      {/* Navigation */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        padding: '20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        zIndex: 100,
-      }}>
-        <Link href="/" style={{ color: '#fff', textDecoration: 'none', fontSize: '18px', fontWeight: 700 }}>
-          aura<span style={{ color: '#e94560' }}>a</span>uvarose
-        </Link>
-        <Link href="/game" onClick={handleBack} style={{ color: '#888', textDecoration: 'none', fontSize: '14px' }}>
-          ← Kembali ke Game
-        </Link>
-      </div>
+      {/* Back to Game Menu */}
+      <Link
+        href="/game"
+        style={{
+          position: 'fixed',
+          top: 24,
+          left: 24,
+          zIndex: 100,
+          color: '#fff',
+          textDecoration: 'none',
+          fontSize: 13,
+          fontWeight: 600,
+          letterSpacing: '0.02em',
+          background: 'rgba(255,255,255,0.06)',
+          padding: '9px 18px',
+          borderRadius: '100px',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          transition: 'all 0.25s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(255,255,255,0.14)';
+          e.currentTarget.style.transform = 'translateX(-3px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+          e.currentTarget.style.transform = 'translateX(0)';
+        }}
+      >
+        ← Game Menu
+      </Link>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

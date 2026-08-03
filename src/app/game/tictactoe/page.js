@@ -128,24 +128,24 @@ export default function TicTacToePage() {
         href="/game"
         style={{
           position: "fixed",
-          top: 28,
-          left: 28,
+          top: 24,
+          left: 24,
           color: "#fff",
           textDecoration: "none",
-          fontSize: "14px",
+          fontSize: 13,
           fontWeight: 600,
           letterSpacing: "0.02em",
           background: "rgba(255,255,255,0.06)",
-          padding: "10px 20px",
+          padding: "9px 18px",
           borderRadius: "100px",
           backdropFilter: "blur(12px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          transition: "all 0.3s ease",
-          zIndex: 50,
+          border: "1px solid rgba(255,255,255,0.12)",
+          transition: "all 0.25s ease",
+          zIndex: 100,
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = "rgba(255,255,255,0.14)";
-          e.currentTarget.style.transform = "translateX(-2px)";
+          e.currentTarget.style.transform = "translateX(-3px)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.background = "rgba(255,255,255,0.06)";
