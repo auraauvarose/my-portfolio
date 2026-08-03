@@ -1,0 +1,461 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - generic [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - text: aura
+        - emphasis [ref=f1e6]: a
+        - text: uvarose
+      - generic [ref=f1e8]:
+        - generic [ref=f1e10]: Inisialisasi Portofolio...
+        - generic [ref=f1e11]: 0%
+    - generic [ref=f1e12]:
+      - generic [ref=f1e13]:
+        - generic [ref=f1e14]:
+          - text: aura
+          - emphasis [ref=f1e15]: a
+          - text: uvarose
+        - button "✕" [ref=f1e16]
+      - list [ref=f1e17]:
+        - listitem [ref=f1e18]:
+          - link "Beranda" [ref=f1e19]:
+            - /url: "#"
+        - listitem [ref=f1e20]:
+          - link "Tentang" [ref=f1e21]:
+            - /url: "#about"
+        - listitem [ref=f1e22]:
+          - link "Skills" [ref=f1e23]:
+            - /url: "#skills"
+        - listitem [ref=f1e24]:
+          - link "Proyek" [ref=f1e25]:
+            - /url: "#projects"
+        - listitem [ref=f1e26]:
+          - link "Sertifikat" [ref=f1e27]:
+            - /url: "#portfolio"
+        - listitem [ref=f1e28]:
+          - link "📸 Gallery" [ref=f1e29]:
+            - /url: "#gallery"
+        - listitem [ref=f1e30]:
+          - link "Kontak" [ref=f1e31]:
+            - /url: "#contact"
+        - listitem [ref=f1e32]:
+          - link "Game" [ref=f1e33]:
+            - /url: /game
+      - generic [ref=f1e34]:
+        - button "☀ Light" [ref=f1e36]
+        - generic [ref=f1e37]:
+          - link "⚙ Admin" [ref=f1e38]:
+            - /url: /admin
+          - button "🇮🇩 ID" [ref=f1e39]
+    - navigation [ref=f1e40]:
+      - generic [ref=f1e41]:
+        - link [ref=f1e42]:
+          - /url: "#"
+          - text: aura
+          - emphasis [ref=f1e43]: a
+          - text: uvarose
+        - list [ref=f1e44]:
+          - listitem [ref=f1e45]:
+            - link "Beranda" [ref=f1e46]:
+              - /url: "#"
+          - listitem [ref=f1e47]:
+            - link "Tentang" [ref=f1e48]:
+              - /url: "#about"
+          - listitem [ref=f1e49]:
+            - link "Skills" [ref=f1e50]:
+              - /url: "#skills"
+          - listitem [ref=f1e51]:
+            - link "Proyek" [ref=f1e52]:
+              - /url: "#projects"
+          - listitem [ref=f1e53]:
+            - link "Sertifikat" [ref=f1e54]:
+              - /url: "#portfolio"
+          - listitem [ref=f1e55]:
+            - link "Kontak" [ref=f1e56]:
+              - /url: "#contact"
+          - listitem [ref=f1e57]:
+            - link "Game" [ref=f1e58]:
+              - /url: /game
+        - generic [ref=f1e59]:
+          - button "☀ Light" [ref=f1e60]
+          - link "⚙ Admin" [ref=f1e61]:
+            - /url: /admin
+    - generic [ref=f1e62]:
+      - generic [ref=f1e64]:
+        - generic [ref=f1e65]: Pelajar & IT Student
+        - heading "Alo, Saya Aura Auvarose |" [level=1] [ref=f1e67]:
+          - generic [ref=f1e68]: Alo, Saya
+          - generic [ref=f1e69]:
+            - text: Aura
+            - emphasis [ref=f1e70]:
+              - text: Auvarose
+              - generic [ref=f1e71]: "|"
+        - paragraph [ref=f1e72]: "|"
+        - generic [ref=f1e73]:
+          - link "Hubungi Saya →" [ref=f1e74]:
+            - /url: "#contact"
+          - link "Unduh CV 📄" [ref=f1e75]:
+            - /url: /cv?lang=id&color=%23d4eb00
+          - generic [ref=f1e76]: 🕐 00:00:00
+      - generic [ref=f1e79]:
+        - img "Aura" [ref=f1e82]
+        - generic:
+          - generic: 🚀
+          - generic: Arch Linux
+        - generic:
+          - generic: 💻
+          - generic: Pengembang Kreatif
+        - generic:
+          - generic: ⚡
+          - generic: Next.js 16
+    - generic [ref=f1e85]:
+      - generic [ref=f1e86]:
+        - generic [ref=f1e87]: 0+
+        - generic [ref=f1e88]: Proyek Selesai
+      - generic [ref=f1e89]:
+        - generic [ref=f1e90]: "0"
+        - generic [ref=f1e91]: Pengunjung
+      - generic [ref=f1e92]:
+        - generic [ref=f1e93]: 2+
+        - generic [ref=f1e94]: Tahun Belajar
+      - generic [ref=f1e95]:
+        - generic [ref=f1e96]: "0"
+        - generic [ref=f1e97]: IPK Rata-rata
+    - generic [ref=f1e100]:
+      - link "GH GitHub @auraauvarose" [ref=f1e101]:
+        - /url: https://github.com/auraauvarose
+        - generic [ref=f1e102]: GH
+        - generic [ref=f1e103]: GitHub
+        - generic [ref=f1e104]: "@auraauvarose"
+      - link "IG Instagram @aura_auvarose_" [ref=f1e105]:
+        - /url: https://www.instagram.com/aura_auvarose_/
+        - generic [ref=f1e106]: IG
+        - generic [ref=f1e107]: Instagram
+        - generic [ref=f1e108]: "@aura_auvarose_"
+      - link "LI LinkedIn Belum Ada" [ref=f1e109]:
+        - /url: https://linkedin.com/in/USERNAME
+        - generic [ref=f1e110]: LI
+        - generic [ref=f1e111]: LinkedIn
+        - generic [ref=f1e112]: Belum Ada
+      - link "✉ Email auraauvaroseendica@gmail.com" [ref=f1e113]:
+        - /url: mailto:auraauvaroseendica@gmail.com
+        - generic [ref=f1e114]: ✉
+        - generic [ref=f1e115]: Email
+        - generic [ref=f1e116]: auraauvaroseendica@gmail.com
+      - link "DC Discord @Rur^a!" [ref=f1e117]:
+        - /url: https://discord.com/users/862306063054667786
+        - generic [ref=f1e118]: DC
+        - generic [ref=f1e119]: Discord
+        - generic [ref=f1e120]: "@Rur^a!"
+      - link "TT TikTok @au.rose" [ref=f1e121]:
+        - /url: https://www.tiktok.com/@au.rose
+        - generic [ref=f1e122]: TT
+        - generic [ref=f1e123]: TikTok
+        - generic [ref=f1e124]: "@au.rose"
+      - link "GH GitHub @auraauvarose" [ref=f1e125]:
+        - /url: https://github.com/auraauvarose
+        - generic [ref=f1e126]: GH
+        - generic [ref=f1e127]: GitHub
+        - generic [ref=f1e128]: "@auraauvarose"
+      - link "IG Instagram @aura_auvarose_" [ref=f1e129]:
+        - /url: https://www.instagram.com/aura_auvarose_/
+        - generic [ref=f1e130]: IG
+        - generic [ref=f1e131]: Instagram
+        - generic [ref=f1e132]: "@aura_auvarose_"
+      - link "LI LinkedIn Belum Ada" [ref=f1e133]:
+        - /url: https://linkedin.com/in/USERNAME
+        - generic [ref=f1e134]: LI
+        - generic [ref=f1e135]: LinkedIn
+        - generic [ref=f1e136]: Belum Ada
+      - link "✉ Email auraauvaroseendica@gmail.com" [ref=f1e137]:
+        - /url: mailto:auraauvaroseendica@gmail.com
+        - generic [ref=f1e138]: ✉
+        - generic [ref=f1e139]: Email
+        - generic [ref=f1e140]: auraauvaroseendica@gmail.com
+      - link "DC Discord @Rur^a!" [ref=f1e141]:
+        - /url: https://discord.com/users/862306063054667786
+        - generic [ref=f1e142]: DC
+        - generic [ref=f1e143]: Discord
+        - generic [ref=f1e144]: "@Rur^a!"
+      - link "TT TikTok @au.rose" [ref=f1e145]:
+        - /url: https://www.tiktok.com/@au.rose
+        - generic [ref=f1e146]: TT
+        - generic [ref=f1e147]: TikTok
+        - generic [ref=f1e148]: "@au.rose"
+    - generic [ref=f1e149]:
+      - generic [ref=f1e151]:
+        - paragraph [ref=f1e152]: Tentang Saya
+        - heading "Cerita & Perjalanan" [level=2] [ref=f1e153]: Cerita &Perjalanan
+      - generic [ref=f1e154]:
+        - generic [ref=f1e155]:
+          - generic:
+            - paragraph
+            - paragraph
+          - generic [ref=f1e156]:
+            - generic [ref=f1e157]: Node.js
+            - generic [ref=f1e158]: JavaScript
+            - generic [ref=f1e159]: Python
+            - generic [ref=f1e160]: Next.js
+            - generic [ref=f1e161]: Git
+            - generic [ref=f1e162]: Linux
+            - generic [ref=f1e163]: REST API
+            - generic [ref=f1e164]: Supabase
+        - generic [ref=f1e165]:
+          - generic [ref=f1e166]: Timeline
+          - generic [ref=f1e167]:
+            - generic [ref=f1e168]:
+              - generic [ref=f1e170]: 2021–2025
+              - generic [ref=f1e171]: Pengalaman Belajar
+              - generic [ref=f1e172]: Desain Komunikasi Visual.
+            - generic [ref=f1e173]:
+              - generic [ref=f1e175]: "2022"
+              - generic [ref=f1e176]: Mengenal Pemrograman
+              - generic [ref=f1e177]: Memulai belajar pemrograman menggunakan JavaScript dan Python.
+            - generic [ref=f1e178]:
+              - generic [ref=f1e180]: "2025"
+              - generic [ref=f1e181]: Kuliah S1 Informatika
+              - generic [ref=f1e182]: Mulai menempuh pendidikan S1 Informatika.
+    - generic [ref=f1e183]:
+      - generic [ref=f1e184]:
+        - generic [ref=f1e185]:
+          - paragraph [ref=f1e186]: Kemampuan
+          - heading "Tech Stack" [level=2] [ref=f1e187]: TechStack
+        - generic [ref=f1e188]: "010"
+      - generic [ref=f1e189]:
+        - generic [ref=f1e190] [cursor=pointer]:
+          - generic [ref=f1e191]:
+            - generic [ref=f1e192]: Back-End
+            - generic [ref=f1e197]: Node.js
+          - generic:
+            - generic: Back-End
+            - generic: Runtime JavaScript di sisi server yang cepat, dibangun di atas V8 Chrome.
+            - generic:
+              - generic: Node.js
+              - generic: Tekan/Hover
+        - generic [ref=f1e198] [cursor=pointer]:
+          - generic [ref=f1e199]:
+            - generic [ref=f1e200]:
+              - generic [ref=f1e201]: EX
+              - generic [ref=f1e203]: Framework
+            - generic [ref=f1e204]: Express.js
+          - generic:
+            - generic: Framework
+            - generic: Framework web minimalis dan fleksibel untuk Node.js untuk membangun API.
+            - generic:
+              - generic: Express.js
+              - generic: Tekan/Hover
+        - generic [ref=f1e205] [cursor=pointer]:
+          - generic [ref=f1e206]:
+            - generic [ref=f1e207]:
+              - img [ref=f1e209]:
+                - generic [ref=f1e211]: JS
+              - generic [ref=f1e212]: Language
+            - generic [ref=f1e213]: JavaScript
+          - generic:
+            - generic: Language
+            - generic: Bahasa pemrograman web untuk interaktivitas dinamis client & server.
+            - generic:
+              - generic: JavaScript
+              - generic: Tekan/Hover
+        - generic [ref=f1e214] [cursor=pointer]:
+          - generic [ref=f1e215]:
+            - generic [ref=f1e216]: Language
+            - generic [ref=f1e221]: Python
+          - generic:
+            - generic: Language
+            - generic: Bahasa populer yang bersih, tangguh untuk automasi dan AI/data science.
+            - generic:
+              - generic: Python
+              - generic: Tekan/Hover
+        - generic [ref=f1e222] [cursor=pointer]:
+          - generic [ref=f1e223]:
+            - generic [ref=f1e224]: DevOps
+            - generic [ref=f1e229]: Docker
+          - generic:
+            - generic: DevOps
+            - generic: Platform kontainerisasi untuk deploy aplikasi secara konsisten.
+            - generic:
+              - generic: Docker
+              - generic: Tekan/Hover
+        - generic [ref=f1e230] [cursor=pointer]:
+          - generic [ref=f1e231]:
+            - generic [ref=f1e232]: Framework
+            - generic [ref=f1e237]: Next.js
+          - generic:
+            - generic: Framework
+            - generic: Framework React premium dengan render server, SSR, dan optimasi performa.
+            - generic:
+              - generic: Next.js
+              - generic: Tekan/Hover
+        - generic [ref=f1e238] [cursor=pointer]:
+          - generic [ref=f1e239]:
+            - generic [ref=f1e240]: Tools
+            - generic [ref=f1e245]: Git
+          - generic:
+            - generic: Tools
+            - generic: Sistem pengontrol versi standar industri untuk kolaborasi kode.
+            - generic:
+              - generic: Git
+              - generic: Tekan/Hover
+        - generic [ref=f1e246] [cursor=pointer]:
+          - generic [ref=f1e247]:
+            - generic [ref=f1e248]: Language
+            - generic [ref=f1e253]: C++
+          - generic:
+            - generic: Language
+            - generic: Bahasa berkinerja tinggi, banyak digunakan pada sistem & game engine.
+            - generic:
+              - generic: C++
+              - generic: Tekan/Hover
+        - generic [ref=f1e254] [cursor=pointer]:
+          - generic [ref=f1e255]:
+            - generic [ref=f1e256]: OS
+            - generic [ref=f1e261]: Linux
+          - generic:
+            - generic: OS
+            - generic: Sistem operasi open-source tangguh, tulang punggung server cloud.
+            - generic:
+              - generic: Linux
+              - generic: Tekan/Hover
+        - generic [ref=f1e262] [cursor=pointer]:
+          - generic [ref=f1e263]:
+            - generic [ref=f1e264]: Database
+            - generic [ref=f1e271]: SQL
+          - generic:
+            - generic: Database
+            - generic: Bahasa standar untuk mengelola, kueri database relasional secara efisien.
+            - generic:
+              - generic: SQL
+              - generic: Tekan/Hover
+    - generic [ref=f1e272]:
+      - generic [ref=f1e274]:
+        - paragraph [ref=f1e275]: Tujuan & Visi
+        - heading "Goals & Aspirasi" [level=2] [ref=f1e276]: Goals &Aspirasi
+      - generic [ref=f1e277]:
+        - generic [ref=f1e278]:
+          - generic [ref=f1e279]: 🎯
+          - generic [ref=f1e280]: Jangka Pendek
+          - list [ref=f1e281]:
+            - listitem [ref=f1e282]: → Lulus dengan IPK terbaik
+            - listitem [ref=f1e283]: → Kuasai cloud (AWS/GCP)
+            - listitem [ref=f1e284]: → Bangun 5 proyek portfolio
+            - listitem [ref=f1e285]: → Kontribusi open source
+        - generic [ref=f1e286]:
+          - generic [ref=f1e287]: 🚀
+          - generic [ref=f1e288]: Jangka Menengah
+          - list [ref=f1e289]:
+            - listitem [ref=f1e290]: → Bekerja di tech company
+            - listitem [ref=f1e291]: → Spesialisasi distributed system
+            - listitem [ref=f1e292]: → Bangun startup atau produk sendiri
+            - listitem [ref=f1e293]: → Mentoring junior developer
+        - generic [ref=f1e294]:
+          - generic [ref=f1e295]: 🌟
+          - generic [ref=f1e296]: Jangka Panjang
+          - list [ref=f1e297]:
+            - listitem [ref=f1e298]: → Software architect berpengalaman
+            - listitem [ref=f1e299]: → Berkontribusi pada komunitas IT
+            - listitem [ref=f1e300]: → Buat platform edukasi coding
+            - listitem [ref=f1e301]: → Impak positif melalui teknologi
+    - generic [ref=f1e302]:
+      - generic [ref=f1e303]:
+        - generic [ref=f1e304]:
+          - generic [ref=f1e309]:
+            - generic [ref=f1e310] [cursor=pointer]:
+              - generic [ref=f1e311]: ⚡
+              - generic [ref=f1e312]: status.js
+            - generic [ref=f1e313] [cursor=pointer]:
+              - generic [ref=f1e314]: 📊
+              - generic [ref=f1e315]: github.json
+            - generic [ref=f1e316] [cursor=pointer]:
+              - generic [ref=f1e317]: 🎨
+              - generic [ref=f1e318]: sandbox.html
+          - generic [ref=f1e319]: ● ⚫ Offline
+        - generic [ref=f1e321]:
+          - generic [ref=f1e327]:
+            - generic [ref=f1e328]: Aktivitas Saat Ini
+            - generic [ref=f1e329]: Visual Studio Code
+            - generic [ref=f1e330]:
+              - text: Editing
+              - strong [ref=f1e331]: my-portfolio
+          - generic [ref=f1e333]:
+            - generic [ref=f1e334]: aura@Arch-workstation
+            - generic [ref=f1e335]: "-----------------------"
+            - generic [ref=f1e336]: "💻 OS: Arch Linux"
+            - generic [ref=f1e337]: "🐚 Shell: Bash (JetBrains Mono)"
+            - generic [ref=f1e338]: "📝 Editor: VS Code 1.89"
+            - generic [ref=f1e339]: "🎨 Aksen: #d4eb00"
+      - generic [ref=f1e341]:
+        - generic [ref=f1e342]: Repositori Terbaru
+        - link "Lihat semua →" [ref=f1e343]:
+          - /url: https://github.com/auraauvarose
+      - generic [ref=f1e361]:
+        - generic [ref=f1e362]:
+          - paragraph [ref=f1e363]: Karya Saya
+          - heading "Proyek" [level=2] [ref=f1e364]
+        - generic [ref=f1e365]: "00"
+      - generic [ref=f1e366]: Belum ada proyek. Tambahkan lewat panel Admin.
+    - generic [ref=f1e368]:
+      - generic [ref=f1e369]:
+        - generic [ref=f1e370]:
+          - paragraph [ref=f1e371]: Pencapaian
+          - heading "Sertifikat" [level=2] [ref=f1e372]
+        - generic [ref=f1e373]: "00"
+      - generic [ref=f1e374]: Belum ada sertifikat. Tambahkan lewat panel Admin.
+    - generic [ref=f1e375]:
+      - generic [ref=f1e376]:
+        - generic [ref=f1e377]:
+          - paragraph [ref=f1e378]: GALERI FOTO
+          - heading "Momen & Kenangan" [level=2] [ref=f1e379]: Momen &Kenangan
+        - link "📷 Kirim Fotomu →" [ref=f1e380]:
+          - /url: /submit-photo
+      - generic [ref=f1e383]:
+        - generic [ref=f1e384]: 📸
+        - paragraph [ref=f1e385]: Belum ada foto.
+        - link "Jadilah yang pertama kirim foto →" [ref=f1e386]:
+          - /url: /submit-photo
+    - generic [ref=f1e387]:
+      - generic [ref=f1e389]:
+        - paragraph [ref=f1e390]: Buku Tamu
+        - heading "Tinggalkan Pesan" [level=2] [ref=f1e391]: TinggalkanPesan
+      - generic [ref=f1e392]:
+        - generic [ref=f1e394]:
+          - generic [ref=f1e395]:
+            - generic [ref=f1e396]: Nama Lengkap
+            - textbox "Masukkan nama kamu..." [ref=f1e397]
+          - generic [ref=f1e398]:
+            - generic [ref=f1e399]: Pesan
+            - textbox "Tulis pesanmu di sini..." [ref=f1e400]
+          - button "Kirim Pesan →" [ref=f1e401]
+        - generic [ref=f1e402]:
+          - generic [ref=f1e403]:
+            - generic [ref=f1e404]: "0"
+            - generic [ref=f1e405]: Pesan Masuk
+          - generic [ref=f1e406]: Belum ada pesan. Jadilah yang pertama! 👋
+    - contentinfo [ref=f1e408]:
+      - generic [ref=f1e409]:
+        - generic [ref=f1e410]:
+          - generic [ref=f1e411]:
+            - text: aura
+            - emphasis [ref=f1e412]: a
+            - text: uvarose
+          - paragraph [ref=f1e413]: © 2026 auraauvarose
+        - generic [ref=f1e415]:
+          - button "🤍 Suka website ini?" [ref=f1e416] [cursor=pointer]:
+            - generic [ref=f1e417]: 🤍
+            - generic [ref=f1e418]: Suka website ini?
+          - generic [ref=f1e419]:
+            - generic [ref=f1e420]: "0"
+            - generic [ref=f1e421]: orang menyukai ini
+        - generic [ref=f1e422]:
+          - generic [ref=f1e423]:
+            - generic [ref=f1e425]: "0"
+            - generic [ref=f1e426]: kali
+          - paragraph [ref=f1e427]: Dibuat dengan Next.js & Supabase
+    - generic [ref=f1e428]:
+      - button "$_" [ref=f1e429] [cursor=pointer]
+      - button "🇮🇩 ID" [ref=f1e430]:
+        - generic [ref=f1e431]: 🇮🇩
+        - generic [ref=f1e432]: ID
+      - button "🌿" [ref=f1e433] [cursor=pointer]
+      - button "▶" [ref=f1e434]
+  - button "Open Next.js Dev Tools" [ref=f1e440] [cursor=pointer]
+  - alert [ref=f1e444]

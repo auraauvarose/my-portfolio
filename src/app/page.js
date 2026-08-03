@@ -329,15 +329,12 @@ export default function Home() {
 
   useEffect(() => {
     if (!pageReady) {
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflowY = 'hidden';
     } else {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
+      document.body.style.overflowY = '';
     }
     return () => {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
+      document.body.style.overflowY = '';
     };
   }, [pageReady]);
 
@@ -437,10 +434,14 @@ export default function Home() {
     const els = document.querySelectorAll('[data-reveal]');
     const obs = new IntersectionObserver((entries) => {
       entries.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add('revealed'); obs.unobserve(e.target); }
+        if (e.isIntersecting) { e.target.classList.add('revealed'); }
       });
     }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
-    els.forEach(el => obs.observe(el));
+    els.forEach(el => {
+      // Re-apply revealed if already visible (handles React re-renders)
+      if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('revealed');
+      obs.observe(el);
+    });
     return () => obs.disconnect();
   }, [projects, certificates, pageReady, lang]);
 
@@ -452,12 +453,17 @@ export default function Home() {
     const handler = (e) => {
       if (scrolling) return;
       const card = e.currentTarget;
+      if (!card.classList.contains('revealed')) return;
       const r = card.getBoundingClientRect();
       const x = ((e.clientX - r.left) / r.width - 0.5) * 8;
       const y = ((e.clientY - r.top) / r.height - 0.5) * 8;
       card.style.transform = `translateY(-4px) rotateX(${-y}deg) rotateY(${x}deg)`;
     };
-    const reset = (e) => { e.currentTarget.style.transform = ''; };
+    const reset = (e) => {
+      const card = e.currentTarget;
+      if (!card.classList.contains('revealed')) return;
+      card.style.transform = '';
+    };
     const cards = document.querySelectorAll('.mag');
     cards.forEach(c => { c.addEventListener('mousemove', handler); c.addEventListener('mouseleave', reset); });
     return () => {
@@ -1163,15 +1169,14 @@ export default function Home() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,400;1,9..144,700&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;600;700;800&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,700;1,400&family=Lato:wght@400;700&family=Bebas+Neue&family=Teko:wght@400;600;700&family=Pacifico&family=Libre+Caslon+Display&family=Libre+Caslon+Text:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap');
         *,*::before,*::after{box-sizing:border-box;}
-        html{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden!important;background:#111110;transition:background 0.5s ease;scrollbar-width:thin;scrollbar-color:rgba(100,100,100,0.5) transparent;}
+        html{margin:0;padding:0;width:100%;max-width:100%;overflow-x:clip;background:#111110;transition:background 0.5s ease;scrollbar-width:thin;scrollbar-color:rgba(100,100,100,0.5) transparent;}
         html.site-dark{background:#111110;}
         html:not(.site-dark){background:#ffffff;}
-        html{scrollbar-gutter:stable;}
         html::-webkit-scrollbar{width:4px;}
         html::-webkit-scrollbar-track{background:transparent;}
         html::-webkit-scrollbar-thumb{background:rgba(100,100,100,0.4);border-radius:4px;}
         html::-webkit-scrollbar-thumb:hover{background:rgba(150,150,150,0.6);}
-        body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:hidden!important;background:transparent;}
+        body{margin:0;padding:0;width:100%;max-width:100%;overflow-x:clip;background:transparent;}
         /* Modern Custom Cursor - Elegant Dot Style */
         body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23d4eb00' stroke='%230d0d0d' stroke-width='1.5'/%3E%3Ccircle cx='8' cy='8' r='2' fill='%230d0d0d'/%3E%3C/svg%3E") 8 8,auto;}
         a,button,[role="button"],input,textarea,select,label[for]{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%23d4eb00' stroke-width='2'/%3E%3Ccircle cx='10' cy='10' r='3' fill='%23d4eb00'/%3E%3C/svg%3E") 10 10,pointer;}
@@ -1201,7 +1206,7 @@ export default function Home() {
         @keyframes spin{to{transform:rotate(360deg);}}
 
         /* ── THEME VARS ── */
-        .rw{--acc:#d4eb00;--acc-bg:rgba(212,235,0,0.12);--ink:#1a1a1a;--ink2:#555555;--ink3:#999999;--bg:#ffffff;--bg2:#f4f4f0;--bd:rgba(0,0,0,0.09);--shadow:rgba(0,0,0,0.07);--font-heading:'Fraunces',serif;--font-body:'Plus Jakarta Sans',sans-serif;font-family:var(--font-body);background:var(--bg);color:var(--ink);min-height:100vh;width:100%;max-width:100%;transition:background 0.5s ease,color 0.5s ease;position:relative;overflow-x:hidden!important;}
+        .rw{--acc:#d4eb00;--acc-bg:rgba(212,235,0,0.12);--ink:#1a1a1a;--ink2:#555555;--ink3:#999999;--bg:#ffffff;--bg2:#f4f4f0;--bd:rgba(0,0,0,0.09);--shadow:rgba(0,0,0,0.07);--font-heading:'Fraunces',serif;--font-body:'Plus Jakarta Sans',sans-serif;font-family:var(--font-body);background:var(--bg);color:var(--ink);min-height:100vh;width:100%;max-width:100%;transition:background 0.5s ease,color 0.5s ease;position:relative;overflow-x:clip;}
         .rw.dark{--ink:#f0efe8;--ink2:#909088;--ink3:#555550;--bg:#111110;--bg2:#1c1c1a;--bd:rgba(255,255,255,0.07);--shadow:rgba(0,0,0,0.3);}
         .rw *{transition-property:background-color,border-color,color,box-shadow;transition-duration:0.5s;transition-timing-function:ease;}
         .hero-photo-wrap,.proj-card,.cert-card,.skill-card,.gh-repo-card{transform:translateZ(0);}
@@ -1255,7 +1260,7 @@ export default function Home() {
         }
 
         /* ── MAGNETIC CARDS ── */
-        .mag{transition:transform 0.25s ease,box-shadow 0.25s ease;transform-style:preserve-3d;perspective:800px;will-change:transform;}
+        .mag{transition:box-shadow 0.25s ease;transform-style:preserve-3d;perspective:800px;will-change:transform;}
         @media(max-width:768px){.mag{transform-style:flat;perspective:none;}}
 
         /* ── NAV ── */
@@ -1427,12 +1432,10 @@ export default function Home() {
           flex-direction:column;
           height:100%;
           justify-content:space-between;
-          transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s;
+          transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .skill-card:hover .skill-main, .skill-card.active .skill-main{
-          transform: translateY(-10px);
-          opacity: 0;
-          pointer-events: none;
+          transform: translateY(-8px);
         }
         .skill-header{
           display:flex;
@@ -1487,13 +1490,15 @@ export default function Home() {
           inset:0;
           padding:18px;
           background: var(--bg2);
+          border-radius:18px;
           display:flex;
           flex-direction:column;
           justify-content:space-between;
           opacity:0;
           transform: translateY(100%);
-          transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s;
+          transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.2s ease-out;
           pointer-events:none;
+          z-index:2;
         }
         .skill-card:hover .skill-desc-overlay, .skill-card.active .skill-desc-overlay{
           opacity:1;
@@ -2802,8 +2807,6 @@ export default function Home() {
                 className={`skill-card mag ${activeSkill === i ? 'active' : ''}`}
                 data-reveal
                 data-delay={String((i%4)+1)}
-                onMouseEnter={() => setActiveSkill(i)}
-                onMouseLeave={() => setActiveSkill(null)}
                 onClick={() => setActiveSkill(activeSkill === i ? null : i)}
                 style={{
                   '--skill-color': sk.color,
